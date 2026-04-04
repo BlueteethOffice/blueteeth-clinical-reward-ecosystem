@@ -70,11 +70,11 @@ export default function LoginPage() {
              throw new Error("auth/strict-password-mismatch");
          }
          authIdentity = 'niteen02@gmail.com'; 
-      } else if (lowerEmail === 'number one') {
+      } else if (lowerEmail === 'admin@blueteeth.in') {
          if (sanitizedPassword !== 'Niteen@0987') {
              throw new Error("auth/strict-password-mismatch");
          }
-         authIdentity = 'nitinchauhan378@gmail.com'; 
+         authIdentity = 'admin@blueteeth.in'; 
       } else if (!sanitizedEmail.includes('@')) {
          toast.error('Access Denied: Standard professional email required.');
          setLoading(false);
@@ -92,9 +92,9 @@ export default function LoginPage() {
           const userRef = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
           
-          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
+          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
           const isMaster = user.email && masterEmails.includes(user.email.toLowerCase());
-          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.toLowerCase() === 'number one' || sanitizedEmail.includes('admin')) ? 'admin' : 'doctor';
+          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.includes('admin')) ? 'admin' : 'doctor';
 
           if (userSnap.exists()) {
             const userData = userSnap.data();
@@ -150,7 +150,7 @@ export default function LoginPage() {
         const securityNotifyEmail = user.email || email;
         const isValidEmail = securityNotifyEmail && securityNotifyEmail.includes('@');
         const role = loginResult?.targetRole || 'doctor';
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
         const isAdminIdentity = role === 'admin' || masterEmails.includes(email.toLowerCase());
 
         // 1. ADMIN SUCCESS ALERT TO NITIN
@@ -199,7 +199,7 @@ export default function LoginPage() {
         console.warn('Login Auth Note:', error.message);
         
         // ADMIN FAILED ATTEMPT ALERT
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
         if (masterEmails.includes(email.toLowerCase())) {
             sendEmail({
                 to_email: 'nitinchauhan378@gmail.com',
