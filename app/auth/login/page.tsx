@@ -81,9 +81,22 @@ export default function LoginPage() {
          return;
       }
 
-      // 1. STANDARD FIREBASE AUTHENTICATION (Uses REAL password provided in input)
+      // 1. STANDARD FIREBASE AUTHENTICATION (With Auto-Provisioning for Master Accounts)
       console.log(">>> [AUTH GATEWAY] VERIFYING REAL-TIME CREDENTIALS...");
-      const userCredential = await signInWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
+      let userCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
+      } catch (authError: any) {
+        // AUTO-INJECT MASTER ACCOUNTS DIRECTLY INTO FIREBASE DB (No Signup Needed)
+        if ((lowerEmail === 'niteen02' || lowerEmail === 'admin@blueteeth.in') && 
+            (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential')) {
+            console.log(">>> [MEDICAL CLOUD] FORCING MASTER ACCOUNT CREATION IN DATABASE...");
+            const { createUserWithEmailAndPassword } = await import('firebase/auth');
+            userCredential = await createUserWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
+        } else {
+            throw authError; // Standard users must register
+        }
+      }
       const user = userCredential.user;
       // 2. FETCH IDENTITY AND SYNC (Bulletproof Timeout)
       console.log(">>> [MEDICAL CLOUD] AUTHORIZING IDENTITY...");
