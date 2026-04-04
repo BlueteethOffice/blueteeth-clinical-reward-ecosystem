@@ -182,11 +182,13 @@ export default function LoginPage() {
         console.warn('Login Auth Note:', error.message);
         
         if (error.code === 'auth/invalid-credential') {
-           toast.error('Identity Conflict: Check your Professional Email or Credentials.');
+           toast.error('Access Denied: Check your credentials or Register as a new Practitioner.');
         } else if (error.code === 'auth/user-not-found') {
-           toast.error('Identity Profile not discovered.');
+           toast.error('Identity Profile not discovered. Please proceed to Registration.');
+        } else if (error.code === 'auth/too-many-requests') {
+           toast.error('Security Protocol: Too many login attempts. Please try again later.');
         } else {
-           toast.error('Professional Authorization Failed.');
+           toast.error('Professional Authorization Failed. Contact system administrator.');
         }
     } finally {
        setLoading(false);
