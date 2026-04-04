@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import emailjs from '@emailjs/browser';
+import { sendEmail } from '@/lib/email';
 
 type SignupStep = 'FORM' | 'OTP' | 'SUCCESS';
 
@@ -33,11 +33,9 @@ export default function SignupPage() {
   const [userId, setUserId] = useState('');
   const router = useRouter();
 
-  // Initialize EmailJS once
+  // Security Identity initialization
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) {
-      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
-    }
+    // Identity system ready
   }, []);
 
   // Redirect if success
@@ -103,29 +101,24 @@ export default function SignupPage() {
       console.log(">>> [MEDICAL CLOUD] DISPATCHING MAIL...");
       const userNotifyEmail = formData.email;
       if (userNotifyEmail && userNotifyEmail.includes('@')) {
-        await emailjs.send(
-          process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-          process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-          { 
-            email: userNotifyEmail, 
-            to_email: userNotifyEmail,
-            user_email: userNotifyEmail,
-            from_name: "Blueteeth Security Team",
-            subject: "Blueteeth: Verify Your Professional Identity",
-            to_name: formData.name, 
-            passcode: newOtp, 
-            otp: newOtp,
-            logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-            message: `Your professional authentication code is: ${newOtp}. It will expire in 10 minutes. Please enter this code to finalize your Blueteeth Rewards enrollment.`,
-            time: "10 minutes" 
-          },
-          process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-        ).then(() => {
-          console.log(">>> [MEDICAL CLOUD] OTP EMAIL SENT SUCCESSFULLY.");
-        }).catch(e => {
-          console.error(">>> [MEDICAL CLOUD] EMAILJS ERROR:", e?.status, e?.text || e);
-          toast(`System Note: If email doesn't arrive, check the console for manual code entry.`, { duration: 10000 });
+        const emailResult = await sendEmail({ 
+          email: userNotifyEmail, 
+          to_email: userNotifyEmail,
+          user_email: userNotifyEmail,
+          subject: "Blueteeth: Verify Your Professional Identity",
+          to_name: formData.name, 
+          passcode: newOtp, 
+          otp: newOtp,
+          message: `Your professional authentication code is: ${newOtp}. It will expire in 10 minutes. Please enter this code to finalize your Blueteeth Rewards enrollment.`,
+          time: "10 minutes" 
         });
+
+        if (emailResult.success) {
+          console.log(">>> [MEDICAL CLOUD] OTP EMAIL SENT SUCCESSFULLY.");
+        } else {
+          console.error(">>> [MEDICAL CLOUD] EMAILJS ERROR:", emailResult.error);
+          toast(`System Note: If email doesn't arrive, check the console for manual code entry.`, { duration: 10000 });
+        }
       }
     } catch (e) {
       console.warn("Medical Cloud Dispatch Deferred:", e);
@@ -196,23 +189,16 @@ export default function SignupPage() {
             try {
                const welcomeEmail = formData.email;
                if (welcomeEmail && welcomeEmail.includes('@')) {
-                 await emailjs.send(
-                   process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-                   process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-                    { 
-                       email: welcomeEmail, 
-                       to_email: welcomeEmail,
-                       user_email: welcomeEmail,
-                       to_name: formData.name, 
-                       from_name: "Blueteeth Security Team",
-                       logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-                       message: `Welcome Dr. ${formData.name}! Your account has been verified and fully activated. You can now access the ELITE Dental Hub.`,
-                       passcode: "VERIFIED",
-                       otp: "VERIFIED",
-                       time: new Date().toLocaleString()
-                    },
-                    process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-                 );
+                 await sendEmail({ 
+                   email: welcomeEmail, 
+                   to_email: welcomeEmail,
+                   user_email: welcomeEmail,
+                   to_name: formData.name, 
+                   message: `Welcome Dr. ${formData.name}! Your account has been verified and fully activated. You can now access the ELITE Dental Hub.`,
+                   passcode: "VERIFIED",
+                   otp: "VERIFIED",
+                   time: new Date().toLocaleString()
+                 });
                  console.log(">>> [MEDICAL CLOUD] Welcome email dispatched.");
                }
             } catch(e) { console.warn("Confirmation Deferred:", e); }; 

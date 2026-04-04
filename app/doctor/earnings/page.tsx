@@ -33,7 +33,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import emailjs from '@emailjs/browser';
+import { sendEmail } from '@/lib/email';
 
 // Mock era ends here. Connection to living clinical database initialized.
 
@@ -124,25 +124,19 @@ export default function EarningsPage() {
   const sendCompletionEmail = async (type: 'identity_updated' | 'redemption_requested', details: string) => {
     if (!user?.email) return;
     try {
-      await emailjs.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-        {
-          email: user.email,
-          to_email: user.email,
-          user_email: user.email,
-          to_name: userData?.name || "Clinical Practitioner",
-          subject: type === 'identity_updated' ? "Blueteeth: Payment Identity Updated" : "Blueteeth: Withdrawal Request Submitted",
-          message: type === 'identity_updated' 
-            ? `Your clinical payout identity has been successfully updated to: ${details}. All future settlements will be routed to this professional node.`
-            : `Your withdrawal request for ₹${details} has been successfully submitted and is now in the administrative review queue. Expected completion: 24-48 hours.`,
-          logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-          otp: "SUCCESS",
-          passcode: "SUCCESS",
-          time: new Date().toLocaleString()
-        },
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-      );
+      await sendEmail({
+        email: user.email,
+        to_email: user.email,
+        user_email: user.email,
+        to_name: userData?.name || "Clinical Practitioner",
+        subject: type === 'identity_updated' ? "Blueteeth: Payment Identity Updated" : "Blueteeth: Withdrawal Request Submitted",
+        message: type === 'identity_updated' 
+          ? `Your clinical payout identity has been successfully updated to: ${details}. All future settlements will be routed to this professional node.`
+          : `Your withdrawal request for ₹${details} has been successfully submitted and is now in the administrative review queue. Expected completion: 24-48 hours.`,
+        otp: "SUCCESS",
+        passcode: "SUCCESS",
+        time: new Date().toLocaleString()
+      });
       console.log(">>> [COMPLETION NODE] CONFIRMATION EMAIL DISPATCHED.");
     } catch (e) {
       console.warn("Completion Mail Deferred:", e);
@@ -176,23 +170,20 @@ export default function EarningsPage() {
         time: "10 Minutes"
       };
 
-      await emailjs.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-        templateParams,
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-      ).then(() => {
+      const emailResult = await sendEmail(templateParams);
+      
+      if (emailResult.success) {
         setIsOtpSending(false);
         setShowOtpField(true);
         toast.success(`Secure Identity OTP dispatched to ${user?.email?.replace(/(.{2}).+(@.+)/, "$1***$2") || 'your clinical email'}`, {
           icon: '✉️',
           duration: 4000
         });
-      }).catch(e => {
-        console.error(">>> [SECURITY] OTP Dispatch Protocol Failure:", e?.status, e?.text || e);
+      } else {
+        console.error(">>> [SECURITY] OTP Dispatch Protocol Failure:", emailResult.error);
         setIsOtpSending(false);
         toast.error("Security Node Timeout. Please retry dispatch.");
-      });
+      }
     } catch (error) {
       console.warn("OTP Dispatch Protocol Exception:", error);
       setIsOtpSending(false);

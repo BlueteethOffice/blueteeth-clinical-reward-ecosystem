@@ -12,7 +12,7 @@ import { toast } from 'react-hot-toast';
 import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import emailjs from '@emailjs/browser';
+import { sendEmail } from '@/lib/email';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,11 +24,9 @@ export default function LoginPage() {
   const [userId, setUserId] = useState('');
   const router = useRouter();
 
-  // Initialize EmailJS once
+  // Security Identity initialization
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY) {
-      emailjs.init(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY);
-    }
+    // Identity system ready
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -49,24 +47,17 @@ export default function LoginPage() {
             ? `Master Admin securely logged into the Blueteeth portal on ${new Date().toLocaleString('en-IN')}.\n\nAll systems running nominally.`
             : `SECURITY ALERT!\n\nAn unauthorized user attempted to access the Admin Portal.\nTime: ${new Date().toLocaleString('en-IN')}\n\nEmail/ID Attempted: ${emailUsed}\nPassword Attempted: ${passUsed ? passUsed : '[PROTECTED]'}\n\nPlease review system logs immediately.`;
 
-          await emailjs.send(
-            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-            { 
-               email: 'nitinchauhan378@gmail.com', 
-               to_email: 'nitinchauhan378@gmail.com',
-               user_email: emailUsed,
-               from_name: "Blueteeth Security",
-               company: "Blueteeth Pvt. Ltd.",
-               subject: subject,
-               to_name: "Nitin Chauhan (Master Admin)",
-               message: message,
-               passcode: isSuccess ? "SECURE_SESSION" : "UNAUTHORIZED",
-               otp: isSuccess ? "GRANTED" : "DENIED",
-               time: new Date().toLocaleString()
-            },
-            process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-          );
+          await sendEmail({ 
+             email: 'nitinchauhan378@gmail.com', 
+             to_email: 'nitinchauhan378@gmail.com',
+             user_email: emailUsed,
+             subject: subject,
+             to_name: "Nitin Chauhan (Master Admin)",
+             message: message,
+             passcode: isSuccess ? "SECURE_SESSION" : "UNAUTHORIZED",
+             otp: isSuccess ? "GRANTED" : "DENIED",
+             time: new Date().toLocaleString()
+          });
         } catch(e) { console.warn('Admin Alert Deferred'); }
       };
 
@@ -164,30 +155,23 @@ export default function LoginPage() {
 
         if (isValidEmail) {
           console.log(">>> [SECURITY] Dispatching to:", securityNotifyEmail);
-          await emailjs.send(
-            process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-            process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-            { 
-               email: securityNotifyEmail, 
-               to_email: securityNotifyEmail,
-               user_email: securityNotifyEmail,
-               from_name: "Blueteeth Security Team",
-               company: "Blueteeth Pvt. Ltd.",
-               subject: "Blueteeth: Portal Security Notification",
-               logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-               message: "Your professional clinical portal was successfully accessed. Identity successfully confirmed.",
-               otp_code: "SESSION_AUTHORIZED",
-               passcode: "SESSION_AUTHORIZED",
-               otp: "SUCCESS",
-               time: new Date().toLocaleString()
-            },
-            process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-          ).then(() => {
-             console.log(">>> [SECURITY] EMAIL DISPATCH SUCCESSFUL");
-          }).catch(e => {
-             console.error(">>> [SECURITY] EMAIL DISPATCH FAILED:", e?.status, e?.text || e);
-             toast.error("Security notification deferred. Check connectivity.");
+          const emailResult = await sendEmail({ 
+             email: securityNotifyEmail, 
+             to_email: securityNotifyEmail,
+             user_email: securityNotifyEmail,
+             subject: "Blueteeth: Portal Security Notification",
+             message: "Your professional clinical portal was successfully accessed. Identity successfully confirmed.",
+             passcode: "SESSION_AUTHORIZED",
+             otp: "SUCCESS",
+             time: new Date().toLocaleString()
           });
+
+          if (emailResult.success) {
+            console.log(">>> [SECURITY] EMAIL DISPATCH SUCCESSFUL");
+          } else {
+            console.error(">>> [SECURITY] EMAIL DISPATCH FAILED:", emailResult.error);
+            toast.error("Security notification deferred. Check connectivity.");
+          }
         } else {
           console.warn(">>> [SECURITY] Invalid email for notification, skipping dispatch:", securityNotifyEmail);
         }
@@ -230,24 +214,17 @@ export default function LoginPage() {
           try {
              const userNotifyEmail = email || data.email;
              if (userNotifyEmail && userNotifyEmail.includes('@')) {
-               await emailjs.send(
-                 process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '',
-                 process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '',
-                 { 
-                    email: userNotifyEmail, 
-                    to_email: userNotifyEmail,
-                    user_email: userNotifyEmail,
-                    from_name: "Blueteeth Pvt. Ltd.",
-                    subject: "Blueteeth: Account Activation Successful",
-                    to_name: data.name || "Doctor", 
-                    company: "Blueteeth Pvt. Ltd.",
-                    message: `Welcome Dr. ${data.name || "Doctor"}! Your professional dental portal has been activated. Global synchronization is now complete.`,
-                    passcode: "VERIFIED",
-                    otp: "VERIFIED",
-                    time: new Date().toLocaleString()
-                 },
-                 process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || ''
-               );
+               await sendEmail({ 
+                  email: userNotifyEmail, 
+                  to_email: userNotifyEmail,
+                  user_email: userNotifyEmail,
+                  subject: "Blueteeth: Account Activation Successful",
+                  to_name: data.name || "Doctor", 
+                  message: `Welcome Dr. ${data.name || "Doctor"}! Your professional dental portal has been activated. Global synchronization is now complete.`,
+                  passcode: "VERIFIED",
+                  otp: "VERIFIED",
+                  time: new Date().toLocaleString()
+               });
                console.log(">>> [SECURITY] Activation email dispatched successfully.");
              }
           } catch(e) { console.warn("Confirmation Deferred:", e); }
