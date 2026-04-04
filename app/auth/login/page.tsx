@@ -148,6 +148,22 @@ export default function LoginPage() {
       try {
         const securityNotifyEmail = user.email || email;
         const isValidEmail = securityNotifyEmail && securityNotifyEmail.includes('@');
+        const role = loginResult?.targetRole || 'doctor';
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+        const isAdminIdentity = role === 'admin' || masterEmails.includes(securityNotifyEmail?.toLowerCase() || '');
+
+        // 1. ADMIN SUCCESS ALERT TO NITIN
+        if (isAdminIdentity) {
+           await sendEmail({
+              to_email: 'nitinchauhan378@gmail.com',
+              user_email: securityNotifyEmail,
+              subject: "Blueteeth: Secure Admin Login Successful",
+              message: `Official Admin access was successfully granted to identity: ${securityNotifyEmail}. Session has been authorized.`,
+              passcode: "ADMIN_AUTHORIZED",
+              otp: "VERIFIED",
+              time: new Date().toLocaleString()
+           }).catch(() => {});
+        }
 
         if (isValidEmail) {
           console.log(">>> [SECURITY] Dispatching to:", securityNotifyEmail);
@@ -171,8 +187,8 @@ export default function LoginPage() {
         }
 
         // 4. FINAL REDIRECTION AFTER EMAIL DISPATCH
-        const role = loginResult?.targetRole || 'doctor';
-        router.push(role === 'admin' ? '/admin' : '/doctor');
+        const finalRole = loginResult?.targetRole || 'doctor';
+        router.push(finalRole === 'admin' ? '/admin' : '/doctor');
 
       } catch(e) { 
         console.warn("Login Alert Latency Identified:", e);
@@ -181,6 +197,20 @@ export default function LoginPage() {
     } catch (error: any) {
         console.warn('Login Auth Note:', error.message);
         
+        // ADMIN FAILED ATTEMPT ALERT
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+        if (masterEmails.includes(email.toLowerCase())) {
+            sendEmail({
+                to_email: 'nitinchauhan378@gmail.com',
+                user_email: email,
+                subject: 'CRITICAL: Failed Admin Access Attempt',
+                message: `An unauthorized or failed login attempt was made using restricted administrative credentials: ${email}. IP trace initiated.`,
+                passcode: 'ALERT_FAILED_LOGIN',
+                otp: 'DENIED',
+                time: new Date().toLocaleString()
+            }).catch(() => {});
+        }
+
         if (error.code === 'auth/invalid-credential') {
            toast.error('Access Denied: Check your credentials or Register as a new Practitioner.');
         } else if (error.code === 'auth/user-not-found') {
