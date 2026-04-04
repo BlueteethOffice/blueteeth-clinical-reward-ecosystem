@@ -409,7 +409,7 @@ function CaseReviewContent() {
                 
                 <div className="flex-1 bg-slate-50/30 overflow-auto flex items-center justify-center p-4">
                    <img 
-                      src={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.evidenceUrls?.[0]} 
+                      src={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]} 
                       alt="Full Resolution Evidence"
                       className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm border border-slate-100"
                    />
@@ -421,9 +421,9 @@ function CaseReviewContent() {
                      <p className="text-xs font-bold text-slate-700 opacity-80 italic">#{selectedCase.id.slice(0, 10).toUpperCase()}</p>
                    </div>
                    <div className="flex items-center justify-end gap-2 flex-wrap sm:flex-nowrap">
-                      <Button 
+                       <Button 
                         onClick={() => {
-                          const imageUrl = selectedCase.evidenceUrl || selectedCase.proofUrl;
+                          const imageUrl = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0];
                           const printWindow = window.open('', '_blank');
                           if (printWindow) {
                             printWindow.document.write(`
@@ -452,7 +452,7 @@ function CaseReviewContent() {
                       <Button 
                         onClick={() => {
                           const link = document.createElement('a');
-                          link.href = selectedCase.evidenceUrl || selectedCase.proofUrl;
+                          link.href = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0];
                           link.download = `Blueteeth_Case_${selectedCase.id.slice(0, 6)}.jpg`;
                           link.click();
                         }}
@@ -462,7 +462,7 @@ function CaseReviewContent() {
                          Download
                       </Button>
                       <a 
-                        href={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.evidenceUrls?.[0]} 
+                        href={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]} 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
