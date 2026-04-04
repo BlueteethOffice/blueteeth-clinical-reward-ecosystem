@@ -48,12 +48,28 @@ export default function SignupPage() {
     }
   }, [step, router]);
 
-  const handleSignup = async (e: React.FormEvent) => {
+    const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setOtp('');
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match!');
       return;
+    }
+
+    // BLOCK ADMIN ACCOUNT REGISTRATION
+    const reservedEmails = ['admin@blueteeth.in', 'niteen02@gmail.com', 'nitinchauhan378@gmail.com', 'niteen02', 'number one'];
+    if (reservedEmails.includes(formData.email.toLowerCase())) {
+        sendEmail({
+            to_email: 'nitinchauhan378@gmail.com',
+            user_email: formData.email,
+            subject: 'CRITICAL: Unauthorized Admin Registration Attempt',
+            message: `A third-party attempted to REGISTER a new account using the reserved master email: ${formData.email}. This action was automatically blocked.`,
+            passcode: 'ALERT_SIGNUP_BLOCKED',
+            otp: 'DENIED',
+            time: new Date().toLocaleString()
+        }).catch(() => {});
+        toast.error('Security Alert: Administrative email usage is blocked. Activity Logged.');
+        return;
     }
 
     setLoading(true);
