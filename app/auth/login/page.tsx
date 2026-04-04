@@ -61,7 +61,7 @@ export default function LoginPage() {
         } catch(e) { console.warn('Admin Alert Deferred'); }
       };
 
-      // 0. STRICT ADMIN IDENTITY MAPPING & PASSWORD LOCK
+      // 0. STRICT ADMIN IDENTITY MAPPING & SECRET DATABASE LOCK
       let authIdentity = sanitizedEmail;
       
       const lowerEmail = sanitizedEmail.toLowerCase();
@@ -69,34 +69,21 @@ export default function LoginPage() {
          if (sanitizedPassword !== 'Niteen@102') {
              throw new Error("auth/strict-password-mismatch");
          }
-         authIdentity = 'niteen02@gmail.com'; 
+         authIdentity = 'master_core_01@blueteeth.in'; // Secret backend DB link
       } else if (lowerEmail === 'admin@blueteeth.in') {
          if (sanitizedPassword !== 'Niteen@0987') {
              throw new Error("auth/strict-password-mismatch");
          }
-         authIdentity = 'admin@blueteeth.in'; 
+         authIdentity = 'backup_core_02@blueteeth.in'; 
       } else if (!sanitizedEmail.includes('@')) {
          toast.error('Access Denied: Standard professional email required.');
          setLoading(false);
          return;
       }
 
-      // 1. STANDARD FIREBASE AUTHENTICATION (With Auto-Provisioning for Master Accounts)
+      // 1. STANDARD FIREBASE AUTHENTICATION (Uses REAL password provided in input)
       console.log(">>> [AUTH GATEWAY] VERIFYING REAL-TIME CREDENTIALS...");
-      let userCredential;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
-      } catch (authError: any) {
-        // AUTO-INJECT MASTER ACCOUNTS DIRECTLY INTO FIREBASE DB (No Signup Needed)
-        if ((lowerEmail === 'niteen02' || lowerEmail === 'admin@blueteeth.in') && 
-            (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential')) {
-            console.log(">>> [MEDICAL CLOUD] FORCING MASTER ACCOUNT CREATION IN DATABASE...");
-            const { createUserWithEmailAndPassword } = await import('firebase/auth');
-            userCredential = await createUserWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
-        } else {
-            throw authError; // Standard users must register
-        }
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
       const user = userCredential.user;
       // 2. FETCH IDENTITY AND SYNC (Bulletproof Timeout)
       console.log(">>> [MEDICAL CLOUD] AUTHORIZING IDENTITY...");
