@@ -150,12 +150,17 @@ export default function LoginPage() {
         const securityNotifyEmail = user.email || email;
         const isValidEmail = securityNotifyEmail && securityNotifyEmail.includes('@');
         const role = loginResult?.targetRole || 'doctor';
+        
+        // 4. FINAL REDIRECTION (Immediate execution for speed)
+        const finalRole = loginResult?.targetRole || 'doctor';
+        router.push(finalRole === 'admin' ? '/admin' : '/doctor');
+
         const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
         const isAdminIdentity = role === 'admin' || masterEmails.includes(email.toLowerCase());
 
-        // 1. ADMIN SUCCESS ALERT TO NITIN
+        // 1. ADMIN SUCCESS ALERT TO NITIN (Asynchronous - No Wait)
         if (isAdminIdentity) {
-           await sendEmail({
+           sendEmail({
               to_email: 'nitinchauhan378@gmail.com',
               user_email: securityNotifyEmail,
               subject: "Blueteeth: Secure Admin Login Successful",
@@ -166,9 +171,10 @@ export default function LoginPage() {
            }).catch(() => {});
         }
 
+        // 2. USER SECURITY EMAIL (Asynchronous - No Wait)
         if (isValidEmail) {
-          console.log(">>> [SECURITY] Dispatching to:", securityNotifyEmail);
-          const emailResult = await sendEmail({ 
+          console.log(">>> [SECURITY] Dispatching async mail to:", securityNotifyEmail);
+          sendEmail({ 
              email: securityNotifyEmail, 
              to_email: securityNotifyEmail,
              user_email: securityNotifyEmail,
@@ -177,23 +183,13 @@ export default function LoginPage() {
              passcode: "SESSION_AUTHORIZED",
              otp: "SUCCESS",
              time: new Date().toLocaleString()
-          });
-
-          if (emailResult.success) {
-            console.log(">>> [SECURITY] EMAIL DISPATCH SUCCESSFUL");
-          } else {
-            console.error(">>> [SECURITY] EMAIL DISPATCH FAILED:", emailResult.error);
-            toast.error(`Security alert error: ${emailResult.error}`);
-          }
+          }).catch(e => console.error("Async Email Error:", e));
         }
-
-        // 4. FINAL REDIRECTION AFTER EMAIL DISPATCH
-        const finalRole = loginResult?.targetRole || 'doctor';
-        router.push(finalRole === 'admin' ? '/admin' : '/doctor');
 
       } catch(e) { 
         console.warn("Login Alert Latency Identified:", e);
-        router.push('/doctor');
+        const fbRole = loginResult?.targetRole || 'doctor';
+        router.push(fbRole === 'admin' ? '/admin' : '/doctor');
       }
     } catch (error: any) {
         console.warn('Login Auth Note:', error.message);
