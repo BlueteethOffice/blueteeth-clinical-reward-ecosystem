@@ -321,12 +321,25 @@ export const fetchAdminCases = async (status: 'Pending' | 'Approved' = 'Pending'
   try {
     const q = query(collection(db, 'cases'), where('status', '==', status));
     const querySnapshot = await getDocs(q);
-    const cases: any[] = [];
-    querySnapshot.forEach((docSnap) => {
-      cases.push({ id: docSnap.id, ...docSnap.data() });
+    
+    const casePromises = querySnapshot.docs.map(async (docSnap) => {
+      const data = docSnap.data();
+      let doctorName = 'Unknown Practitioner';
+      let doctorPhone = 'N/A';
+      try {
+        if (data.doctorUid) {
+           const doctorSnap = await getDoc(doc(db, 'users', data.doctorUid));
+           if (doctorSnap.exists()) {
+             doctorName = doctorSnap.data().name || doctorName;
+             doctorPhone = doctorSnap.data().phone || doctorSnap.data().mobile || doctorPhone;
+           }
+        }
+      } catch(e) {}
+      return { id: docSnap.id, ...data, doctorName, doctorPhone };
     });
     
-    return cases.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
+    const cases = await Promise.all(casePromises);
+    return cases.sort((a: any, b: any) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
   } catch (error: any) {
     console.error(`Error fetching ${status} cases:`, error);
     return [];

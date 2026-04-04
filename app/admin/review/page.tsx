@@ -156,6 +156,7 @@ function CaseReviewContent() {
                             <div>
                               <h4 className="font-bold text-blue-900 group-hover:text-blue-600 transition-colors uppercase">{c.patientName}</h4>
                               <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest">ID: {c.patientMobile}</p>
+                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">By <span className="font-bold text-slate-700">{c.doctorName || 'Dr. Unknown'}</span></p>
                             </div>
                           </div>
                           <div className="text-right flex items-center gap-6">
@@ -257,6 +258,13 @@ function CaseReviewContent() {
                         <div>
                           <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Clinic Location</p>
                           <p className="font-bold text-blue-900 text-xs leading-none">{selectedCase.location}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                        <User className="h-3.5 w-3.5 text-blue-600" />
+                        <div>
+                          <p className="text-[8px] font-bold text-blue-400 uppercase tracking-tighter">Submitted By</p>
+                          <p className="font-bold text-blue-900 text-xs leading-none">{selectedCase.doctorName || 'Dr. Unknown'}</p>
                         </div>
                       </div>
                     </div>
