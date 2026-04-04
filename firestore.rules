@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if the user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Role-based Access Logic
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // 1. Users Collection - DO NOT ALLOW USERS TO CHANGE THEIR OWN ROLE OR POINTS
+    match /users/{userId} {
+      // Users can read their own or admins can read all
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      // Allow initial creation: points must be 0, role must be doctor
+      allow create: if isSignedIn() && request.auth.uid == userId && 
+                    request.resource.data.points == 0 && 
+                    request.resource.data.role == 'doctor';
+      
+      // Updates: don't allow changing role or points
+      allow update: if isAdmin() || 
+                    (request.auth.uid == userId && 
+                    request.resource.data.points == resource.data.points && 
+                    request.resource.data.role == resource.data.role);
+    }
+
+    // 2. Cases Collection
+    match /cases/{caseId} {
+      allow read: if isSignedIn() && (resource.data.doctorUid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.doctorUid == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // 3. Withdrawals Collection
+    match /withdrawals/{requestId} {
+      allow read: if isSignedIn() && (resource.data.doctorUid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.doctorUid == request.auth.uid;
+      allow update: if isAdmin();
+    }
+  }
+}
