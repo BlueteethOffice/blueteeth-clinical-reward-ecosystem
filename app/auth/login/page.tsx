@@ -110,11 +110,9 @@ export default function LoginPage() {
                 });
             }
 
-            // Role-based Routing (Direct access)
-            if (targetRole === 'admin' || userData.role === 'admin') router.push('/admin');
-            else router.push('/doctor');
-            toast.success(`Welcome back, ${targetRole === 'admin' ? 'Master Admin' : 'Dr. ' + (userData.name || 'Professional')}`);
-            return "SUCCESS";
+            // Role-based Routing (Deferred for Security Audit)
+            toast.success(`Identity Confirmed. Accessing ${targetRole === 'admin' ? 'Administrative' : 'Clinical'} Portal...`);
+            return { success: "SUCCESS", targetRole: targetRole || userData.role };
             
           } else {
             console.warn(">>> [MEDICAL CLOUD] PROFILE NOT FOUND - FORCING RECOVERY.");
@@ -130,8 +128,7 @@ export default function LoginPage() {
               isVerified: true
             });
             toast.success(`Authorized with ${targetRole.toUpperCase()} Recovery.`);
-            router.push(targetRole === 'admin' ? '/admin' : '/doctor');
-            return "RECOVERY";
+            return { success: "RECOVERY", targetRole };
           }
         } catch (e) {
           console.error(">>> [MEDICAL CLOUD] FETCH ERROR:", e);
@@ -140,12 +137,11 @@ export default function LoginPage() {
       };
 
       const fetchTimeout = new Promise((resolve) => setTimeout(() => resolve("TIMEOUT"), 1500));
-      const loginResult = await Promise.race([fetchIdentity(), fetchTimeout]);
+      const loginResult: any = await Promise.race([fetchIdentity(), fetchTimeout]);
 
       if (loginResult === "TIMEOUT") {
         console.warn(">>> [MEDICAL CLOUD] RESILIENCE ACTIVE: DB SYNC LATENCY.");
         toast.success("Authorized via Professional Cloud.");
-        router.push('/doctor');
       }
 
       // SEND LOGIN NOTIFICATION MAIL (Elite Security Alert - Official Branding)
@@ -170,12 +166,18 @@ export default function LoginPage() {
             console.log(">>> [SECURITY] EMAIL DISPATCH SUCCESSFUL");
           } else {
             console.error(">>> [SECURITY] EMAIL DISPATCH FAILED:", emailResult.error);
-            toast.error("Security notification deferred. Check connectivity.");
+            toast.error(`Security alert error: ${emailResult.error}`);
           }
-        } else {
-          console.warn(">>> [SECURITY] Invalid email for notification, skipping dispatch:", securityNotifyEmail);
         }
-      } catch(e) { console.warn("Login Alert Latency Identified:", e); }
+
+        // 4. FINAL REDIRECTION AFTER EMAIL DISPATCH
+        const role = loginResult?.targetRole || 'doctor';
+        router.push(role === 'admin' ? '/admin' : '/doctor');
+
+      } catch(e) { 
+        console.warn("Login Alert Latency Identified:", e);
+        router.push('/doctor');
+      }
     } catch (error: any) {
         console.warn('Login Auth Note:', error.message);
         

@@ -117,7 +117,7 @@ export default function SignupPage() {
           console.log(">>> [MEDICAL CLOUD] OTP EMAIL SENT SUCCESSFULLY.");
         } else {
           console.error(">>> [MEDICAL CLOUD] EMAILJS ERROR:", emailResult.error);
-          toast(`System Note: If email doesn't arrive, check the console for manual code entry.`, { duration: 10000 });
+          toast.error(`OTP Error: ${emailResult.error}`);
         }
       }
     } catch (e) {
