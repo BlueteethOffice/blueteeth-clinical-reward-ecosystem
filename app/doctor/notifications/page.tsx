@@ -98,7 +98,7 @@ export default function NotificationsPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
           {loading ? (
             <div className="p-8 space-y-4">
                {[1,2,3,4].map(i => (

@@ -40,19 +40,19 @@ Card.displayName = 'Card';
 export { Card };
 
 export const CardHeader = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('p-6 border-b border-slate-50', className)} {...props}>
+  <div className={cn('p-4 sm:p-6 border-b border-slate-50', className)} {...props}>
     {children}
   </div>
 );
 
 export const CardContent = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('p-6', className)} {...props}>
+  <div className={cn('p-4 sm:p-6', className)} {...props}>
     {children}
   </div>
 );
 
 export const CardFooter = ({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('px-6 py-4 bg-slate-50/50 border-t border-slate-50', className)} {...props}>
+  <div className={cn('p-4 sm:px-6 py-4 bg-slate-50/50 border-t border-slate-50', className)} {...props}>
     {children}
   </div>
 );

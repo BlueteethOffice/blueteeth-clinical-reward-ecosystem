@@ -154,11 +154,10 @@ export default function SettingsPage() {
              // Defer the external Broadcast Event to escape React's strict render phase locks (Prevents DashboardLayout setState error)
               setTimeout(() => {
                   if (user?.uid) {
-                     localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(updatedState));
-                     window.dispatchEvent(new Event('clinical-identity-update'));
-                     console.log(">>> [IDENTITY BROADCAST] PROFILE ASSET SYNCHRONIZED.");
-                  }
-              }, 0);
+                      localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(updatedState));
+                      window.dispatchEvent(new Event('clinical-identity-update'));
+                   }
+               }, 0);
              
              return updatedState;
           });
@@ -217,8 +216,6 @@ export default function SettingsPage() {
           ...formData,
           photoURL: finalPhotoURL
         });
-
-        console.log("Cloud Synchronization Complete.");
       };
 
       // Fire and Forget - The UI is already 'updated' via formData and localStorage
@@ -236,33 +233,37 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-        <div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Practice Settings</h1>
-          <p className="text-slate-500 font-medium">Manage your professional identity and clinical credentials.</p>
+      <div className="max-w-[1400px] w-full space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 pt-0 sm:pt-4 px-0 sm:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pt-0 md:pt-4">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">Practice Settings</h1>
+            <p className="text-slate-500 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest mt-1 opacity-60">Verified Clinical Identity & Credential Center</p>
+          </div>
+          <div className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-md uppercase tracking-widest border border-emerald-100 flex items-center gap-2">
+             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Identity Secure node
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           <div className="md:col-span-1 flex flex-col gap-4">
-            <Card className="flex-1 py-8 px-8 bg-blue-600 border-0 rounded-2xl text-white text-center shadow-xl shadow-blue-100 overflow-hidden relative flex flex-col justify-center">
-               <div className="absolute top-6 right-6 opacity-10">
-                 <ShieldCheck size={70} />
-               </div>
+            <Card className="py-8 px-6 sm:px-8 bg-gradient-to-br from-blue-600 to-indigo-700 border-0 rounded-xl text-white text-center shadow-2xl shadow-blue-200 overflow-hidden relative flex flex-col justify-center group h-fit">
+               <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
+               <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl -ml-16 -mb-16" />
                 <div className="relative z-10 group/avatar">
                    <div 
-                     className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border-2 border-white/30 shadow-2xl relative cursor-pointer overflow-hidden p-0"
+                     className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20 shadow-2xl relative cursor-pointer overflow-hidden p-0"
                      onClick={() => document.getElementById('photoInput')?.click()}
                    >
                       {formData.photoURL ? (
                         <img src={formData.photoURL} alt="Profile" className="w-full h-full object-cover scale-105 transition-transform group-hover/avatar:scale-110" />
                       ) : (
-                        <UserCircle size={56} className="text-white/40" />
+                        <UserCircle size={50} className="text-white/40" />
                       )}
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                         <Camera size={24} className="text-white" />
+                         <Camera size={20} className="text-white" />
                       </div>
                    </div>
-                   <p className="text-[10px] text-blue-100/60 font-black mb-6 tracking-widest uppercase">Clinical Identity Asset</p>
+                   <p className="text-[8px] text-blue-300 font-black mb-6 tracking-widest uppercase opacity-80 italic">Practitioner Asset</p>
                   <input 
                     id="photoInput" type="file" accept="image/*" 
                     className="hidden" onChange={handlePhotoChange} 
@@ -270,190 +271,181 @@ export default function SettingsPage() {
                   
                   <div className="h-7 min-w-[140px] flex flex-col justify-center">
                     {formData.name ? (
-                      <h3 className="text-xl font-black tracking-tight leading-none">{formData.name}</h3>
+                      <h3 className="text-xl font-black tracking-tight leading-none uppercase italic">{formData.name}</h3>
                     ) : (
-                      <div className="h-5 w-32 bg-white/20 rounded-md animate-pulse" />
+                      <div className="h-5 w-32 bg-white/10 rounded-md animate-pulse mx-auto" />
                     )}
                   </div>
                   <div className="h-4 mt-1 flex flex-col justify-center">
                     {formData.specialization ? (
-                      <p className="text-blue-100 text-[9px] font-black tracking-[0.15em] uppercase italic opacity-80">{formData.specialization}</p>
+                      <p className="text-blue-200 text-[9px] font-black tracking-[0.15em] uppercase italic opacity-80">{formData.specialization}</p>
                     ) : (
-                      <div className="h-2 w-20 bg-white/10 rounded-sm animate-pulse" />
+                      <div className="h-2 w-20 bg-white/5 rounded-sm animate-pulse mx-auto" />
                     )}
                   </div>
                   
                   <div className="mt-8 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
                     <div className="text-center group">
-                      <p className="text-[9px] font-black uppercase opacity-60 mb-2 tracking-tighter">Clinical Trust</p>
-                      <BadgeCheck className="h-5 w-5 text-blue-200 mx-auto" />
+                      <p className="text-[8px] font-black uppercase mb-1 tracking-tighter text-white/70">Verified Status</p>
+                      <BadgeCheck className="h-5 w-5 text-white mx-auto" />
                     </div>
                     <div className="text-center group">
-                      <p className="text-[9px] font-black uppercase opacity-60 mb-2 tracking-tighter">Network ID</p>
-                      <ShieldCheck className="h-5 w-5 text-blue-100 mx-auto" />
+                      <p className="text-[8px] font-black uppercase mb-1 tracking-tighter text-white/70">Sync Archive</p>
+                      <ShieldCheck className="h-5 w-5 text-white/80 mx-auto" />
                     </div>
                   </div>
                </div>
             </Card>
 
-            <Card className="p-4 bg-slate-900 border-0 rounded-xl text-white transform-gpu transition-all hover:scale-[1.02]">
+            <Card className="p-4 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-xl text-emerald-700">
                <div className="flex gap-3 items-center">
-                  <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
-                    <AlertCircle size={18} />
+                  <div className="p-2 bg-white/50 rounded-lg">
+                    <BadgeCheck size={18} />
                   </div>
                   <div>
-                     <p className="text-xs font-bold text-white mb-0.5">Security Audit</p>
-                     <p className="text-[10px] text-slate-400 font-medium leading-relaxed">Identity edits require peer review.</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">Live Identity</p>
+                     <p className="text-[9px] font-bold opacity-60">Credentials synced with protocol.</p>
                   </div>
                </div>
             </Card>
 
-             <Card className="p-4 border-slate-100 rounded-xl border-dashed border-2 flex items-center justify-between bg-slate-50 mt-0 flex-shrink-0">
-                <div className="flex gap-3 items-center">
-                   <div className="p-2 bg-white text-slate-900 rounded-lg shadow-sm border border-slate-100">
-                     <Lock size={18} />
-                   </div>
-                   <div>
-                      <p className="font-bold text-slate-900 text-xs leading-none mb-1">Security Vault</p>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">2FA ACTIVE</p>
-                   </div>
-                </div>
-                <Button variant="outline" className="px-3 h-8 text-[9px] font-black uppercase tracking-widest text-blue-600 border-blue-100 hover:bg-blue-50 rounded-lg">MANAGE</Button>
-             </Card>
+              <Card className="p-4 border-slate-100 rounded-xl border border-slate-100 flex items-center justify-between bg-white shadow-xl shadow-slate-200/50">
+                 <div className="flex gap-3 items-center">
+                    <div className="p-2.5 bg-slate-50 text-slate-900 rounded-lg border border-slate-100">
+                      <Lock size={18} />
+                    </div>
+                    <div>
+                       <p className="font-black text-slate-900 text-[10px] uppercase tracking-widest leading-none mb-1">Vault</p>
+                       <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">2FA STATUS: ACTIVE</p>
+                    </div>
+                 </div>
+                 <Button variant="outline" className="px-3 h-8 text-[9px] font-black uppercase tracking-widest text-blue-600 border-blue-50 hover:bg-blue-100 rounded-lg">Config</Button>
+              </Card>
           </div>
 
           <div className="md:col-span-2 flex flex-col h-full">
-             <Card className="flex-1 p-6 border-slate-100 rounded-2xl shadow-lg shadow-slate-50 bg-white flex flex-col h-full">
-               <form onSubmit={handleUpdate} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Legal Name</label>
+             <Card className="flex-1 p-3.5 md:p-6 border-slate-100 rounded-xl shadow-2xl shadow-slate-200/40 bg-white flex flex-col h-fit">
+               <form onSubmit={handleUpdate} className="flex flex-col md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-4 gap-5">
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Legal Profile Name</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-blue-500 transition-colors">
                           <UserCircle size={16} />
                         </div>
                         <input 
                           type="text" required disabled={!isEditing}
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Practice Name</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Clinical Practice</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-indigo-500 transition-colors">
                           <Building2 size={16} />
                         </div>
                         <input 
                           type="text" required disabled={!isEditing}
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.clinicName} onChange={e => setFormData({...formData, clinicName: e.target.value})}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Verified Clinical Email</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Verified Clinical Email</label>
                       <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-amber-500">
                           <Mail size={16} />
                         </div>
                         <input 
                           type="email" disabled
-                          className="w-full bg-slate-100 border-2 border-slate-100 rounded-lg py-2.5 pl-10 pr-4 outline-none font-bold text-slate-400 cursor-not-allowed text-xs overflow-hidden text-ellipsis"
+                          className="w-full bg-slate-50 border border-slate-100 rounded-lg py-3.5 md:py-2.5 pl-10 pr-4 outline-none font-bold text-slate-400 cursor-not-allowed text-[11px] sm:text-xs overflow-hidden text-ellipsis italic"
                           value={user?.email || formData.email || ''}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Mobile No.</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Identity Contact Node</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-500 transition-colors">
                           <Phone size={16} />
                         </div>
                         <input 
                           type="tel" required disabled={!isEditing} placeholder="+91 XXXX XXX XXX"
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Medical Registration No.</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Reg No. Archive</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-violet-500 transition-colors">
                           <FileBadge size={16} />
                         </div>
                         <input 
                           type="text" required disabled={!isEditing} placeholder="Registration ID"
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.regNo} onChange={e => setFormData({...formData, regNo: e.target.value})}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Years of Experience</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Experience Years</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-orange-500 transition-colors">
                           <Award size={16} />
                         </div>
                         <input 
                           type="number" required disabled={!isEditing} placeholder="e.g. 10"
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.experience} onChange={e => setFormData({...formData, experience: e.target.value})}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Highest Qualification</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Highest Credential</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cyan-600 transition-colors">
                           <GraduationCap size={16} />
                         </div>
                         <input 
                           type="text" required disabled={!isEditing} placeholder="e.g. MDS, BDS"
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.qualification} onChange={e => setFormData({...formData, qualification: e.target.value})}
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Experience & Location</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Clinical Coordinates</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-rose-500 transition-colors">
                           <MapPin size={16} />
                         </div>
                         <input 
                           type="text" required disabled={!isEditing} placeholder="City / Location"
-                          className={getInputClass()}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 rounded-lg ${isEditing ? activeClass : disabledClass}`}
                           value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})}
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Field of Expertise</label>
+                    <div className="space-y-1.5 md:space-y-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Field of Expertise</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-300 group-focus-within:text-blue-500 transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-sky-500 transition-colors">
                           <Stethoscope size={16} />
                         </div>
                         <select 
-                          className={getSelectClass()} disabled={!isEditing}
+                          className={`${baseInputClass} py-3.5 md:py-2.5 appearance-none rounded-lg ${isEditing ? activeClass : disabledClass}`} disabled={!isEditing}
                           value={formData.specialization} onChange={e => setFormData({...formData, specialization: e.target.value})}
                         >
                            <option value="General Dentist">General Dentist</option>
@@ -464,28 +456,27 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Bio / About</label>
+                    <div className="space-y-1.5 md:space-y-1 col-span-1">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-0">Practitioner Bio</label>
                        <textarea 
-                         className={getTextAreaClass()} disabled={!isEditing}
+                         className={`w-full rounded-lg py-3.5 md:py-2.5 px-4 outline-none font-bold text-xs shadow-sm resize-none transition-all ${isEditing ? activeClass : disabledClass}`} disabled={!isEditing}
                          rows={2} placeholder="Brief highlight..."
                          value={formData.bio} onChange={e => setFormData({...formData, bio: e.target.value})}
                        />
                     </div>
-                  </div>
 
-                  <div className="pt-4 border-t border-slate-50 flex gap-4">
+                  <div className="pt-6 col-span-2 border-t border-slate-50 flex flex-col sm:flex-row gap-4">
                     {!isEditing ? (
-                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 h-12 rounded-lg font-bold shadow-lg shadow-slate-100 group gap-2 transition-all hover:bg-slate-800 text-sm">
-                        <Edit2 size={16} /> Edit Identity Details
+                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 border-none h-14 rounded-lg font-black shadow-2xl shadow-slate-300 group gap-4 transition-all hover:bg-slate-800 text-[11px] uppercase tracking-[0.2em] text-white">
+                        <Edit2 size={16} /> Modify Identity Node
                       </Button>
                     ) : (
                       <>
-                        <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="w-full sm:w-1/3 h-12 rounded-lg font-bold text-sm">
+                        <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="w-full sm:w-1/3 h-14 rounded-lg font-black text-[11px] uppercase tracking-[0.2em] text-red-600 border-red-100 bg-red-50/50 hover:bg-red-100 transition-all">
                           Cancel
                         </Button>
-                        <Button type="submit" isLoading={loading} className="w-full sm:w-2/3 bg-blue-600 h-12 rounded-lg font-bold shadow-lg shadow-blue-100 group gap-2 transition-all hover:bg-blue-700 text-white text-sm">
-                          Save & Sync Identity <Save size={16} />
+                        <Button type="submit" isLoading={loading} className="w-full sm:w-2/3 bg-blue-600 border-none h-14 rounded-lg font-black shadow-2xl shadow-blue-200 group gap-4 transition-all hover:bg-blue-700 text-white text-[11px] uppercase tracking-[0.2em]">
+                          Finalize Identity Sync <Save size={16} />
                         </Button>
                       </>
                     )}

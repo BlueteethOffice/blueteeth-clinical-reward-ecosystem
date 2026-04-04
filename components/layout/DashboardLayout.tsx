@@ -156,24 +156,27 @@ export default function DashboardLayout({
         return;
       }
 
-      // SECURITY ENFORCEMENT: If this is an Admin Route, verify role
+      // If user exists but userData is still fetching from Firestore, WAIT.
+      if (!userData && !isAdminRoute) {
+        // We can allow doctor routes mostly, but safer to wait or skip if it's taking too long
+        // But for Admin, it's CRITICAL.
+      }
+
+      // SECURITY ENFORCEMENT for Admin Routes
       if (isAdminRoute) {
+         // WAIT for userData to verify role
+         if (!userData) return; 
+
          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
          const userEmailRaw = user.email?.toLowerCase();
          const isRootEmail = userEmailRaw && masterEmails.includes(userEmailRaw);
          const hasAdminRole = userData?.role === 'admin' || isUserAdmin;
 
-         console.log(">>> [SECURITY AUDIT] Identity:", userEmailRaw, "isRoot:", isRootEmail, "hasRole:", hasAdminRole);
-
-         // Bypass for master identities even if email is missing (e.g. anonymous master login)
          if (!isRootEmail && !hasAdminRole) {
-            console.error(">>> [SECURITY AUDIT] UNAUTHORIZED ACCESS BLOCKED:", userEmailRaw);
             toast.error("SECURITY LOCK: Administrative privileges required.");
             router.replace('/doctor');
             return;
          }
-         
-         console.log(">>> [SECURITY AUDIT] ADMIN GRANTED:", userEmailRaw);
       }
       
       setLoading(false);
@@ -279,8 +282,8 @@ export default function DashboardLayout({
 
       {/* Main content area */}
       <div className="flex flex-col flex-1 lg:ml-80 min-w-0 h-screen overflow-y-auto bg-slate-100/30">
-        <header className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-xl px-6 py-2.5 shadow-sm">
+        <header className="relative z-[100] px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-xl px-4 sm:px-6 py-2 shadow-sm">
             <div className="flex items-center lg:hidden">
               <button
                 type="button"
@@ -290,7 +293,7 @@ export default function DashboardLayout({
                 <Menu className="h-6 w-6" />
               </button>
             </div>
-            <div className="hidden sm:flex relative group ml-2 items-center">
+            <div className="hidden lg:flex relative group ml-2 items-center">
                <Suspense fallback={<div className="w-80 h-10 bg-slate-100 rounded-xl animate-pulse" />}>
                  <SearchInput />
                </Suspense>
@@ -321,46 +324,49 @@ export default function DashboardLayout({
 
       <AnimatePresence>
         {sidebarOpen && (
-          <>
+          <div className="fixed inset-0 z-[150] lg:hidden">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSidebarOpen(false)}
-              className="fixed inset-0 z-[60] bg-slate-900/40 backdrop-blur-sm lg:hidden"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200, bounce: 0 }}
-              className="fixed inset-y-0 left-0 z-[70] w-full max-w-[280px] bg-white p-0 shadow-2xl lg:hidden flex flex-col"
+              className="fixed inset-y-0 left-0 z-[160] w-full max-w-[280px] bg-white p-0 shadow-2xl lg:hidden flex flex-col"
             >
-              <div className="p-6 flex items-center justify-between border-b border-slate-50">
+              <div className="p-6 pt-8 flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                 <div className="flex items-center">
-                  <div className="h-9 w-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
-                    <span className="text-white font-bold text-lg">B</span>
+                  <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200/50">
+                    <span className="text-white font-bold text-xl italic leading-none">B</span>
                   </div>
-                  <span className="ml-3 text-lg font-black text-slate-900 tracking-tight">Blueteeth</span>
+                  <div className="ml-3">
+                    <span className="block text-base font-black text-slate-900 tracking-tight leading-none">Blueteeth</span>
+                    <span className="block text-[8px] font-bold text-blue-500 uppercase tracking-[0.2em] mt-1">Clinical Hub</span>
+                  </div>
                 </div>
                 <button
                   type="button"
-                  className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-red-500 transition-colors"
+                  className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-100/50 text-slate-400 hover:text-red-500 transition-colors border border-slate-200/30"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 py-6 space-y-1">
+              <div className="flex-1 overflow-y-auto p-4 py-6 space-y-1.5 custom-scrollbar">
                 {navigation.map((item) => (
                   <Link key={item.name} href={item.href} onClick={() => setSidebarOpen(false)}>
-                    <div className={`flex items-center px-4 py-3.5 text-sm font-bold rounded-xl transition-all duration-200 ${
+                    <div className={`flex items-center px-4 py-3 text-sm font-black rounded-xl transition-all duration-300 ${
                       isActive(item.href) 
-                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-100' 
+                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 ring-1 ring-white/10 scale-[1.02]' 
                         : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'
                     }`}>
-                      <item.icon className={`mr-4 h-5 w-5 flex-shrink-0 ${isActive(item.href) ? 'text-white' : 'text-slate-400'}`} />
-                      {item.name}
+                      <item.icon className={`mr-4 h-5 w-5 flex-shrink-0 transition-colors ${isActive(item.href) ? 'text-white' : 'text-slate-400 group-hover:text-blue-500'}`} />
+                      <span className="tracking-tight uppercase text-[10px]">{item.name}</span>
                     </div>
                   </Link>
                 ))}
@@ -378,7 +384,7 @@ export default function DashboardLayout({
                  </Button>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>

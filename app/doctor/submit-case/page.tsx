@@ -12,13 +12,12 @@ import {
   ShieldCheck, User, Phone, ClipboardList, Calendar, 
   Loader2, Zap, Info, CheckCircle2, ChevronRight, Calculator,
   TrendingUp, Award, DollarSign, Plus, MapPin, 
-  FileImage, Paperclip, Trash2
+  FileImage, Paperclip, Trash2, FileText, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import toast from 'react-hot-toast';
 
 const TREATMENTS = [
@@ -48,86 +47,74 @@ export default function SubmitCase() {
     patientName: '',
     patientMobile: '',
     treatment: '',
-    caseDate: '', // Start empty to avoid hydration mismatch
+    caseDate: '',
     notes: '',
     evidenceName: '',
     location: ''
   });
 
-  // Safe date initialization after mount
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
       caseDate: new Date().toISOString().split('T')[0]
     }));
   }, []);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const selectedTreatment = TREATMENTS.find(t => t.id === formData.treatment);
+
+  const processFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      if (file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const scale = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-       toast.error("User Authentication Required.");
-       return;
+      toast.error("Auth session expired. Please re-login.");
+      return;
     }
     
     if (!formData.treatment) {
-       toast.error("Please select a clinical procedure.");
-       return;
+      toast.error("Select Clinical Procedure.");
+      return;
     }
 
-    // INITIALIZE INSTANT SYNC (MICROSECOND LATENCY)
-    const toastId = toast.loading("Finalizing Clinical Sync...");
+    const toastId = toast.loading("Processing Cloud Sync...");
     setLoading(true);
 
     try {
       let evidenceUrl = '';
-      
-      // 1. ASYNC IMAGE UPLOAD (Base64 + Auto-Compression for Record-Breaking Speed)
       if (selectedFile) {
-        try {
-          console.log(">>> [CLINICAL SYNC] COMPRESSING CLINICAL EVIDENCE...");
-          
-          const compressImage = (file: File): Promise<string> => {
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.readAsDataURL(file);
-              reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target?.result as string;
-                img.onload = () => {
-                  const canvas = document.createElement('canvas');
-                  const MAX_WIDTH = 800; // Optimal for mobile/web viewing
-                  const scale = MAX_WIDTH / img.width;
-                  canvas.width = MAX_WIDTH;
-                  canvas.height = img.height * scale;
-                  const ctx = canvas.getContext('2d');
-                  ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-                  // High compression to ensure Firestore document stays well under 1MB
-                  const dataUrl = canvas.toDataURL('image/jpeg', 0.6); 
-                  resolve(dataUrl);
-                };
-              };
-              reader.onerror = (error) => reject(error);
-            });
-          };
-
-          evidenceUrl = await compressImage(selectedFile);
-          console.log(">>> [CLINICAL SYNC] IMAGE COMPRESSED & ENCODED.");
-        } catch (storageErr: any) {
-          console.error(">>> [CRITICAL COMPRESSION ERROR]:", storageErr);
-          toast.error("Local Compression Failed. Try a smaller image.", { id: toastId });
-          setLoading(false);
-          return;
-        }
+        evidenceUrl = await processFile(selectedFile);
       }
 
-      console.log(">>> [CLINICAL SYNC] FINALIZING DATABASE ENTRY...");
-
-      // 2. REGISTER CASE (Ensuring Data Integrity)
-      await addDoc(collection(db, 'cases'), {
+      const clinicalData = {
         ...formData,
         doctorUid: user.uid,
         doctorName: user.displayName || (userData as any)?.name || 'Practitioner',
@@ -137,12 +124,16 @@ export default function SubmitCase() {
         status: 'Pending',
         location: formData.location || 'Clinical Pool',
         submittedAt: serverTimestamp()
-      });
-      
-      console.log("[SYNC SUCCESS] Data Registered.");
+      };
 
-      // 3. INSTANT UI RELEASE - Back to Sonic Speed
-      toast.success("Case Synced with Micro-Latency!", { id: toastId });
+      // FIRE AND FORGET (BACKGROUND SYNC)
+      addDoc(collection(db, 'cases'), clinicalData)
+        .catch(err => {
+           toast.error("Background sync failed. Data may be lost.");
+        });
+
+      // INSTANT SUCCESS FEEDBACK
+      toast.success("Case Registered Successfully!", { id: toastId });
       
       setFormData({
         patientName: '',
@@ -154,9 +145,10 @@ export default function SubmitCase() {
         location: ''
       });
       setSelectedFile(null);
+      
     } catch (err: any) {
-      console.error(">>> [SUBMISSION ERROR]:", err);
-      toast.error(`Sync Failure: ${err.message || "Unknown Cloud Error"}`, { id: toastId });
+      console.error(">>> [SUBMISSION CORE ERROR]:", err);
+      toast.error("Process aborted locally.", { id: toastId });
     } finally {
       setLoading(false);
     }
@@ -165,23 +157,26 @@ export default function SubmitCase() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-4 pb-20" suppressHydrationWarning={true}>
-        <div className="flex items-center justify-end h-8">
-           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50/50 border border-blue-100/50 backdrop-blur-sm">
-              <ShieldCheck className="h-3 w-3 text-blue-600 animate-pulse" />
-              <span className="text-[9px] font-black uppercase tracking-widest text-blue-700">Clinical Audit Stream (Active)</span>
-           </div>
-        </div>
+        <div className="flex flex-col gap-4 sm:gap-0">
+          {/* Badge Container */}
+          <div className="flex items-center justify-start sm:justify-end h-auto sm:h-8 order-2 sm:order-1">
+             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50/50 border border-blue-100/50 backdrop-blur-sm">
+                <ShieldCheck className="h-3 w-3 text-blue-600 animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-blue-700">Clinical Audit Stream (Active)</span>
+             </div>
+          </div>
 
-        <div className="-mt-12 space-y-1">
-           <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Initialize Case Record</h1>
-           <p className="text-slate-400 font-bold text-[11px] uppercase tracking-[0.2em] flex items-center gap-2">
-              <Zap size={12} className="text-amber-500 fill-amber-500" />
-              Clinical Performance Synchronization Engine
-           </p>
+          {/* Title Container */}
+          <div className="sm:-mt-8 space-y-1 px-2 sm:px-0 order-1 sm:order-2">
+             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">Initialize Case Record</h1>
+             <p className="text-slate-400 font-bold text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em] flex items-center gap-2 flex-wrap">
+                <Zap size={11} className="text-amber-500 fill-amber-500" />
+                Clinical Performance Sync Engine
+             </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start pt-6">
-           {/* LEFT COLUMN: THE FORM (Spacious Clinical Input) */}
            <div className="lg:col-span-9">
               <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm border-t border-white">
                 <CardContent className="p-8 sm:p-10">
@@ -264,7 +259,6 @@ export default function SubmitCase() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                      {/* Evidence Section */}
                       <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                            Clinical Evidence / Proof Attachment
@@ -274,9 +268,10 @@ export default function SubmitCase() {
                              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
                                 <Plus className="h-5 w-5" />
                              </div>
-                             <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600 text-center">Click to attach clinical proof (X-ray, Photo, or Prescription)</p>
+                             <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600 text-center uppercase tracking-tight">Click to attach clinical proof <br/><span className="text-[8px] opacity-60">(X-ray, Photo, or PDF Record)</span></p>
                              <input 
                                type="file" 
+                               accept="image/*,application/pdf"
                                className="absolute inset-0 opacity-0 cursor-pointer"
                                onChange={(e) => {
                                  const file = e.target.files?.[0];
@@ -289,8 +284,14 @@ export default function SubmitCase() {
                              />
                              {formData.evidenceName && (
                                 <div className="mt-2 flex flex-col items-center gap-2">
-                                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black border border-emerald-100">
-                                    <CheckCircle2 size={12} /> {formData.evidenceName}
+                                  <div className={`flex items-center gap-2 px-3 py-1 rounded-lg text-[10px] font-black border transition-all ${
+                                    selectedFile?.type === 'application/pdf' 
+                                      ? 'bg-red-50 text-red-700 border-red-100' 
+                                      : 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                  }`}>
+                                    {selectedFile?.type === 'application/pdf' ? <FileText size={12} /> : <CheckCircle2 size={12} />}
+                                    <span className="truncate max-w-[150px]">{formData.evidenceName}</span>
+                                    {selectedFile?.type === 'application/pdf' && <span className="ml-1 text-[8px] opacity-70">PDF</span>}
                                   </div>
                                   <button 
                                     type="button"
@@ -309,7 +310,6 @@ export default function SubmitCase() {
                         </div>
                       </div>
 
-                      {/* Notes Section */}
                       <div className="space-y-4 group transition-all">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
                            Practitioner Notes / Clinical Observations
@@ -326,13 +326,13 @@ export default function SubmitCase() {
                     <div className="pt-4">
                       <Button 
                         disabled={loading}
-                        className="w-full h-16 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg transition-all shadow-xl shadow-blue-500/30 active:scale-[0.98] disabled:opacity-70 group overflow-hidden relative"
+                        className="w-full h-14 sm:h-16 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg transition-all shadow-xl shadow-blue-500/30 active:scale-[0.98] disabled:opacity-70 group overflow-hidden relative"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-white/10 to-blue-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         {loading ? (
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-6 w-6 animate-spin text-blue-200" />
-                            <span className="uppercase tracking-widest text-[11px] font-black">Executing Sync...</span>
+                            <span className="uppercase tracking-widest text-[11px] font-black">Fast Sync active...</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-3">
@@ -347,81 +347,78 @@ export default function SubmitCase() {
               </Card>
            </div>
 
-           {/* RIGHT COLUMN: REWARD PREVIEW & GUIDELINES (Elegant Balanced Panel) */}
            <div className="lg:col-span-3 space-y-4">
-              {/* REWARD CALCULATOR CARD - Optimized No-Overlap Layout */}
               <AnimatePresence mode="wait">
                 <motion.div 
                   key={formData.treatment || 'empty'}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  className="bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-950 rounded-xl p-6 text-white shadow-2xl relative overflow-hidden group border border-white/5"
+                  className="min-h-[540px] sm:min-h-0 flex flex-col justify-between sm:justify-center bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-950 rounded-xl p-7 sm:p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5"
                 >
-                  <div className="absolute -right-4 -top-4 h-24 w-24 bg-blue-500/10 rounded-full blur-3xl" />
-                  <div className="relative z-10 space-y-5">
+                  <div className="absolute -right-4 -top-4 h-32 w-32 bg-blue-500/10 rounded-full blur-3xl" />
+                  <div className="relative z-10 flex flex-col h-full space-y-8 sm:space-y-5">
                     <div className="flex items-center gap-3">
                        <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10">
                           <Calculator className="h-5 w-5 text-blue-300" />
                        </div>
                        <div>
                           <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Expected Yield</p>
-                          <h3 className="text-lg font-black tracking-tight">Reward Calculator</h3>
+                          <h3 className="text-xl sm:text-lg font-black tracking-tight">Reward Calculator</h3>
                        </div>
                     </div>
-
-                    <div className="space-y-4 pt-2">
-                       <div className="p-4 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
-                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Treatment Class</p>
-                          <p className="text-sm font-black text-white truncate h-5">
+ 
+                    <div className="flex-1 flex flex-col justify-center space-y-8 sm:space-y-4">
+                       <div className="p-5 sm:p-3.5 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm transition-all">
+                          <p className="text-[10px] sm:text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Active Treatment Node</p>
+                          <p className="text-sm sm:text-xs font-black text-white leading-tight">
                              {selectedTreatment?.name || 'Awaiting Selection...'}
                           </p>
                        </div>
-
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                             <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">B-Points</p>
-                             <p className="text-2xl font-black text-white">+{selectedTreatment?.points || 0}</p>
+ 
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-4">
+                          <div className="p-6 sm:p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 shadow-inner">
+                             <p className="text-[11px] sm:text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">B-Points</p>
+                             <p className="text-3xl sm:text-2xl font-black text-white">+{selectedTreatment?.points || 0}</p>
                           </div>
-                          <div className="p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                             <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Cash Value</p>
-                             <p className="text-2xl font-black text-emerald-400">₹{selectedTreatment ? (selectedTreatment.points * 50).toFixed(0) : '0'}</p>
+                          <div className="p-6 sm:p-4 bg-emerald-500/10 rounded-lg border border-emerald-500/20 shadow-inner">
+                             <p className="text-[11px] sm:text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Cash Value</p>
+                             <p className="text-3xl sm:text-2xl font-black text-emerald-400">₹{selectedTreatment ? (selectedTreatment.points * 50).toFixed(0) : '0'}</p>
                           </div>
                        </div>
                     </div>
-
-                    <div className="flex items-start gap-2 p-3 bg-white/5 rounded-lg border border-white/5">
-                       <Info size={12} className="text-blue-400 mt-0.5 shrink-0" />
-                       <p className="text-[9px] text-slate-300 leading-relaxed font-medium capitalize">
-                          1 Point = ₹50.00. Approvals processed within standard clinical window.
+ 
+                    <div className="flex items-start gap-2 p-4 sm:p-3 bg-white/5 rounded-lg border border-white/5">
+                       <Info size={14} className="text-blue-400 mt-0.5 shrink-0" />
+                       <p className="text-[11px] sm:text-[9px] text-slate-300 leading-relaxed font-medium capitalize">
+                          1 Point = ₹50.00.
                        </p>
                     </div>
                   </div>
                 </motion.div>
               </AnimatePresence>
 
-              {/* GUIDELINES CARD - Structured Balance */}
-              <div className="bg-white rounded-xl p-7 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-between">
-                    <div className="flex items-center gap-2 mb-5">
-                       <ShieldCheck size={16} className="text-blue-600" />
-                       <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Clinical Protocols</h3>
-                    </div>
-                    <ul className="space-y-1.5">
-                       {CLINICAL_GUIDELINES.map((guide, idx) => (
-                         <li key={idx} className="flex gap-4 items-center group p-1.5 rounded-lg hover:bg-blue-50/50 transition-colors">
-                            <div className="h-5 w-8 rounded-md bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-all shadow-sm">
-                               <CheckCircle2 size={10} className="text-blue-600 group-hover:text-white transition-colors" />
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-500 leading-none group-hover:text-slate-900 transition-colors pt-0.5 truncate uppercase tracking-tighter">
-                               {guide}
-                            </span>
-                         </li>
-                       ))}
-                    </ul>
-                 </div>
-               </div>
+              <div className="bg-white rounded-xl p-7 sm:p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-start min-h-[310px] sm:min-h-[260px]">
+                <div className="flex items-center gap-2 mb-5">
+                   <ShieldCheck size={16} className="text-blue-600" />
+                   <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Clinical Protocols</h3>
+                </div>
+                <ul className="space-y-5 sm:space-y-4 text-wrap leading-relaxed">
+                   {CLINICAL_GUIDELINES.map((guide, idx) => (
+                     <li key={idx} className="flex gap-4 items-center group p-1.5 rounded-lg hover:bg-blue-50/50 transition-colors">
+                        <div className="h-5 w-8 rounded-md bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-all shadow-sm">
+                           <CheckCircle2 size={10} className="text-blue-600 group-hover:text-white transition-colors" />
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-500 leading-tight group-hover:text-slate-900 transition-colors pt-0.5 uppercase tracking-tighter sm:truncate">
+                           {guide}
+                         </span>
+                     </li>
+                   ))}
+                </ul>
+              </div>
             </div>
-         </div>
+          </div>
+        </div>
       </DashboardLayout>
   );
 }

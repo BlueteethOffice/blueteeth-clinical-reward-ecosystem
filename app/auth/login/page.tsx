@@ -323,7 +323,7 @@ export default function LoginPage() {
             </div>
 
             {/* Right Side Form - Professional Refined */}
-            <div className="lg:col-span-3 p-6 sm:p-10">
+            <div className="lg:col-span-3 p-5 sm:p-10">
               <AnimatePresence mode="wait">
                 {!showOtpStep ? (
                   <motion.div

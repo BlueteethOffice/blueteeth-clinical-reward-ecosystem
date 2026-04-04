@@ -598,14 +598,14 @@ function DoctorListContent() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowDrawer(false)}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[210]"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-[101] overflow-hidden flex flex-col border-l border-slate-100"
+              className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-[211] overflow-hidden flex flex-col border-l border-slate-100"
             >
               {/* Drawer Header */}
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
@@ -1149,7 +1149,7 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
       {/* Manual Balance Adjust Modal */}
       <AnimatePresence>
         {showAdjustModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[220] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1214,7 +1214,7 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
       {/* New Practitioner Modal */}
       <AnimatePresence>
         {showNewDoctorModal && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[220] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setShowNewDoctorModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200">
               <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center gap-4">
