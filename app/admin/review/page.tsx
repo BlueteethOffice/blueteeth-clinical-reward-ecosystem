@@ -233,8 +233,17 @@ function CaseReviewContent() {
               >
                 <Card className="overflow-hidden">
                   <div className="bg-slate-900 px-3 py-2 text-white flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Case Audit</span>
-                    <h3 className="text-sm font-black text-blue-400">#{selectedCase.id.slice(0, 6)}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Case Audit</span>
+                      <h3 className="text-sm font-black text-blue-400">#{selectedCase.id.slice(0, 6)}</h3>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCase(null)}
+                      className="h-6 w-6 rounded-md bg-slate-700 hover:bg-red-500 flex items-center justify-center transition-colors group"
+                      title="Close Panel"
+                    >
+                      <XCircle className="h-3.5 w-3.5 text-slate-400 group-hover:text-white" />
+                    </button>
                   </div>
                   <CardContent className="p-3 space-y-4">
                     {/* Patient Summary - Ultra Compact */}
