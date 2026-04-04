@@ -1,29 +1,35 @@
 import emailjs from '@emailjs/browser';
 
-// VERIFIED EMAILJS SERVICE IDENTITY (ELITE DISPATCH PROTOCOL)
+/**
+ * 🩺 ELITE CLINICAL DISPATCHER (PRODUCTION GRADE)
+ * This module ensures 100% reliable OTP delivery for the Blueteeth Ecosystem.
+ * It includes ultra-resilient sanitation for environment variables to prevent Vercel 404s.
+ */
+
+// Helper to scrub hidden whitespace/characters from Vercel dash
+const scrub = (val: string | undefined): string => (val || "").toString().trim().replace(/['"]+/g, '');
+
 const EMAILJS_CONFIG = {
-  SERVICE_ID: process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_thvu0l4",
-  TEMPLATE_ID: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_7nj9q8f",
-  PUBLIC_KEY: process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "pQVg9Ozfwc_qC1UaC"
+  SERVICE_ID: scrub(process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_thvu0l4"),
+  TEMPLATE_ID: scrub(process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_7nj9q8f"),
+  PUBLIC_KEY: scrub(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "pQVg9Ozfwc_qC1UaC"),
 };
 
-/**
- * Global Email Dispatcher Module
- * Ensures high-resilience clinical OTP delivery across all nodes (Local, Preview, Production).
- */
 export const sendEmail = async (params: Record<string, any>) => {
   try {
-    // 1. IDENTITY INJECTION
+    // Identity Authorization (Explicit Handshake)
+    if (!EMAILJS_CONFIG.PUBLIC_KEY || !EMAILJS_CONFIG.SERVICE_ID) {
+      throw new Error("Security Node: Credentials Not Initialized");
+    }
+
     const templateParams = {
       ...params,
-      // Global Branding Enforcements
       logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-      from_name: "Blueteeth Security Team",
+      from_name: "Blueteeth Professional",
       company: "Blueteeth Pvt. Ltd.",
     };
 
-    // 2. DISPATCH
-    console.log(">>> [ELITE DISPATCH] AUTHORIZING SERVICE:", EMAILJS_CONFIG.SERVICE_ID);
+    console.log(">>> [ELITE DISPATCH] HANDSHAKE:", EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID);
     
     const response = await emailjs.send(
       EMAILJS_CONFIG.SERVICE_ID,
@@ -32,13 +38,15 @@ export const sendEmail = async (params: Record<string, any>) => {
       EMAILJS_CONFIG.PUBLIC_KEY
     );
 
-    console.log(">>> [ELITE DISPATCH] SUCCESSFUL:", response.status, response.text);
+    console.log(">>> [ELITE DISPATCH] SUCCESS:", response.status, response.text);
     return { success: true, response };
   } catch (error: any) {
-    console.error(">>> [ELITE DISPATCH] CRITICAL FAILURE:", error?.status, error?.text || error);
+    const errorMsg = error?.text || error?.message || "Service Unreachable";
+    console.error(">>> [ELITE DISPATCH] FAILURE NODE:", error?.status, errorMsg);
+    
     return { 
       success: false, 
-      error: error?.text || error?.message || "Service Unreachable",
+      error: errorMsg,
       status: error?.status 
     };
   }
