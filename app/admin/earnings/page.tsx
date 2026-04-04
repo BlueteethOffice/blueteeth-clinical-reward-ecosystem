@@ -169,7 +169,7 @@ function PayoutManagementContent() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 shadow-sm">
                <Activity className="h-3 w-3" /> Real-time Liquidity Stream
             </div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none uppercase">Financial Archive & Payouts</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-none uppercase">Financial Archive & Payouts</h1>
             <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-60">Global Clinical Reward Dispersal Hub</p>
           </div>
           
