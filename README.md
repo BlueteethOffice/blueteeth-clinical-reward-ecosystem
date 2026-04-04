@@ -1,11 +1,11 @@
 # 🦷 Blueteeth B-points Reward System
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FBlueteethOffice%2Fblueteeth-clinical-reward-ecosystem)
-[![Vercel Deployment Status](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel&logoColor=white)](https://blueteeth-rewards.vercel.app)
+[![Vercel Deployment Status](https://img.shields.io/badge/Vercel-Deployed-success?logo=vercel&logoColor=white)](https://blueteeth-clinical-reward-ecosystem.vercel.app/)
 
 A high-fidelity, production-ready clinical reward portal for dental professionals. This system allows doctors to submit patient cases, track clinical performance metrics, and earn "B-Points" based on treatment yields, all synchronized in real-time.
 
-**🌐 Live Demo:** [blueteeth-rewards.vercel.app](https://blueteeth-rewards.vercel.app)
+**🌐 Live Demo:** [blueteeth-clinical-reward-ecosystem.vercel.app](https://blueteeth-clinical-reward-ecosystem.vercel.app/)
 
 ![System Preview](https://github.com/user-attachments/assets/placeholder-image.png) *(Note: Add actual screenshot here)*
 
