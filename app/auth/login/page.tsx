@@ -318,7 +318,7 @@ export default function LoginPage() {
                              <User size={16} />
                            </div>
                            <input 
-                             type="text" required placeholder="Niteen02 or doctor@gmail.com"
+                             type="text" required placeholder="dr.smith@example.com"
                              className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-200 text-sm font-medium text-slate-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all font-sans bg-slate-50/30"
                              value={email} onChange={(e) => setEmail(e.target.value)}
                            />
