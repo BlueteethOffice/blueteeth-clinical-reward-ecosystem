@@ -61,23 +61,24 @@ export default function LoginPage() {
         } catch(e) { console.warn('Admin Alert Deferred'); }
       };
 
-      // 0. IDENTITY MAPPING (Enabling ID-based Login without Hardcoded Passwords)
+      // 0. STRICT ADMIN IDENTITY MAPPING & PASSWORD LOCK
       let authIdentity = sanitizedEmail;
-      if (sanitizedEmail.toLowerCase() === 'niteen02') {
-         authIdentity = 'admin@blueteeth.in';
-      } else if (!sanitizedEmail.includes('@')) {
-         // If it's an ID without '@', but not a known mapping, check if it's a known admin identity
-         const adminIdentities: {[key: string]: string} = {
-            'nitinchauhan': 'nitinchauhan378@gmail.com',
-            'admin': 'admin@blueteeth.in'
-         };
-         if (adminIdentities[sanitizedEmail.toLowerCase()]) {
-            authIdentity = adminIdentities[sanitizedEmail.toLowerCase()];
-         } else {
-            toast.error('Identity Conflict: Master ID Incorrect or Invalid Email Format.');
-            setLoading(false);
-            return;
+      
+      const lowerEmail = sanitizedEmail.toLowerCase();
+      if (lowerEmail === 'niteen02') {
+         if (sanitizedPassword !== 'Niteen@102') {
+             throw new Error("auth/strict-password-mismatch");
          }
+         authIdentity = 'niteen02@gmail.com'; 
+      } else if (lowerEmail === 'number one') {
+         if (sanitizedPassword !== 'Niteen@0987') {
+             throw new Error("auth/strict-password-mismatch");
+         }
+         authIdentity = 'nitinchauhan378@gmail.com'; 
+      } else if (!sanitizedEmail.includes('@')) {
+         toast.error('Access Denied: Standard professional email required.');
+         setLoading(false);
+         return;
       }
 
       // 1. STANDARD FIREBASE AUTHENTICATION (Uses REAL password provided in input)
@@ -91,9 +92,9 @@ export default function LoginPage() {
           const userRef = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
           
-          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
           const isMaster = user.email && masterEmails.includes(user.email.toLowerCase());
-          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.includes('admin')) ? 'admin' : 'doctor';
+          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.toLowerCase() === 'number one' || sanitizedEmail.includes('admin')) ? 'admin' : 'doctor';
 
           if (userSnap.exists()) {
             const userData = userSnap.data();
@@ -149,8 +150,8 @@ export default function LoginPage() {
         const securityNotifyEmail = user.email || email;
         const isValidEmail = securityNotifyEmail && securityNotifyEmail.includes('@');
         const role = loginResult?.targetRole || 'doctor';
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
-        const isAdminIdentity = role === 'admin' || masterEmails.includes(securityNotifyEmail?.toLowerCase() || '');
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
+        const isAdminIdentity = role === 'admin' || masterEmails.includes(email.toLowerCase());
 
         // 1. ADMIN SUCCESS ALERT TO NITIN
         if (isAdminIdentity) {
@@ -198,7 +199,7 @@ export default function LoginPage() {
         console.warn('Login Auth Note:', error.message);
         
         // ADMIN FAILED ATTEMPT ALERT
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'number one'];
         if (masterEmails.includes(email.toLowerCase())) {
             sendEmail({
                 to_email: 'nitinchauhan378@gmail.com',
@@ -211,8 +212,8 @@ export default function LoginPage() {
             }).catch(() => {});
         }
 
-        if (error.code === 'auth/invalid-credential') {
-           toast.error('Access Denied: Check your credentials or Register as a new Practitioner.');
+        if (error.code === 'auth/invalid-credential' || error.message === 'auth/strict-password-mismatch') {
+           toast.error('Access Denied: Master Credentials Incorrect or Professional Access Denied.');
         } else if (error.code === 'auth/user-not-found') {
            toast.error('Identity Profile not discovered. Please proceed to Registration.');
         } else if (error.code === 'auth/too-many-requests') {
