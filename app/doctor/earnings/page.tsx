@@ -184,7 +184,7 @@ export default function EarningsPage() {
       ).then(() => {
         setIsOtpSending(false);
         setShowOtpField(true);
-        toast.success(`Secure Identity OTP dispatched to ${user.email.replace(/(.{2}).+(@.+)/, "$1***$2")}`, {
+        toast.success(`Secure Identity OTP dispatched to ${user?.email?.replace(/(.{2}).+(@.+)/, "$1***$2") || 'your clinical email'}`, {
           icon: '✉️',
           duration: 4000
         });
