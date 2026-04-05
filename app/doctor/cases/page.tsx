@@ -116,7 +116,7 @@ export default function CaseHistory() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Clinical Archive Exported Successfully.");
+    toast.success("Report Downloaded Successfully.");
   };
 
   const handleViewAttachment = (url: string) => {
@@ -160,34 +160,34 @@ export default function CaseHistory() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-5 lg:space-y-8 pb-10 lg:pb-20 overflow-x-hidden min-h-screen pt-0">
+      <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-6 lg:px-8 space-y-5 lg:space-y-8 pb-2 pt-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
           <div className="order-2 md:order-1 animate-in fade-in slide-in-from-left-2 duration-500">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Clinical Repository</h1>
-            <p className="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mt-1.5">Verified Unified Audit Trails & Synchronized Dossiers</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">Case History</h1>
+            <p className="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] mt-1.5">List of all your submitted cases</p>
           </div>
           <div className="order-1 md:order-2 flex gap-3 w-full md:w-auto">
             <Button 
                onClick={handleExport}
                className="flex-1 md:flex-none h-11 px-8 rounded-md bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-200 gap-3 font-black text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95 border-none"
             >
-               <FileText size={16} /> Export Records
+               <FileText size={16} /> Download Report
             </Button>
           </div>
         </div>
 
         {/* Filters Card */}
         <Card className="bg-white/40 backdrop-blur-md border-slate-100 shadow-2xl shadow-slate-200/20 rounded-xl overflow-hidden border-t-4 border-t-blue-600">
-          <CardContent className="p-6 flex flex-col lg:flex-row items-center justify-between gap-6">
+          <CardContent className="p-4 sm:p-6 flex flex-col lg:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
                <div className="h-10 w-10 bg-blue-500/10 rounded-md flex items-center justify-center text-blue-600 border border-blue-500/20 backdrop-blur-md">
                   <Filter size={18} />
                </div>
                <div className="flex flex-col">
-                  <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 leading-none">Dossier Filter node</h3>
+                  <h3 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] mb-1 leading-none">Search & Filter</h3>
                   <div className="flex items-center gap-2">
                      <span className="text-sm font-black text-slate-800 truncate max-w-[150px] sm:max-w-none">
-                        {searchQuery ? `Searching: "${searchQuery}"` : 'Active Clinical Stream'}
+                        {searchQuery ? `Searching: "${searchQuery}"` : 'All Cases'}
                      </span>
                      <div className="h-3 w-[1px] bg-slate-200 mx-2" />
                      <span className="text-[9px] font-black text-blue-600 bg-blue-500/10 px-3 py-1 rounded-md uppercase tracking-widest border border-blue-100 whitespace-nowrap">
@@ -205,7 +205,7 @@ export default function CaseHistory() {
                   className={`px-5 py-2 rounded-md text-[9px] font-black uppercase tracking-widest transition-all ${
                     filter === f 
                       ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30' 
-                      : 'bg-white text-slate-400 border border-slate-100 hover:border-blue-400 hover:text-blue-600 hover:shadow-md'
+                      : 'bg-white text-slate-600 border border-slate-100 hover:border-blue-400 hover:text-blue-600 hover:shadow-md'
                   }`}
                 >
                   {f}
@@ -231,12 +231,12 @@ export default function CaseHistory() {
                   <div 
                      key={c.id} 
                      onClick={() => setSelectedCase(c)}
-                     className="p-5 active:bg-blue-50/50 transition-colors"
+                     className="p-4 sm:p-5 active:bg-blue-50/50 transition-colors"
                   >
                      <div className="flex justify-between items-start mb-3">
                         <div>
                            <p className="text-[14px] font-black text-slate-900 uppercase tracking-tight leading-tight">{c.patientName}</p>
-                           <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">REF-{(c.id || '').split('-').pop()?.toUpperCase()} • {c.date}</p>
+                           <p className="text-[9px] font-bold text-slate-600 mt-1 uppercase tracking-widest">REF-{(c.id || '').toUpperCase().slice(0, 8)} • {c.date}</p>
                         </div>
                         <span className={`inline-flex px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${
                            c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
@@ -244,7 +244,7 @@ export default function CaseHistory() {
                         }`}>{c.status}</span>
                      </div>
                      <div className="flex justify-between items-end">
-                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter max-w-[60%] truncate">
+                        <div className="text-[9px] font-black text-slate-700 uppercase tracking-tighter max-w-[60%] truncate">
                            {c.treatmentName || c.treatment}
                         </div>
                         <div className="text-right">
@@ -255,28 +255,28 @@ export default function CaseHistory() {
                   </div>
                ))
             ) : (
-               <div className="p-12 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Zero nodes archived</div>
+               <div className="p-12 text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">No cases found in history</div>
             )}
           </div>
 
           {/* Desktop Audit Table */}
-          <div className="hidden lg:block overflow-visible no-scrollbar">
+          <div className="hidden lg:block">
             <table className="min-w-full border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-400 border-b border-slate-100">
-                  <th className="px-10 py-5 text-left text-[9px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Patient Record Node</th>
-                  <th className="px-10 py-5 text-left text-[9px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Protocol Identity</th>
-                  <th className="px-10 py-5 text-center text-[9px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Yield</th>
-                  <th className="px-10 py-5 text-center text-[9px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Authorization</th>
-                  <th className="px-10 py-5 text-right text-[9px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Record</th>
+                <tr className="bg-slate-50 text-slate-600 border-b border-slate-100">
+                  <th className="px-10 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Patient Name</th>
+                  <th className="px-10 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Treatment Details</th>
+                  <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Points</th>
+                  <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Status</th>
+                  <th className="px-10 py-5 text-right text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Record</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                    [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-lg w-32 mb-2"></div><div className="h-2 bg-slate-50/50 rounded-lg w-20"></div></td>
-                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-lg w-24"></div></td>
+                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-md w-32 mb-2"></div><div className="h-2 bg-slate-50/50 rounded-md w-20"></div></td>
+                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-md w-24"></div></td>
                       <td className="px-10 py-8"><div className="h-6 bg-slate-50 rounded-xl w-16 mx-auto"></div></td>
                       <td className="px-10 py-8"><div className="h-11 bg-slate-50 rounded-xl w-24 mx-auto"></div></td>
                       <td className="px-10 py-8"></td>
@@ -294,8 +294,8 @@ export default function CaseHistory() {
                       <td className="px-10 py-6">
                         <div className="flex flex-col gap-1.5">
                            <span className="text-[14px] font-black text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate max-w-[150px] sm:max-w-none">{c.patientName}</span>
-                           <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex flex-wrap items-center gap-x-3 gap-y-1">
-                              <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md"><Hash size={9} className="text-blue-500" /> REF-{c.id.split('-').pop()?.toUpperCase()}</span>
+                           <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md"><Hash size={9} className="text-blue-500" /> REF-{(c.id || '').toUpperCase().slice(0, 8)}</span>
                               <span className="flex items-center gap-1 text-[9px]"><Smartphone size={9} className="text-indigo-400" /> {(c.patientMobile || '').slice(0, 3)}****{(c.patientMobile || '').slice(-3)}</span>
                            </div>
                         </div>
@@ -307,12 +307,12 @@ export default function CaseHistory() {
                         </div>
                       </td>
                       <td className="px-10 py-6 text-center">
-                        <span className="inline-flex flex-col items-center rounded-lg bg-white px-3 py-1.5 border border-slate-100 shadow-sm transition-transform group-hover:scale-105 group-hover:border-blue-200">
+                        <span className="inline-flex flex-col items-center rounded-md bg-white px-3 py-1.5 border border-slate-100 shadow-sm transition-transform group-hover:scale-105 group-hover:border-blue-200">
                            <span className="text-[11px] font-black text-slate-900 tracking-tighter whitespace-nowrap">
                              +{Number(c.points || 0).toFixed(1)}
                              {c.bonusPoints > 0 && <span className="text-emerald-500 ml-1"> (+{Number(c.bonusPoints).toFixed(1)})</span>}
                            </span>
-                           <span className="text-[8px] font-black text-blue-400 uppercase tracking-tighter">Points</span>
+                           <span className="text-[8px] font-black text-blue-600 uppercase tracking-tighter">Points</span>
                         </span>
                       </td>
                       <td className="px-10 py-6 text-center whitespace-nowrap">
@@ -330,7 +330,7 @@ export default function CaseHistory() {
                       <td className="px-10 py-6 text-right">
                         <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedCase(c); }}
-                           className="h-10 w-9 rounded-md bg-white border border-slate-100 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50"
+                           className="h-10 w-9 rounded-md bg-white border border-slate-100 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50"
                         >
                            <Eye className="h-5 w-5" />
                         </button>
@@ -344,7 +344,7 @@ export default function CaseHistory() {
                          <div className="h-16 w-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 border border-slate-100 shadow-inner text-slate-300">
                            <ListTodo size={32} />
                          </div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Zero Clinical Nodes In Registry</p>
+                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">No Cases Found in Registry</p>
                       </div>
                     </td>
                   </tr>
@@ -355,7 +355,7 @@ export default function CaseHistory() {
           
           {totalPages > 1 && (
             <div className="p-4 sm:p-8 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] flex-1 text-center sm:text-left">
+              <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest sm:tracking-[0.2em] flex-1 text-center sm:text-left">
                 Node {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredCases.length)} <span className="mx-1 sm:mx-2 text-slate-200">|</span> Archive Count: {filteredCases.length}
               </p>
               <div className="flex items-center gap-2">
@@ -377,7 +377,7 @@ export default function CaseHistory() {
                         className={`h-10 w-9 rounded-md font-black text-[9px] transition-all ${
                           currentPage === pageNum 
                             ? 'bg-slate-900 text-white shadow-xl translate-y-[-2px]' 
-                            : 'bg-white text-slate-400 border border-slate-100 hover:border-slate-300'
+                            : 'bg-white text-slate-600 border border-slate-100 hover:border-slate-300'
                         }`}
                       >
                         {pageNum}
@@ -417,70 +417,70 @@ export default function CaseHistory() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 380 }}
-                className="pointer-events-auto relative w-full h-auto max-h-[96vh] sm:max-h-none sm:h-auto max-w-none sm:max-w-[550px] bg-white rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col border border-slate-100 sm:border-slate-100 overflow-hidden"
+                className="pointer-events-auto relative w-full h-auto max-h-[96vh] sm:max-h-none sm:h-auto max-w-none sm:max-w-[550px] bg-white rounded-xl shadow-2xl flex flex-col border border-slate-100 sm:border-slate-100 overflow-hidden"
               >
                 {/* Modal Header - Premium Slate Look */}
                 <div className="p-4 sm:p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 shrink-0 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                   <div className="flex items-center gap-4 relative z-10">
-                    <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/10 rounded-lg flex items-center justify-center text-white border border-white/10 shadow-inner">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/10 rounded-md flex items-center justify-center text-white border border-white/10 shadow-inner">
                       <FileText size={18} className="sm:size-5" />
                     </div>
                     <div>
-                      <h3 className="font-black text-white uppercase tracking-[0.2em] text-[9px] sm:text-[10px] leading-none mb-1">Clinical Dossier Archive</h3>
-                      <p className="text-[9px] sm:text-[10px] font-bold text-white/50 tracking-tighter uppercase flex items-center gap-2">
-                        <ShieldCheck size={10} className="text-blue-400" /> Audit Node: {selectedCase.id.toUpperCase()}
+                      <h3 className="font-black text-white uppercase tracking-[0.2em] text-[9px] sm:text-[10px] leading-none mb-1">Case Details Summary</h3>
+                      <p className="text-[9px] sm:text-[10px] font-black text-white tracking-tighter uppercase flex items-center gap-2">
+                        <ShieldCheck size={10} className="text-blue-400" /> Case ID: {(selectedCase.id || '').toUpperCase().slice(0, 8)}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedCase(null)}
-                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90 text-white/50 hover:text-white border border-white/10 relative z-10"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90 text-white/50 hover:text-white border border-white/10 relative z-10"
                   >
                     <X className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </div>
 
                 {/* Modal Body - Condensed & Sharp */}
-                <div className="flex-1 overflow-y-auto sm:overflow-visible px-4 sm:px-8 py-5 sm:py-5 space-y-6 sm:space-y-5 custom-scrollbar bg-slate-50/20">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-5 space-y-6 sm:space-y-5 no-scrollbar bg-slate-50/20">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
                      <div className="space-y-1 sm:space-y-1">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest px-0.5">Subject Identity</p>
-                        <p className="text-slate-900 font-extrabold text-sm sm:text-base tracking-tight leading-none bg-white p-3 sm:p-3 rounded-lg border border-slate-200 shadow-sm">{selectedCase.patientName}</p>
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest px-0.5">Patient Name</p>
+                        <p className="text-slate-900 font-extrabold text-sm sm:text-base tracking-tight leading-none bg-white p-3 sm:p-3 rounded-md border border-slate-200 shadow-sm">{selectedCase.patientName}</p>
                      </div>
                      <div className="space-y-1 sm:space-y-1">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest px-0.5">Contact Reference</p>
-                        <p className="text-slate-700 font-bold text-xs sm:text-sm bg-white p-3 sm:p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest px-0.5">Mobile Number</p>
+                        <p className="text-slate-700 font-bold text-xs sm:text-sm bg-white p-3 sm:p-3 rounded-md border border-slate-200 shadow-sm flex items-center gap-3">
                            <Phone size={12} className="text-blue-500" /> {selectedCase.patientMobile || 'Not Masked'}
                         </p>
                      </div>
                      <div className="space-y-1 sm:space-y-1">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest px-0.5">Sync Timestamp</p>
-                        <p className="text-slate-600 font-bold text-[10px] sm:text-xs bg-white p-3 sm:p-3 rounded-lg border border-slate-200 shadow-sm flex items-center gap-3">
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest px-0.5">Submission Date</p>
+                        <p className="text-slate-600 font-bold text-[10px] sm:text-xs bg-white p-3 sm:p-3 rounded-md border border-slate-200 shadow-sm flex items-center gap-3">
                            <Calendar size={12} className="text-indigo-400" /> {selectedCase.date}
                         </p>
                      </div>
                   </div>
 
-                  <div className="p-4 sm:p-5 bg-white rounded-lg border border-slate-200 shadow-sm space-y-5 sm:space-y-4">
+                  <div className="p-4 sm:p-5 bg-white rounded-md border border-slate-200 shadow-sm space-y-5 sm:space-y-4">
                      <div className="flex flex-col sm:flex-row justify-between gap-5 sm:gap-4">
                         <div className="flex flex-col gap-1.5">
-                           <span className="font-black text-slate-400 uppercase tracking-widest text-[8px]">Active clinical protocol</span>
+                           <span className="font-black text-slate-600 uppercase tracking-widest text-[8px]">Treatment Selection</span>
                            <span className="font-black text-slate-900 text-[11px] sm:text-[11px] py-1.5 px-3 rounded-md bg-slate-50 border border-slate-100 inline-block w-fit">
                               {selectedCase.treatmentName || selectedCase.treatment}
                            </span>
                         </div>
                         <div className="flex flex-col gap-1.5 sm:items-end">
-                           <span className="font-black text-blue-500 uppercase tracking-widest text-[8px]">Total Case Yield</span>
+                           <span className="font-black text-blue-500 uppercase tracking-widest text-[8px]">Total Case Points</span>
                            <span className="text-2xl sm:text-3xl font-black text-blue-600 tracking-tighter leading-none">
                               +{Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)} <span className="text-[10px] uppercase">B-Pts</span>
                            </span>
                         </div>
                      </div>
                      
-                     <div className="flex justify-between items-center bg-slate-950 p-4 sm:p-4 rounded-lg">
+                     <div className="flex justify-between items-center bg-slate-950 p-4 sm:p-4 rounded-md">
                         <div className="flex flex-col">
-                           <span className="font-black text-white/50 uppercase tracking-[0.2em] text-[7px] sm:text-[8px]">Settlement</span>
+                           <span className="font-black text-white/80 uppercase tracking-[0.2em] text-[7px] sm:text-[8px]">Cash Value</span>
                            <span className="text-[8px] sm:text-[9px] text-blue-400 font-bold italic">Status: {selectedCase.status}</span>
                         </div>
                         <span className="text-2xl sm:text-3xl font-black text-white tracking-tighter">₹{Math.round((Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)) * 50).toLocaleString()}</span>
@@ -489,11 +489,11 @@ export default function CaseHistory() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Evidence Proof</p>
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest px-1">Case Photo / PDF Proof</p>
                         {selectedCase.evidenceUrl ? (
                           <button 
                             onClick={() => handleViewAttachment(selectedCase.evidenceUrl)}
-                            className="flex items-center gap-4 p-3 sm:p-3 w-full bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-slate-900 hover:text-white transition-all group active:scale-95"
+                            className="flex items-center gap-4 p-3 sm:p-3 w-full bg-slate-50 text-slate-900 rounded-md border border-slate-200 hover:bg-slate-900 hover:text-white transition-all group active:scale-95"
                           >
                              <div className="h-8 w-8 bg-slate-900 rounded-md flex items-center justify-center text-white group-hover:bg-white group-hover:text-slate-900 transition-colors">
                                {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? <FileText size={16} /> : <FileImage size={16} />}
@@ -501,17 +501,17 @@ export default function CaseHistory() {
                              <span className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest">View Archive</span>
                           </button>
                         ) : (
-                          <div className="flex items-center gap-3 p-3 bg-slate-50 text-slate-400 rounded-lg border border-slate-200 border-dashed">
+                          <div className="flex items-center gap-3 p-3 bg-slate-50 text-slate-600 rounded-md border border-slate-200 border-dashed">
                              <Info size={16} />
-                             <span className="font-black text-[9px] uppercase tracking-widest">No Evidence synced</span>
+                             <span className="font-black text-[9px] uppercase tracking-widest">No Evidence attached</span>
                           </div>
                         )}
                      </div>
                      
                      <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Practitioner Logs</p>
-                        <div className="bg-white rounded-lg p-3 text-[11px] sm:text-[11px] text-slate-600 font-medium border border-slate-200 italic leading-snug min-h-[60px] sm:min-h-[70px]">
-                           {selectedCase.notes || "Case register node: Normal protocol."}
+                        <p className="text-[8px] sm:text-[9px] font-black text-slate-600 uppercase tracking-widest px-1">Doctor's Notes</p>
+                        <div className="bg-white rounded-md p-3 text-[11px] sm:text-[11px] text-slate-600 font-medium border border-slate-200 italic leading-snug min-h-[60px] sm:min-h-[70px]">
+                           {selectedCase.notes || "Case submitted normally."}
                         </div>
                      </div>
                   </div>
@@ -521,9 +521,9 @@ export default function CaseHistory() {
                 <div className="p-4 sm:p-4 shrink-0 bg-slate-50 border-t border-slate-200">
                   <button
                     onClick={() => setSelectedCase(null)}
-                    className="w-full h-12 sm:h-12 rounded-lg bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
+                    className="w-full h-12 sm:h-12 rounded-md bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
                   >
-                    Dismiss Record Archive
+                    Close Details
                   </button>
                 </div>
               </motion.div>

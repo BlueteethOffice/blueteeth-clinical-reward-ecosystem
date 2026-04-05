@@ -34,10 +34,10 @@ const TREATMENTS = [
 ];
 
 const CLINICAL_GUIDELINES = [
-  "Ensure patient consent is documented in the notes.",
-  "Check mobile number for duplicate entries.",
-  "Assign the correct treatment category for accurate audit.",
-  "Specify clinical observations for faster approval."
+  "Add patient consent in the notes.",
+  "Check mobile number for accuracy.",
+  "Select the correct treatment type.",
+  "Add clinical notes for faster approval."
 ];
 
 export default function SubmitCase() {
@@ -101,7 +101,7 @@ export default function SubmitCase() {
     }
     
     if (!formData.treatment) {
-      toast.error("Select Clinical Procedure.");
+      toast.error("Select Treatment Taken.");
       return;
     }
 
@@ -156,34 +156,34 @@ export default function SubmitCase() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-4 pb-20" suppressHydrationWarning={true}>
+      <div className="max-w-6xl mx-auto space-y-4 pb-4" suppressHydrationWarning={true}>
         <div className="flex flex-col gap-4 sm:gap-0">
           {/* Badge Container */}
           <div className="flex items-center justify-start sm:justify-end h-auto sm:h-8 order-2 sm:order-1">
              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50/50 border border-blue-100/50 backdrop-blur-sm">
                 <ShieldCheck className="h-3 w-3 text-blue-600 animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-blue-700">Clinical Audit Stream (Active)</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-blue-700">Live Status: Active</span>
              </div>
           </div>
 
           {/* Title Container */}
           <div className="sm:-mt-8 space-y-1 px-2 sm:px-0 order-1 sm:order-2">
-             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">Initialize Case Record</h1>
-             <p className="text-slate-400 font-bold text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em] flex items-center gap-2 flex-wrap">
+             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">Submit Case Details</h1>
+             <p className="text-slate-600 font-bold text-[9px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em] flex items-center gap-2 flex-wrap">
                 <Zap size={11} className="text-amber-500 fill-amber-500" />
-                Clinical Performance Sync Engine
+                Cloud-Synced & Secure Status
              </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start pt-6">
            <div className="lg:col-span-9">
-              <Card className="border-0 shadow-xl shadow-slate-200/40 rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm border-t border-white">
+              <Card className="border border-slate-200 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.12)] rounded-lg overflow-hidden bg-white relative">
                 <CardContent className="p-8 sm:p-10">
                   <form onSubmit={handleSubmit} className="space-y-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                       <div className="space-y-3 group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
                            <User size={12} className="text-blue-500" /> Full Patient Name
                         </Label>
                         <Input 
@@ -191,13 +191,13 @@ export default function SubmitCase() {
                           required 
                           value={formData.patientName}
                           onChange={(e) => setFormData({...formData, patientName: e.target.value})}
-                          className="h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base font-medium placeholder:text-slate-300 border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                          className="h-14 rounded-lg bg-white border-slate-200 shadow-sm transition-all text-base font-bold placeholder:text-slate-600 focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-3 group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
-                           <Phone size={12} className="text-blue-500" /> Mobile Identity
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
+                           <Phone size={12} className="text-blue-500" /> Patient Mobile Number
                         </Label>
                         <Input 
                           placeholder="10-digit number" 
@@ -205,23 +205,23 @@ export default function SubmitCase() {
                           maxLength={10}
                           value={formData.patientMobile}
                           onChange={(e) => setFormData({...formData, patientMobile: e.target.value.replace(/\D/g, '')})}
-                          className="h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base font-medium placeholder:text-slate-300 border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                          className="h-14 rounded-lg bg-white border-slate-200 shadow-sm transition-all text-base font-bold placeholder:text-slate-600 focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-3 relative group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
-                           <ClipboardList size={12} className="text-blue-500" /> Clinical Procedure
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
+                           <ClipboardList size={12} className="text-blue-500" /> Treatment Taken
                         </Label>
                         <div className="relative">
                           <select 
                             required
                             value={formData.treatment} 
                             onChange={(e) => setFormData({...formData, treatment: e.target.value})}
-                            className="h-14 w-full rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400 transition-all font-bold text-slate-900 appearance-none cursor-pointer shadow-sm hover:bg-slate-100/30"
+                            className="h-14 w-full rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400 transition-all font-bold text-slate-900 appearance-none cursor-pointer shadow-sm hover:bg-slate-100/30"
                             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
                           >
-                            <option value="" disabled>Identify Treatment</option>
+                            <option value="" disabled>Select Treatment</option>
                             {TREATMENTS.map(t => (
                               <option key={t.id} value={t.id} className="font-bold">
                                 {t.name} ({t.points} Pts)
@@ -232,7 +232,7 @@ export default function SubmitCase() {
                       </div>
 
                       <div className="space-y-3 group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
                            <Calendar size={12} className="text-blue-500" /> Submission Date
                         </Label>
                         <Input 
@@ -240,12 +240,12 @@ export default function SubmitCase() {
                           required 
                           value={formData.caseDate}
                           onChange={(e) => setFormData({...formData, caseDate: e.target.value})}
-                          className="h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base font-medium border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                          className="h-14 rounded-lg bg-white border-slate-200 shadow-sm transition-all focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
 
                       <div className="space-y-3 group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
                            <MapPin size={12} className="text-blue-500" /> Clinic Location
                         </Label>
                         <Input 
@@ -253,22 +253,22 @@ export default function SubmitCase() {
                           required 
                           value={formData.location}
                           onChange={(e) => setFormData({...formData, location: e.target.value})}
-                          className="h-14 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base font-medium placeholder:text-slate-300 border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                          className="h-14 rounded-lg bg-white border-slate-200 shadow-sm transition-all text-base font-bold placeholder:text-slate-600 focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                       <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                           Clinical Evidence / Proof Attachment
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                           Attach Photos / PDF Proof
                         </Label>
                         <div className="relative group">
-                          <div className="w-full h-32 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer overflow-hidden p-4">
+                          <div className="w-full h-32 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer overflow-hidden p-4">
                              <div className="h-10 w-10 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600 group-hover:scale-110 transition-transform">
                                 <Plus className="h-5 w-5" />
                              </div>
-                             <p className="text-[10px] font-bold text-slate-400 group-hover:text-blue-600 text-center uppercase tracking-tight">Click to attach clinical proof <br/><span className="text-[8px] opacity-60">(X-ray, Photo, or PDF Record)</span></p>
+                             <p className="text-[10px] font-bold text-slate-600 group-hover:text-blue-600 text-center uppercase tracking-tight">Click to attach clinical proof <br/><span className="text-[8px] opacity-60">(X-ray, Photo, or PDF Record)</span></p>
                              <input 
                                type="file" 
                                accept="image/*,application/pdf"
@@ -311,14 +311,14 @@ export default function SubmitCase() {
                       </div>
 
                       <div className="space-y-4 group transition-all">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 group-focus-within:text-blue-600">
-                           Practitioner Notes / Clinical Observations
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-blue-600">
+                           Additional Case Notes
                         </Label>
                         <Textarea 
                           placeholder="Detail the clinical context for faster professional approval..." 
                           value={formData.notes}
                           onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                          className="h-32 rounded-xl bg-slate-50/50 focus:bg-white transition-all text-base font-medium resize-none placeholder:text-slate-300 border-slate-100 shadow-sm focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                          className="h-32 rounded-lg bg-white border-slate-200 shadow-sm transition-all focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
                     </div>
@@ -326,17 +326,17 @@ export default function SubmitCase() {
                     <div className="pt-4">
                       <Button 
                         disabled={loading}
-                        className="w-full h-14 sm:h-16 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg transition-all shadow-xl shadow-blue-500/30 active:scale-[0.98] disabled:opacity-70 group overflow-hidden relative"
+                        className="w-full h-16 sm:h-20 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-black text-lg transition-all shadow-xl shadow-blue-500/30 active:scale-[0.98] disabled:opacity-70 group overflow-hidden relative"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-white/10 to-blue-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                         {loading ? (
                           <div className="flex items-center gap-3">
                             <Loader2 className="h-6 w-6 animate-spin text-blue-200" />
-                            <span className="uppercase tracking-widest text-[11px] font-black">Fast Sync active...</span>
+                            <span className="uppercase tracking-widest text-[11px] font-black">Syncing clinical data...</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3">
-                             Confirm Case Submission
+                          <div className="flex items-center gap-3 relative z-10">
+                             <span className="text-base sm:text-lg font-black uppercase tracking-[0.1em]">Confirm Case Submission</span>
                              <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                           </div>
                         )}
@@ -354,23 +354,23 @@ export default function SubmitCase() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98 }}
-                  className="min-h-[540px] sm:min-h-0 flex flex-col justify-between sm:justify-center bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-950 rounded-xl p-7 sm:p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5"
+                  className="min-h-[540px] sm:min-h-0 flex flex-col justify-between sm:justify-center bg-gradient-to-br from-blue-900 via-indigo-950 to-slate-950 rounded-lg p-7 sm:p-8 text-white shadow-2xl relative overflow-hidden group border border-white/5"
                 >
                   <div className="absolute -right-4 -top-4 h-32 w-32 bg-blue-500/10 rounded-full blur-3xl" />
                   <div className="relative z-10 flex flex-col h-full space-y-8 sm:space-y-5">
                     <div className="flex items-center gap-3">
-                       <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10">
+                       <div className="h-10 w-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-md border border-white/10">
                           <Calculator className="h-5 w-5 text-blue-300" />
                        </div>
                        <div>
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Expected Yield</p>
-                          <h3 className="text-xl sm:text-lg font-black tracking-tight">Reward Calculator</h3>
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Points Summary</p>
+                          <h3 className="text-xl sm:text-lg font-black tracking-tight">Earnings Preview</h3>
                        </div>
                     </div>
  
                     <div className="flex-1 flex flex-col justify-center space-y-8 sm:space-y-4">
                        <div className="p-5 sm:p-3.5 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm transition-all">
-                          <p className="text-[10px] sm:text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Active Treatment Node</p>
+                          <p className="text-[10px] sm:text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Selected Treatment</p>
                           <p className="text-sm sm:text-xs font-black text-white leading-tight">
                              {selectedTreatment?.name || 'Awaiting Selection...'}
                           </p>
@@ -398,18 +398,18 @@ export default function SubmitCase() {
                 </motion.div>
               </AnimatePresence>
 
-              <div className="bg-white rounded-xl p-7 sm:p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-start min-h-[310px] sm:min-h-[260px]">
+              <div className="bg-white rounded-lg p-7 sm:p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-start min-h-[310px] sm:min-h-[260px]">
                 <div className="flex items-center gap-2 mb-5">
                    <ShieldCheck size={16} className="text-blue-600" />
-                   <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Clinical Protocols</h3>
+                   <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Submission Guidelines</h3>
                 </div>
                 <ul className="space-y-5 sm:space-y-4 text-wrap leading-relaxed">
                    {CLINICAL_GUIDELINES.map((guide, idx) => (
                      <li key={idx} className="flex gap-4 items-center group p-1.5 rounded-lg hover:bg-blue-50/50 transition-colors">
-                        <div className="h-5 w-8 rounded-md bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-all shadow-sm">
+                        <div className="h-5 w-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-all shadow-sm">
                            <CheckCircle2 size={10} className="text-blue-600 group-hover:text-white transition-colors" />
                         </div>
-                        <span className="text-[11px] font-bold text-slate-500 leading-tight group-hover:text-slate-900 transition-colors pt-0.5 uppercase tracking-tighter sm:truncate">
+                        <span className="text-[11px] font-black text-slate-700 leading-tight group-hover:text-slate-900 transition-colors pt-0.5 uppercase tracking-tighter sm:truncate">
                            {guide}
                          </span>
                      </li>

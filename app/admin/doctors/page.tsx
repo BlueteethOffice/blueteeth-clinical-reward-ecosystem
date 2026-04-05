@@ -35,6 +35,8 @@ function DoctorListContent() {
   useEffect(() => {
     setCurrentPage(1);
   }, [queryQ]);
+
+
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [showDrawer, setShowDrawer] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -47,6 +49,16 @@ function DoctorListContent() {
   const [adjustmentValue, setAdjustmentValue] = useState(0);
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Prevent background scrolling when Drawer or Modal is open
+  useEffect(() => {
+    if (showDrawer || showNewDoctorModal || showAdjustModal || showConfirmModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [showDrawer, showNewDoctorModal, showAdjustModal, showConfirmModal]);
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string;
     message: string;
@@ -371,15 +383,15 @@ function DoctorListContent() {
 
   return (
     <DashboardLayout isAdminRoute={true}>
-      <div className="space-y-6 pb-12" suppressHydrationWarning={true}>
+      <div className="space-y-6 pb-0" suppressHydrationWarning={true}>
         {/* Simple Compact Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4" suppressHydrationWarning={true}>
           <div className="space-y-1">
-            <h1 className="text-2xl font-black text-blue-900 tracking-tight">Practitioner Network</h1>
-            <p className="text-slate-500 font-medium text-xs">Managing clinical identities and reward profiles.</p>
+            <h1 className="text-2xl font-black text-blue-900 tracking-tight">Doctor List</h1>
+            <p className="text-slate-500 font-medium text-xs">Manage your doctor network and their points from here.</p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={() => {
@@ -389,20 +401,20 @@ function DoctorListContent() {
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "Blueteeth_Practitioners.csv");
+                link.setAttribute("download", "Blueteeth_Doctors_List.csv");
                 document.body.appendChild(link);
                 link.click();
-                toast.success('Registry Archive Exported');
+                toast.success('Doctor list downloaded');
               }}
-              className="h-10 rounded-xl gap-2 font-bold text-[10px] uppercase tracking-widest border-slate-200"
+              className="h-10 w-full sm:w-auto rounded-lg gap-2 font-bold text-[10px] uppercase tracking-widest border-slate-200"
             >
-              <Download className="h-3.5 w-3.5" /> Export
+              <Download className="h-3.5 w-3.5" /> Download List
             </Button>
             <Button
               onClick={() => setShowNewDoctorModal(true)}
-              className="h-10 rounded-xl gap-2 bg-blue-600 font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20"
+              className="h-10 w-full sm:w-auto rounded-lg gap-2 bg-blue-600 font-bold text-[10px] uppercase tracking-widest shadow-lg shadow-blue-500/20"
             >
-              <UserPlus className="h-3.5 w-3.5" /> New Practitioner
+              <UserPlus className="h-3.5 w-3.5" /> Add New Doctor
             </Button>
           </div>
         </div>
@@ -413,8 +425,8 @@ function DoctorListContent() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
             <input
               type="text"
-              placeholder="Identify by name, email or clinical expertise..."
-              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 shadow-sm transition-all"
+              placeholder="Search by name, email or clinic..."
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 focus:outline-none focus:ring-4 focus:ring-blue-100 shadow-sm transition-all"
               value={queryQ}
               onChange={(e) => {
                 const params = new URLSearchParams(window.location.search);
@@ -431,7 +443,7 @@ function DoctorListContent() {
           <div className="relative">
             <Button
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-              variant="outline" className={`h-11 px-6 rounded-xl border-slate-200 gap-2 font-bold text-[10px] uppercase tracking-widest transition-all ${experienceFilter !== 'all' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'text-slate-600'}`}
+              variant="outline" className={`h-11 w-full sm:w-auto px-6 rounded-lg border-slate-200 gap-2 font-bold text-[10px] uppercase tracking-widest transition-all ${experienceFilter !== 'all' ? 'bg-blue-50 border-blue-200 text-blue-600' : 'text-slate-600'}`}
             >
               <Filter className="h-3.5 w-3.5" />
               {experienceFilter === 'all' ? 'Filters' : `${experienceFilter}s`}
@@ -470,16 +482,16 @@ function DoctorListContent() {
         </div>
 
         {/* Scalable Doctor Stream */}
-        <Card className="border border-slate-100 shadow-xl rounded-xl bg-white overflow-hidden" suppressHydrationWarning={true}>
+        <Card className="border border-slate-100 shadow-xl rounded-lg bg-white overflow-hidden" suppressHydrationWarning={true}>
           {/* Desktop View - Full Professional Table */}
           <div className="hidden lg:block overflow-x-auto" suppressHydrationWarning={true}>
             <table className="w-full text-left" suppressHydrationWarning={true}>
               <thead suppressHydrationWarning={true}>
                 <tr className="bg-slate-50/50 border-b border-slate-100" suppressHydrationWarning={true}>
-                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest w-[40%]" suppressHydrationWarning={true}>Identity & Credentials</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-center" suppressHydrationWarning={true}>Reward Balance</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-center" suppressHydrationWarning={true}>Status Index</th>
-                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-right" suppressHydrationWarning={true}>Audit Action</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest w-[40%]" suppressHydrationWarning={true}>Doctor Details</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-center" suppressHydrationWarning={true}>Total Points & Cash</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-center" suppressHydrationWarning={true}>Work Status</th>
+                  <th className="px-6 py-4 text-[9px] font-black text-blue-400 uppercase tracking-widest text-right" suppressHydrationWarning={true}>Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -592,52 +604,15 @@ function DoctorListContent() {
                       </div>
                    </div>
                 </div>
-                <Button variant="ghost" className="h-10 w-10 p-0 rounded-xl bg-blue-50/50">
+                <Button variant="ghost" className="h-10 w-10 p-0 rounded-lg bg-blue-50/50">
                    <ChevronRight className="h-5 w-5 text-blue-600" />
                 </Button>
               </motion.div>
             )) : (
               <div className="p-12 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                No Practitioners Identified
+                No Doctors Found
               </div>
             )}
-          </div>
-
-          {/* Dynamic Analytics Footer */}
-          <div className="px-6 py-4 bg-slate-900 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-8">
-              <div className="space-y-0.5">
-                <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Live Clinical Load</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-white">{filteredDoctors.length} Nodes</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[7px] font-black uppercase">Online</span>
-                </div>
-              </div>
-              <div className="h-6 w-px bg-white/10 hidden md:block" />
-              <div className="space-y-0.5">
-                <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Global Success</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-white">92.4%</span>
-                  <TrendingUp className="h-3 w-3 text-blue-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="h-8 px-4 rounded-lg text-white/40 hover:text-white font-black text-[8px] uppercase tracking-widest bg-transparent"
-              >Previous</Button>
-              <div className="h-7 w-12 bg-blue-600 rounded-lg flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-blue-500/20">
-                {currentPage}/{totalPages || 1}
-              </div>
-              <Button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="h-8 px-4 rounded-lg text-white/40 hover:text-white font-black text-[8px] uppercase tracking-widest bg-transparent"
-              >Next</Button>
-            </div>
           </div>
         </Card>
 
@@ -680,8 +655,8 @@ function DoctorListContent() {
               {/* Drawer Header */}
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-black text-blue-900 uppercase tracking-widest">Practitioner Profile</h2>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Administrative Audit Panel</p>
+                  <h2 className="text-sm font-black text-blue-900 uppercase tracking-widest">Doctor Profile</h2>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Admin Control Panel</p>
                 </div>
                 <button onClick={() => setShowDrawer(false)} className="h-10 w-10 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all group">
                   <X className="h-5 w-5 text-slate-400 group-hover:text-red-500" />
@@ -741,11 +716,11 @@ function DoctorListContent() {
                   {/* Wealth Stats Recap */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Global Wealth</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Cash</p>
                       <h4 className="text-lg font-black text-slate-900 mt-1">₹{Math.round(selectedDoctor.walletBalance || 0).toLocaleString()}</h4>
                     </div>
                     <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm text-center">
-                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Audit Weight</p>
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Points</p>
                       <h4 className="text-lg font-black text-slate-900 mt-1">{Number(selectedDoctor.totalPoints || 0).toFixed(1)} <span className="text-[8px] text-slate-400">PTS</span></h4>
                     </div>
                   </div>
@@ -755,7 +730,7 @@ function DoctorListContent() {
                      {/* Financial Identity Bundle */}
                      <div className="p-5 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                         <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                           <Smartphone size={12} /> Financial Payout Credentials
+                           <Smartphone size={12} /> Payment Details
                         </p>
                         <div className="space-y-4">
                            <div className="flex items-center justify-between">
@@ -778,7 +753,7 @@ function DoctorListContent() {
                      {/* Clinical Profile Bundle */}
                      <div className="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
                         <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                           <Activity size={12} /> Practitioner Profile
+                           <Activity size={12} /> Doctor Details
                         </p>
                         <div className="space-y-4">
                            <div className="flex items-center justify-between">
@@ -838,7 +813,7 @@ function DoctorListContent() {
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Registry Snapshot</span>
                         <ShieldCheck className="h-4 w-4 text-slate-600" />
                       </div>
-                      <h4 className="text-sm font-black text-white relative z-10">Administrative Account Lock</h4>
+                      <h4 className="text-sm font-black text-white relative z-10">Admin Control Lock</h4>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2.5">
@@ -893,19 +868,19 @@ function DoctorListContent() {
                           <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="bg-white w-full max-w-5xl h-full max-h-[85vh] rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] overflow-hidden flex flex-col border border-white/20"
+                            className="bg-white w-full max-w-5xl h-full max-h-[85vh] rounded-lg shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] overflow-hidden flex flex-col border border-white/20"
                           >
                             {/* Report Header - Enhanced for Mobile View */}
                             <div className="px-5 sm:px-8 py-4 sm:py-6 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
                               <div className="flex items-center gap-3 sm:gap-4">
-                                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200 shrink-0">
+                                <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200 shrink-0">
                                   <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" />
                                 </div>
                                 <div className="min-w-0">
                                   <h2 className="text-sm sm:text-xl font-black text-slate-900 uppercase tracking-tighter leading-tight max-w-[220px] sm:max-w-none">
-                                    Clinical Audit Transcript
+                                    Doctor Statement
                                   </h2>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1 truncate">Ref: <span className="text-blue-600 truncate">{selectedDoctor?.name}</span></p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1 truncate">Doctor: <span className="text-blue-600 truncate">{selectedDoctor?.name}</span></p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -932,19 +907,19 @@ function DoctorListContent() {
                             {/* Report Stats Summary - Enforced 2-Line Labels for Better Visual Weight */}
                             <div className="grid grid-cols-4 border-b border-slate-50">
                               <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Total <br className="xs:hidden" /> Yield</p>
+                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">All Points</p>
                                 <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{Number(selectedDoctor?.totalPoints || 0).toFixed(1)} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">PTS</span></p>
                               </div>
                               <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Settled <br className="xs:hidden" /> Assets</p>
+                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Total Cash</p>
                                 <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">₹{(selectedDoctor?.walletBalance || 0).toLocaleString()}</p>
                               </div>
                               <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Record <br className="xs:hidden" /> Index</p>
+                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Case Count</p>
                                 <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{doctorCases.length} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">NODES</span></p>
                               </div>
                               <div className="p-4 sm:p-6 text-center bg-blue-50/30">
-                                <p className="text-[7px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 leading-none">Market <br className="xs:hidden" /> Rate</p>
+                                <p className="text-[7px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 leading-none">Market Rate</p>
                                 <p className="text-sm sm:text-xl font-black text-blue-600 leading-none">₹{exchangeRate} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-blue-400 uppercase font-bold">/ PT</span></p>
                               </div>
                             </div>
@@ -952,11 +927,11 @@ function DoctorListContent() {
                             {/* Professional Table View */}
                             <div className="flex-1 flex flex-col">
                                                              <div className="px-4 sm:px-8 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-5 gap-1 sm:gap-4 items-center">
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none sm:leading-tight">Practitioner <br className="sm:hidden" /> / Outcome</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Reward <br className="sm:hidden" /> Yield</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Asset <br className="sm:hidden" /> Valuation</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Status <br className="sm:hidden" /> Index</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-right leading-none sm:leading-tight">Audit <br className="sm:hidden" /> Action</span>
+                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none sm:leading-tight">Case <br className="sm:hidden" /> Summary</span>
+                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Points</span>
+                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Cash</span>
+                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Status</span>
+                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-right leading-none sm:leading-tight">Actions</span>
                               </div>
 
                               <div className="divide-y divide-slate-100">
@@ -968,7 +943,7 @@ function DoctorListContent() {
                                 ) : doctorCases.length === 0 ? (
                                   <div className="h-full flex flex-col items-center justify-center py-20 grayscale opacity-20">
                                     <History className="h-20 w-20 mb-4" />
-                                    <p className="text-sm font-black uppercase tracking-widest">No Statements Archived</p>
+                                    <p className="text-sm font-black uppercase tracking-widest">No records found</p>
                                   </div>
                                 ) : (
                                   doctorCases
@@ -1075,7 +1050,7 @@ function DoctorListContent() {
                           <motion.div
                             initial={{ scale: 0.9, opacity: 0, y: 30 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden border border-slate-200"
+                            className="relative bg-white rounded-lg shadow-2xl w-full max-w-[400px] overflow-hidden border border-slate-200"
                           >
                             <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                               <div className="flex items-center gap-3">
@@ -1243,7 +1218,7 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
                 <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest truncate">Adjust Balance: {selectedDoctor?.name}</h3>
               </div>
               <div className="p-6 space-y-6">
-                <div className="space-y-3 text-center">
+                <div className="space-y-2 pb-0 relative">
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">₹</span>
                     <input
@@ -1349,83 +1324,6 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
           </div>
         )}
       </AnimatePresence>
-      {/* Payout Processing Hub - Administrative View */}
-      <div className="mt-12 bg-white rounded-2xl border border-slate-100 shadow-xl overflow-hidden mb-20">
-        <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-gradient-to-r from-white to-slate-50/10">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <IndianRupee size={20} />
-            </div>
-            <div>
-              <h3 className="text-lg font-black text-slate-900 tracking-tight text-white uppercase">Clinical Payout Desk</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Administrative withdrawal processing</p>
-            </div>
-          </div>
-          <div className="text-[10px] font-black text-blue-600 bg-blue-50 px-4 py-2 rounded-xl uppercase tracking-widest border border-blue-100/50">
-            Live Requests: {redemptions.filter(r => r.status === 'Pending').length}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Practitioner</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Withdrawal Asset</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Payment Identity</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Audit Status</th>
-                <th className="px-8 py-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {redemptions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-10 py-20 text-center text-slate-400 font-bold uppercase text-[11px] tracking-widest">
-                    No pending clinical settlements discovered.
-                  </td>
-                </tr>
-              ) : (
-                redemptions.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50 transition-all duration-300">
-                    <td className="px-8 py-5">
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">{r.doctorName}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">Practitioner ID: {String(r.doctorUid).slice(0, 8)}</p>
-                    </td>
-                    <td className="px-8 py-5">
-                      <p className="text-sm font-black text-blue-600">₹{Number(r.amount || 0).toLocaleString()}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{Number(r.points || 0).toFixed(1)} B-PTS</p>
-                    </td>
-                    <td className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest">
-                      <div className="flex items-center gap-2">
-                        {r.method === 'upi' ? <Smartphone size={14} className="text-indigo-400" /> : <Gift size={14} className="text-indigo-400" />}
-                        <span className="text-slate-700">{r.details}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest ${r.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100 animate-pulse'}`}>
-                        {r.status === 'Paid' ? <BadgeCheck size={12} /> : <Clock size={12} />}
-                        {r.status}
-                      </div>
-                    </td>
-                    <td className="px-8 py-5">
-                      {r.status === 'Pending' ? (
-                        <button
-                          onClick={() => handleProcessRedemption(r)}
-                          className="h-10 px-6 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-xl shadow-slate-200"
-                        >
-                          Mark as Paid & Deduct
-                        </button>
-                      ) : (
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Settled</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* Professional Clinical Verification Modal */}
       <AnimatePresence>

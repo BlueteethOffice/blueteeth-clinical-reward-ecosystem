@@ -34,6 +34,11 @@ export const sendEmail = async (params: Record<string, any>) => {
 
     const templateParams = {
       ...params,
+      to_email: recipient,
+      user_email: recipient,
+      email: recipient,
+      to: recipient,
+      reply_to: recipient,
       logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
       from_name: "Blueteeth Professional",
       company: "Blueteeth Pvt. Ltd.",

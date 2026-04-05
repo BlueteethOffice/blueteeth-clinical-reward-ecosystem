@@ -69,7 +69,7 @@ export default function Home() {
               <Link href="/auth/login">
                 <Button variant="ghost" size="sm">Doctor Login</Button>
               </Link>
-              <Link href="/auth/login">
+              <Link href="/auth/login?flow=admin">
                 <Button variant="primary" size="sm" className="rounded-xl">Admin Portal</Button>
               </Link>
             </div>
@@ -128,7 +128,7 @@ export default function Home() {
                     <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link href="/auth/login" className="text-sm font-semibold leading-6 text-slate-900 flex items-center group">
+                <Link href="/auth/login?flow=admin" className="text-sm font-semibold leading-6 text-slate-900 flex items-center group">
                   Admin Access 
                   <ChevronRight className="ml-0.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>

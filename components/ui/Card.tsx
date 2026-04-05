@@ -23,7 +23,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-2xl overflow-hidden transition-all duration-300',
+          'rounded-md overflow-hidden transition-all duration-300',
           variants[variant],
           className
         )}

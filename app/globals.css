@@ -10,11 +10,48 @@
   --foreground: #0f172a;
 }
 
-body {
+html {
+  scroll-behavior: smooth !important;
+  overscroll-behavior-y: none !important;
+}
+
+html, body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden !important;
+  overflow-y: scroll !important; /* Force scroller to prevent layout jumping */
+  width: 100% !important;
+  min-height: 100vh !important;
+  position: relative !important;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translate3d(0,0,0);
+}
+
+/* Global Overflow Purge: Everything that isn't body should not scroll unless explicitly allowed */
+* {
+  scrollbar-width: none !important;
+}
+::-webkit-scrollbar {
+  display: none !important;
+}
+
+body::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+}
+body::-webkit-scrollbar-track {
+  background: #f8fafc !important;
+}
+body::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 10px !important;
+  border: 2px solid #f8fafc !important;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
 }
 
 @keyframes float {
@@ -49,11 +86,26 @@ body {
   mask-image: radial-gradient(circle at center, black, transparent 80%);
 }
 
-/* Global Scrollbar Suppression */
-*::-webkit-scrollbar {
+/* Premium Thin Dashboard Scrollbar */
+.dashboard-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.dashboard-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.02);
+}
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 20px;
+}
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+/* Targeted Internal Scrollbar Suppression */
+.no-scrollbar::-webkit-scrollbar {
   display: none !important;
 }
-* {
+.no-scrollbar {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 }

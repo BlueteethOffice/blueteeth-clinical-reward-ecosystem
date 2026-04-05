@@ -22,11 +22,14 @@ export default function LoginPage() {
   const [showOtpStep, setShowOtpStep] = useState(false);
   const [otp, setOtp] = useState('');
   const [userId, setUserId] = useState('');
+  const [isAdminFlow, setIsAdminFlow] = useState(false);
   const router = useRouter();
 
   // Security Identity initialization
   useEffect(() => {
-    // Identity system ready
+    if (typeof window !== 'undefined') {
+       setIsAdminFlow(window.location.search.includes('flow=admin'));
+    }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -65,6 +68,22 @@ export default function LoginPage() {
       let authIdentity = sanitizedEmail;
       
       const lowerEmail = sanitizedEmail.toLowerCase();
+      const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+      const isMasterAttempt = masterEmails.includes(lowerEmail);
+
+      // --- LOGIN PORTAL ISOLATION ---
+      if (isAdminFlow && !isMasterAttempt) {
+         toast.error('Access Denied: This login is strictly for Master Administrators.');
+         setLoading(false);
+         return;
+      }
+      
+      if (!isAdminFlow && isMasterAttempt) {
+         toast.error('Access Denied: Master accounts cannot login via the Clinical portal. Please use the Admin Access gateway.');
+         setLoading(false);
+         return;
+      }
+
       if (lowerEmail === 'niteen02') {
          if (sanitizedPassword !== 'Niteen@102') {
              throw new Error("auth/strict-password-mismatch");
@@ -333,8 +352,8 @@ export default function LoginPage() {
                     exit={{ opacity: 1 }}
                   >
                     <div className="mb-8">
-                      <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Welcome Back</h1>
-                      <p className="text-slate-500 text-[10px] font-medium uppercase tracking-widest mt-1">Verified Identity Login</p>
+                      <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{isAdminFlow ? "Admin Portal Access" : "Welcome Back"}</h1>
+                      <p className="text-slate-500 text-[10px] font-medium uppercase tracking-widest mt-1">{isAdminFlow ? "Restricted Executive Login" : "Verified Identity Login"}</p>
                     </div>
  
                     <form onSubmit={handleLogin} className="space-y-4 flex flex-col items-center">

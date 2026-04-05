@@ -161,18 +161,18 @@ export default function AdminSettings() {
 
   return (
     <DashboardLayout isAdminRoute={true}>
-      <div className="space-y-10 pb-12 -mt-2">
+      <div className="space-y-10 pb-0 -mt-2">
         {/* Authority Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-2">
           <div className="space-y-3">
              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 shadow-xl shadow-slate-900/10">
-               <ShieldCheck className="h-3 w-3" /> Master System Controls
+               <ShieldCheck className="h-3 w-3" /> System Settings
              </div>
-             <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">Global Configurations</h1>
-             <p className="text-slate-500 font-medium text-sm">Managing clinical point valuations, security thresholds and encryption protocols.</p>
+             <h1 className="text-3xl font-bold text-slate-900 tracking-tight leading-none">Portal Global Controls</h1>
+             <p className="text-slate-500 font-medium text-sm uppercase tracking-tight">Control point values, security rules, and portal health.</p>
           </div>
           <Button onClick={handleSave} isLoading={loading} className="h-12 px-8 rounded-lg bg-blue-600 font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 group gap-4">
-             Enforce Sync <Save className="h-4 w-4 group-hover:scale-110 transition-transform" />
+             Save Changes <Save className="h-4 w-4 group-hover:scale-110 transition-transform" />
           </Button>
         </div>
 
@@ -181,39 +181,39 @@ export default function AdminSettings() {
           <div className="lg:col-span-2 space-y-8">
 
 
-            <Card className="bg-white rounded-xl border border-slate-100 shadow-xl overflow-hidden group">
+            <Card className="bg-white rounded-lg border border-slate-100 shadow-xl overflow-hidden group">
                <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center gap-4">
-                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
+                  <div className="h-12 w-12 bg-white rounded-lg flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
                      <Coins className="h-6 w-6 text-amber-500" />
                   </div>
                   <div>
-                     <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Reward Evaluation Matrix</h3>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Point-to-Cash Converters</p>
+                     <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Points to Cash</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Set how much each point is worth</p>
                   </div>
                </div>
                <CardContent className="p-8 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <div className="space-y-3">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Exchange Rate (1 B-Point)</label>
-                        <div className="relative group">
+                         <div className="relative group">
                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-900 leading-none">₹</span>
                            <input 
                               type="number" 
                               value={settings.exchangeRate} 
                               onChange={(e) => handleInputChange('exchangeRate', parseInt(e.target.value) || 0)}
-                              className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border border-slate-200 text-xl font-black text-slate-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all" 
+                              className="w-full pl-10 pr-4 py-4 rounded-lg bg-slate-50 border border-slate-200 text-xl font-black text-slate-900 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition-all" 
                            />
                         </div>
                      </div>
                      <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Settlement Minimum (INR)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Payout Minimum (INR)</label>
                         <div className="relative group">
                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-900 leading-none">₹</span>
                            <input 
                               type="number" 
                               value={settings.settlementMinimum} 
                               onChange={(e) => handleInputChange('settlementMinimum', parseInt(e.target.value) || 0)}
-                              className="w-full pl-10 pr-4 py-4 rounded-xl bg-slate-50 border border-slate-200 text-xl font-black text-slate-900 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 transition-all" 
+                              className="w-full pl-10 pr-4 py-4 rounded-lg bg-slate-50 border border-slate-200 text-xl font-black text-slate-900 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 transition-all" 
                            />
                         </div>
                      </div>
@@ -225,24 +225,24 @@ export default function AdminSettings() {
                </CardContent>
             </Card>
 
-            <Card className="bg-white rounded-xl border border-slate-100 shadow-xl overflow-hidden group">
+            <Card className="bg-white rounded-lg border border-slate-100 shadow-xl overflow-hidden group">
                <div className="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center gap-4">
-                  <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
+                  <div className="h-12 w-12 bg-white rounded-lg flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
                      <ShieldAlert className="h-6 w-6 text-red-500" />
                   </div>
                   <div>
-                     <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Clinical Audit Protocols</h3>
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Verification and Anti-Fraud Systems</p>
+                     <h3 className="text-lg font-black text-slate-900 tracking-tight uppercase">Security Rules</h3>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Protect the portal from fake data</p>
                   </div>
                </div>
                <CardContent className="p-8 space-y-6">
                   <div 
                     onClick={() => handleInputChange('selfVerification', !settings.selfVerification)}
-                    className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100"
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-all cursor-pointer border border-transparent hover:border-slate-100"
                   >
                      <div>
-                        <p className="text-sm font-black text-slate-900 uppercase">Self-Verification Enforcement</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Enforce OTP/Email check upon registration</p>
+                        <p className="text-sm font-black text-slate-900 uppercase">Verify New Users</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Check phone/email upon first registration</p>
                      </div>
                      <div className={`h-8 w-14 rounded-full p-1 shadow-inner relative transition-colors ${settings.selfVerification ? 'bg-blue-600' : 'bg-slate-200'}`}>
                         <motion.div 
@@ -253,11 +253,11 @@ export default function AdminSettings() {
                   </div>
                   <div 
                     onClick={() => handleInputChange('duplicatePatientScreening', !settings.duplicatePatientScreening)}
-                    className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all cursor-pointer border border-transparent hover:border-slate-100"
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-lg transition-all cursor-pointer border border-transparent hover:border-slate-100"
                   >
                      <div>
-                        <p className="text-sm font-black text-slate-900 uppercase">Duplicate Patient Screening</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Auto-block duplicate patient mobile IDs</p>
+                        <p className="text-sm font-black text-slate-900 uppercase">Block Duplicate Entries</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Don't allow the same patient mobile twice</p>
                      </div>
                      <div className={`h-8 w-14 rounded-full p-1 shadow-inner relative transition-colors ${settings.duplicatePatientScreening ? 'bg-blue-600' : 'bg-slate-200'}`}>
                         <motion.div 
@@ -272,24 +272,24 @@ export default function AdminSettings() {
 
           {/* Infrastructure Health Sidebar */}
           <div className="space-y-10">
-             <div className="p-8 rounded-xl bg-slate-900 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/40 border border-white/5">
+             <div className="p-8 rounded-lg bg-slate-900 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/40 border border-white/5">
                 <div className="absolute left-[-40px] bottom-[-40px] h-64 w-64 text-white/5 group-hover:scale-110 transition-transform duration-1000">
                    <Server className="h-full w-full" />
                 </div>
                 <div className="relative z-10 space-y-8">
                    <div className="flex items-center justify-between">
-                      <div className="h-10 w-10 bg-white shadow-xl rounded-xl flex items-center justify-center">
+                      <div className="h-10 w-10 bg-white shadow-xl rounded-lg flex items-center justify-center">
                          <Database className="h-5 w-5 text-blue-900" />
                       </div>
                       <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-[9px] font-black uppercase shadow-inner">Operational</span>
                    </div>
                    <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Clinical Data Sync Engine</p>
-                      <h4 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">Blueteeth Secure Core</h4>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-2">Portal Health</p>
+                      <h4 className="text-2xl font-black text-white tracking-tighter uppercase leading-none">System Status</h4>
                    </div>
                    <div className="space-y-4 pt-4 border-t border-white/5">
                       <div className="flex justify-between items-end">
-                         <span className="text-[9px] font-black text-slate-500 uppercase">Latency Score</span>
+                         <span className="text-[9px] font-black text-slate-500 uppercase">Speed</span>
                          <span className="text-sm font-black text-blue-400">24ms</span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
@@ -299,17 +299,17 @@ export default function AdminSettings() {
                 </div>
              </div>
 
-             <div className="p-8 rounded-xl bg-indigo-50 border border-indigo-100 relative overflow-hidden group">
+             <div className="p-8 rounded-lg bg-indigo-50 border border-indigo-100 relative overflow-hidden group">
                 <Globe className="absolute right-[-30px] bottom-[-30px] h-48 w-48 text-indigo-200 opacity-30 group-hover:rotate-45 transition-transform duration-1000" />
                 <div className="relative z-10 space-y-6">
-                   <h3 className="text-sm font-black text-indigo-900 uppercase tracking-[0.1em]">Security Protocol</h3>
-                   <p className="text-[11px] font-bold text-indigo-700/80 leading-relaxed uppercase tracking-tight">Manual system audit completed today at {settings.lastAudit}. All encryption layers are non-volatile and synchronized.</p>
+                   <h3 className="text-sm font-black text-indigo-900 uppercase tracking-[0.1em]">Safety Check</h3>
+                   <p className="text-[11px] font-bold text-indigo-700/80 leading-relaxed uppercase tracking-tight">System scan completed today at {settings.lastAudit}. All layers are secure.</p>
                    <Button 
                     onClick={runSecurityScan}
                     variant="outline" 
-                    className="w-full h-11 rounded-xl bg-white text-indigo-900 border-indigo-200 font-black text-[9px] uppercase tracking-widest"
+                    className="w-full h-11 rounded-lg bg-white text-indigo-900 border-indigo-200 font-black text-[9px] uppercase tracking-widest"
                    >
-                    Run Security Scan
+                    Run Scan
                    </Button>
                 </div>
              </div>

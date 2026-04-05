@@ -80,48 +80,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
            setLoading(false); 
         }
 
-        const fetchUserData = async () => {
-          try {
-            const userRef = doc(db, 'users', authUser.uid);
-            const snapshot = await getDoc(userRef);
+        const userRef = doc(db, 'users', authUser.uid);
+        
+        // [REAL-TIME IDENTITY SYNC] Direct Firestore listener for profile updates
+        userDocUnsubscribe = onSnapshot(userRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            setUserData(data);
             
-            if (snapshot.exists()) {
-              const data = snapshot.data();
-              setUserData(data);
-              
-              const verifiedAdmin = isMaster || data.role === 'admin';
-              setIsAdmin(verifiedAdmin);
-              
-              // Persist minimal identity for next-session optimistic rendering
-              localStorage.setItem(`clinical_identity_snapshot_${authUser.uid}`, JSON.stringify({
-                 role: verifiedAdmin ? 'admin' : 'doctor',
-                 name: data.name
-              }));
-            } else {
-              setUserData({ 
-                 name: isMaster ? 'Master Admin' : (authUser.displayName || 'Practitioner'), 
-                 role: isMaster ? 'admin' : 'doctor', 
-                 pending: false 
-              });
-              setIsAdmin(isMaster);
-            }
-            setLoading(false);
-          } catch (error) {
-            console.warn("Identity Fetch Latency:", error);
-            // Default recovery to avoid blocking the UI
+            const verifiedAdmin = isMaster || data.role === 'admin';
+            setIsAdmin(verifiedAdmin);
+            
+            // Persist for next-session optimistic load
+            localStorage.setItem(`clinical_identity_snapshot_${authUser.uid}`, JSON.stringify({
+               role: verifiedAdmin ? 'admin' : 'doctor',
+               name: data.name,
+               photoURL: data.photoURL
+            }));
+          } else {
+            setUserData({ 
+               name: isMaster ? 'Master Admin' : (authUser.displayName || 'Doctor'), 
+               role: isMaster ? 'admin' : 'doctor', 
+               pending: false 
+            });
             setIsAdmin(isMaster);
-            setLoading(false);
           }
-        };
+          setLoading(false);
+        });
 
-        // Safety Timeout shortened for microsecond-feel navigation
         const timeoutId = setTimeout(() => {
           if (loading) {
-            console.warn("Identity Fetch Latency Identified - Bypassing Profile Dependency");
             setLoading(false);
           }
-        }, 3000); // 3s instead of 8s
-        fetchUserData().finally(() => clearTimeout(timeoutId));
+        }, 3000); 
+        
+        return () => {
+          if (userDocUnsubscribe) userDocUnsubscribe();
+          clearTimeout(timeoutId);
+        };
       } else {
         setUserData(null);
         setIsAdmin(false);

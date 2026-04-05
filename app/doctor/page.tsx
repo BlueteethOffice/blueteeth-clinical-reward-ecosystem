@@ -156,7 +156,7 @@ export default function DoctorDashboard() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="space-y-6 pb-12"
+        className="max-w-[1600px] mx-auto px-1 sm:px-0 space-y-6 pb-0 w-full"
       >
         {/* Diagnostic & Connection Hub */}
         <div className="flex flex-col gap-6 lg:gap-8">
@@ -164,49 +164,51 @@ export default function DoctorDashboard() {
           {/* Error Feed */}
           {errorMsg && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-50 border-2 border-red-200 p-4 rounded-2xl flex items-center gap-4 text-red-800 shadow-xl shadow-red-900/5">
-              <div className="h-10 w-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0 border border-red-200"><ShieldAlert className="h-6 w-6" /></div>
+              <div className="h-10 w-10 bg-red-100 rounded-lg flex items-center justify-center shrink-0 border border-red-200"><ShieldAlert className="h-6 w-6" /></div>
               <div className="flex-1">
                 <p className="text-[10px] font-black uppercase tracking-widest mb-0.5">Critical System Error</p>
                 <p className="text-sm font-bold opacity-90">{errorMsg}</p>
               </div>
-              <Button onClick={() => window.location.reload()} size="sm" className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase h-10 px-6 rounded-lg">Retry Cloud Sync</Button>
+              <Button onClick={() => window.location.reload()} size="sm" className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase h-10 px-6 rounded-md">Retry Cloud Sync</Button>
             </motion.div>
           )}
 
-          {/* Clinical Welcome Header - Order-1 on Mobile */}
-          <div className="order-1 lg:order-2">
+          <div className="flex flex-wrap items-center gap-3 bg-white/30 p-2 rounded-lg border border-slate-100/50 backdrop-blur-xl w-full">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 shadow-sm transition-all group">
+              <div className={`h-2 w-2 rounded-full ${connectionStatus === 'Connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : connectionStatus === 'Disconnected' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700/80">Status: {connectionStatus}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/40 backdrop-blur-md border border-slate-200/50 shadow-sm text-slate-600 transition-all">
+              {connectionStatus === 'Connected' ? <Wifi size={14} className="text-emerald-500" /> : <WifiOff size={14} className="text-red-400" />}
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-700/70 leading-none">System Level: {connectionStatus === 'Connected' ? 'Live' : 'Offline'}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-indigo-500/10 backdrop-blur-md text-indigo-700/90 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 shadow-sm leading-none">
+              <CheckCircle2 size={12} className="text-indigo-600" /> Secure Login Verified
+            </div>
+          </div>
+
+          {/* Clinical Welcome Header */}
+          <div className="w-full">
             <div className="flex flex-col space-y-3">
               <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="-mt-1 inline-flex items-center gap-2 self-start px-3 py-2 rounded-md bg-blue-50/80 backdrop-blur-md border border-blue-100 text-[10px] font-black uppercase tracking-widest text-blue-600 shadow-sm leading-none">
-                <Activity className="h-3 w-3" /> System Synchronized: {loading ? 'UPDATING...' : 'REAL-TIME'}
+                <Activity className="h-3 w-3" /> System Status: {loading ? 'UPDATING...' : 'REAL-TIME SYNC'}
               </motion.div>
-              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight max-w-full break-words">
                 Welcome, <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
-                  {userData?.name ? (String(userData.name).startsWith('Dr.') ? userData.name : `Dr. ${userData.name}`) : 'Practitioner'}
+                  {userData?.name || user?.displayName ? 
+                    (String(userData?.name || user?.displayName).startsWith('Dr.') ? (userData?.name || user?.displayName) : `Dr. ${userData?.name || user?.displayName}`) 
+                    : 'Doctor'
+                  }
                 </span>
               </h1>
-              <p className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none mb-1">
-                Clinical Stream Portal • {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
+              <p className="text-[10px] sm:text-[11px] font-black text-slate-600 uppercase tracking-[0.2em] leading-none mb-1">
+                Doctor Rewards Dashboard • {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
               </p>
             </div>
           </div>
 
-          {/* Connection Status Box - Desktop TOP / Mobile ABOVE GMAIL (Order-2) */}
-          <div className="flex flex-wrap items-center gap-4 bg-white/30 p-3 rounded-xl border border-slate-100/50 backdrop-blur-xl order-2 lg:order-1">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 backdrop-blur-md border border-emerald-500/20 shadow-sm transition-all group">
-              <div className={`h-2 w-2 rounded-full ${connectionStatus === 'Connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : connectionStatus === 'Disconnected' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700/80">Cloud Link: {connectionStatus}</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/40 backdrop-blur-md border border-slate-200/50 shadow-sm text-slate-600 transition-all">
-              {connectionStatus === 'Connected' ? <Wifi size={14} className="text-emerald-500" /> : <WifiOff size={14} className="text-red-400" />}
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-700/70 leading-none">Protocol: {connectionStatus === 'Connected' ? 'Production (Live)' : 'Disconnected'}</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-indigo-500/10 backdrop-blur-md text-indigo-700/90 text-[10px] font-black uppercase tracking-widest border border-indigo-500/20 shadow-sm leading-none">
-              <CheckCircle2 size={12} className="text-indigo-600" /> Master Link Active
-            </div>
-          </div>
-
           {/* Practitioner Identity & CTA - Mobile Order-3 */}
-          <div className="order-3 lg:order-3">
+          <div className="order-3 lg:order-3 w-full">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
               <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-0 lg:pt-6 border-t border-slate-100/50 lg:border-t-0">
                 <div className="flex items-center gap-2.5 group cursor-default">
@@ -214,8 +216,8 @@ export default function DoctorDashboard() {
                     <User size={13} className="text-blue-600" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] opacity-60">Practitioner Index</span>
-                    <span className="text-[11px] font-bold text-slate-600 transition-colors group-hover:text-blue-900">{user?.email || 'Unauthorized Node'}</span>
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] opacity-100">Doctor ID</span>
+                    <span className="text-[11px] font-bold text-slate-600 transition-colors group-hover:text-blue-900">{user?.email || 'Guest User'}</span>
                   </div>
                 </div>
 
@@ -226,21 +228,21 @@ export default function DoctorDashboard() {
                     <ShieldCheck size={13} className="text-indigo-600" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] opacity-60">Secure Handshake</span>
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em] opacity-100">Session Code</span>
                     <span className="text-[11px] font-black text-blue-600 uppercase tracking-tight opacity-70 group-hover:opacity-100">{(user?.uid || '').slice(0, 8).toUpperCase()}</span>
                   </div>
                 </div>
               </div>
 
               <Link href="/doctor/submit-case" className="block w-full lg:w-auto">
-                <Button className="w-full h-14 lg:h-16 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-2xl shadow-blue-500/20 flex items-center justify-between lg:justify-start gap-4 transition-all duration-500 active:scale-95 group relative overflow-hidden">
+                <Button className="w-full h-12 lg:h-14 px-6 rounded-md bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 flex items-center justify-between gap-4 transition-all duration-500 active:scale-95 group relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-white/10 to-blue-400/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  <div className="bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors relative z-10"><Plus className="h-5 w-5 lg:h-6 lg:w-6" /></div>
-                  <div className="text-left relative z-10">
-                    <span className="block text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Initialize Protocol</span>
-                    <span className="block font-black text-base lg:text-lg">New Case Submission</span>
+                  <div className="bg-white/20 p-1.5 rounded-md group-hover:bg-white/30 transition-colors relative z-10 shrink-0"><Plus className="h-4 w-4 lg:h-5 lg:w-5" /></div>
+                  <div className="text-center relative z-10 flex-1">
+                    <span className="block text-[8px] lg:text-[9px] font-black uppercase tracking-[0.2em] opacity-100">Action Centre</span>
+                    <span className="block font-black text-sm lg:text-base">New Case Submission</span>
                   </div>
-                  <ArrowRight className="h-5 w-5 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 hidden lg:block" />
+                  <div className="w-8 shrink-0 hidden lg:block" /> {/* Dummy to push text to center */}
                 </Button>
               </Link>
             </div>
@@ -248,19 +250,19 @@ export default function DoctorDashboard() {
         </div>
 
         {/* High-Fidelity Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
           {stats.map((item, idx) => (
             <motion.div
               key={item.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group border-t-4 ${getCaseBorderClass(item.name)}`}
+              className={`bg-white p-5 rounded-lg border border-slate-100 shadow-sm hover:shadow-xl transition-all group border-t-4 ${getCaseBorderClass(item.name)}`}
             >
               <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform shadow-inner`}><item.icon className={`h-6 w-6 ${item.color}`} /></div>
+                <div className={`h-12 w-12 rounded-lg flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform shadow-inner`}><item.icon className={`h-6 w-6 ${item.color}`} /></div>
                 <div className="flex flex-col min-0">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.name}</p>
+                  <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">{item.name}</p>
                   <h3 className="text-xl font-black text-slate-900 tracking-tighter">{item.value}</h3>
                 </div>
               </div>
@@ -270,24 +272,24 @@ export default function DoctorDashboard() {
 
         {/* Global Stream Portal Header - Mobile Fixed Row */}
         <div className="pt-6">
-          <div className="flex items-center justify-between mb-8 px-2">
+          <div className="flex items-center justify-between mb-8 w-full">
             <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
-              <div className="h-9 w-9 sm:h-10 sm:w-10 bg-slate-900 rounded-xl flex items-center justify-center shadow-lg shrink-0"><Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white" /></div>
-              <h2 className="text-sm sm:text-xl font-black text-slate-900 tracking-tight truncate whitespace-nowrap">Global Clinical Stream</h2>
+              <div className="h-9 w-9 sm:h-10 sm:w-10 bg-slate-900 rounded-lg flex items-center justify-center shadow-lg shrink-0"><Activity className="h-4 w-4 sm:h-5 sm:w-5 text-white" /></div>
+              <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate whitespace-nowrap">Recent Case Activity</h2>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 ml-3 sm:ml-4 flex-shrink-0">
+             <div className="flex items-center gap-2 sm:gap-4 ml-3 sm:ml-4 flex-shrink-0">
               <Link href="/doctor/cases">
-                <button className="text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors whitespace-nowrap">Open Archive</button>
+                <button className="text-[8px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-all bg-white/40 backdrop-blur-md border border-white px-3 py-1.5 rounded-[4px] hover:bg-white/60 shadow-sm whitespace-nowrap">Open Archive</button>
               </Link>
               <Link href="/doctor/submit-case">
-                <button className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-100 transition-all border border-blue-100/50">
+                <button className="h-7 w-7 sm:h-8 sm:w-8 rounded-[4px] bg-white/40 backdrop-blur-md flex items-center justify-center text-blue-600 hover:bg-white/60 transition-all border border-white shadow-sm">
                   <Plus size={14} />
                 </button>
               </Link>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
+          <div className="bg-white rounded-lg border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden w-full">
             {/* Mobile View - Professional Card Stack */}
             <div className="block sm:hidden divide-y divide-slate-100">
               {loading ? (
@@ -309,14 +311,14 @@ export default function DoctorDashboard() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <p className="text-[14px] font-black text-slate-900 leading-tight uppercase tracking-tight">{c.patientName}</p>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">REF: {(c.id || '').slice(0, 6).toUpperCase()}</p>
+                        <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">REF: {(c.id || '').slice(0, 6).toUpperCase()}</p>
                       </div>
                       <span className={`inline-flex px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                         c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
                         }`}>{c.status}</span>
                     </div>
                     <div className="flex justify-between items-end">
-                      <div className="text-[9px] font-bold text-slate-400 border-l-2 border-blue-500 pl-2 leading-none">
+                      <div className="text-[9px] font-bold text-slate-600 border-l-2 border-blue-500 pl-2 leading-none">
                         {c.date}
                       </div>
                       <div className="text-right">
@@ -334,16 +336,16 @@ export default function DoctorDashboard() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-8 py-3 text-left text-[9px] font-black text-slate-400 uppercase tracking-widest">Patient Identity</th>
-                    <th className="px-8 py-3 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Node Status</th>
-                    <th className="px-8 py-3 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Clinical Yield</th>
+                    <th className="px-8 py-3 text-left text-[9px] font-black text-slate-600 uppercase tracking-widest">Patient Name</th>
+                    <th className="px-8 py-3 text-center text-[9px] font-black text-slate-600 uppercase tracking-widest whitespace-nowrap">Case Status</th>
+                    <th className="px-8 py-3 text-right text-[9px] font-black text-slate-600 uppercase tracking-widest whitespace-nowrap">Points Earned</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {loading ? (
                     [...Array(3)].map((_, i) => <tr key={i} className="animate-pulse"><td colSpan={3} className="px-8 py-10 bg-slate-50/30"></td></tr>)
                   ) : filteredCases.length === 0 ? (
-                    <tr><td colSpan={3} className="px-8 py-24 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">No Clinical Records Synchronized</td></tr>
+                    <tr><td colSpan={3} className="px-8 py-24 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">No Cases Found</td></tr>
                   ) : (
                     paginatedCases.map((c) => (
                       <tr
@@ -353,7 +355,7 @@ export default function DoctorDashboard() {
                       >
                         <td className="px-8 py-3.5">
                           <div className="font-black text-slate-900 text-[15px] tracking-tight capitalize group-hover:text-blue-600 transition-colors uppercase">{c.patientName}</div>
-                          <div className="text-[8.5px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2 mt-1">
+                          <div className="text-[8.5px] text-slate-600 font-black uppercase tracking-widest flex items-center gap-2 mt-1">
                             <span className="flex items-center gap-1"><Hash size={10} className="text-blue-500" /> REF: {(c.id || '').slice(0, 6).toUpperCase()}</span>
                             <span className="opacity-20">|</span>
                             <span className="flex items-center gap-1"><Phone size={10} className="text-indigo-400" /> {(c.patientMobile || '').slice(0, 3)}****{(c.patientMobile || '').slice(-3)}</span>
@@ -362,7 +364,7 @@ export default function DoctorDashboard() {
                           </div>
                         </td>
                         <td className="px-8 py-3.5 text-center">
-                          <span className={`inline-flex items-center gap-2 rounded-lg px-3 py-1 text-[8.5px] font-black uppercase tracking-widest border ${c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                          <span className={`inline-flex items-center gap-2 rounded-md px-3 py-1 text-[8.5px] font-black uppercase tracking-widest border ${c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
                             c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-red-50 text-red-600 border-red-200'
                             }`}>{c.status}</span>
                         </td>
@@ -379,7 +381,7 @@ export default function DoctorDashboard() {
 
             {totalPages > 1 && (
               <div className="px-8 py-5 border-t border-slate-50 bg-slate-50/30 flex items-center justify-between">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
                   Showing {paginatedCases.length} of {filteredCases.length} Records
                 </p>
                 <div className="flex items-center gap-2">
@@ -388,7 +390,7 @@ export default function DoctorDashboard() {
                     size="sm"
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    className="h-8 w-8 p-0 rounded-lg border-slate-200 text-slate-400 disabled:opacity-30"
+                    className="h-8 w-8 p-0 rounded-md border-slate-200 text-slate-600 disabled:opacity-30"
                   >
                     <ChevronLeft size={14} />
                   </Button>
@@ -396,9 +398,9 @@ export default function DoctorDashboard() {
                     <button
                       key={i}
                       onClick={() => setCurrentPage(i + 1)}
-                      className={`h-8 w-8 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1
+                      className={`h-8 w-8 rounded-md text-[10px] font-black transition-all ${currentPage === i + 1
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                        : 'bg-white border border-slate-100 text-slate-400 hover:border-blue-200 hover:text-blue-600 shadow-sm'
+                        : 'bg-white border border-slate-100 text-slate-600 hover:border-blue-200 hover:text-blue-600 shadow-sm'
                         }`}
                     >
                       {i + 1}
@@ -409,7 +411,7 @@ export default function DoctorDashboard() {
                     size="sm"
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    className="h-8 w-8 p-0 rounded-lg border-slate-200 text-slate-400 disabled:opacity-30"
+                    className="h-8 w-8 p-0 rounded-md border-slate-200 text-slate-600 disabled:opacity-30"
                   >
                     <ChevronRight size={14} />
                   </Button>
@@ -440,7 +442,7 @@ export default function DoctorDashboard() {
               className="fixed inset-0 flex items-center justify-center z-[210] p-4 sm:p-6 pointer-events-none"
             >
               <div
-                className="pointer-events-auto w-full max-w-[500px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-100"
+                className="pointer-events-auto w-full max-w-[500px] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-100"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header - Condensed Height */}
@@ -448,19 +450,19 @@ export default function DoctorDashboard() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                   <div className="flex items-center justify-between relative z-10">
                     <div>
-                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-white/80 mb-0.5 opacity-90">Clinical Case Record</p>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-white/80 mb-0.5 opacity-90">Case Details</p>
                       <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none uppercase">{selectedCase.patientName}</h2>
                     </div>
                     <button
                       onClick={() => setSelectedCase(null)}
-                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all active:scale-90"
+                      className="h-8 w-8 sm:h-10 sm:w-10 rounded-md sm:rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all active:scale-90"
                     >
                       <X className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </button>
                   </div>
 
                   <div className="mt-2.5 sm:mt-3 flex items-center gap-3 relative z-10">
-                    <span className="inline-flex items-center gap-2 bg-white/25 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-white/10">
+                    <span className="inline-flex items-center gap-2 bg-white/25 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md border border-white/10">
                       {selectedCase.status === 'Approved' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                       {selectedCase.status}
                     </span>
@@ -471,12 +473,12 @@ export default function DoctorDashboard() {
                 {/* Modal Body - Scrollable (Hidden Bar) */}
                 <div className="flex-1 overflow-y-auto scrollbar-hide px-5 sm:px-8 py-3 sm:py-4 space-y-2 sm:space-y-3">
                   <div className="flex gap-2 sm:gap-4">
-                    <div className="flex-1 bg-blue-50/50 rounded-xl px-4 sm:px-5 py-2 sm:py-3 border border-blue-100 flex items-center justify-between group hover:bg-blue-50 transition-colors">
+                    <div className="flex-1 bg-blue-50/50 rounded-lg px-4 sm:px-5 py-2 sm:py-3 border border-blue-100 flex items-center justify-between group hover:bg-blue-50 transition-colors">
                       <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-blue-500">B-Points</p>
                       <p className="text-base sm:text-2xl font-black text-blue-700 tracking-tighter">+{selectedCase.points || 0} <span className="text-[7px] sm:text-[10px] font-black text-blue-400">PTS</span></p>
                     </div>
-                    <div className="flex-1 bg-emerald-50/50 rounded-xl px-4 sm:px-5 py-2 sm:py-3 border border-emerald-100 flex items-center justify-between group hover:bg-emerald-50 transition-colors">
-                      <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-600">Yield</p>
+                    <div className="flex-1 bg-emerald-50/50 rounded-lg px-4 sm:px-5 py-2 sm:py-3 border border-emerald-100 flex items-center justify-between group hover:bg-emerald-50 transition-colors">
+                      <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-600">Points Value</p>
                       <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter">₹{((selectedCase.points || 0) * 50).toLocaleString()}</p>
                     </div>
                   </div>
@@ -488,14 +490,14 @@ export default function DoctorDashboard() {
                       { icon: Stethoscope, label: 'Treatment',  value: selectedCase.treatment || '—', color: 'text-sky-500', bg: 'bg-sky-50' },
                       { icon: Monitor,     label: 'Tooth No.',  value: selectedCase.toothNumber || '—', color: 'text-amber-500', bg: 'bg-amber-50' },
                       { icon: Calendar,    label: 'Submitted',  value: selectedCase.date || '—', color: 'text-indigo-500', bg: 'bg-indigo-50' },
-                      { icon: Hash,        label: 'Case ID',    value: selectedCase.id ? selectedCase.id.slice(0, 8).toUpperCase() : '—', color: 'text-slate-500', bg: 'bg-slate-50' },
+                      { icon: Hash,        label: 'Case ID',    value: selectedCase.id ? selectedCase.id.slice(0, 8).toUpperCase() : '—', color: 'text-slate-700', bg: 'bg-slate-50' },
                     ].map((item) => (
                       <div key={item.label} className="flex items-center gap-3 sm:gap-4 py-1 sm:py-2 group">
-                        <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-lg ${item.bg} flex items-center justify-center shrink-0 border border-black/5 group-hover:scale-110 transition-transform shadow-sm`}>
+                        <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-md ${item.bg} flex items-center justify-center shrink-0 border border-black/5 group-hover:scale-110 transition-transform shadow-sm`}>
                           <item.icon size={16} className={`${item.color}`} />
                         </div>
                         <div className="flex flex-col">
-                           <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-[0.15em] text-slate-400 mb-0.5">{item.label}</span>
+                           <span className="text-[7px] sm:text-[9px] font-black uppercase tracking-[0.15em] text-slate-600 mb-0.5">{item.label}</span>
                            <span className="font-extrabold text-slate-900 text-[10px] sm:text-sm tracking-tight">{item.value}</span>
                         </div>
                       </div>
@@ -504,24 +506,24 @@ export default function DoctorDashboard() {
 
                   {selectedCase.evidenceUrl && (
                     <div className="pt-0.5 sm:pt-1">
-                       <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Evidence Proof</p>
-                      <div className="relative group bg-slate-50 rounded-xl border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
+                       <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Evidence Proof</p>
+                      <div className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
                          {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? (
                            <div className="w-full flex items-center justify-between gap-4">
                              <div className="flex items-center gap-3">
-                               <div className="h-10 w-10 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 border border-rose-100">
+                               <div className="h-10 w-10 bg-rose-50 rounded-md flex items-center justify-center text-rose-600 border border-rose-100">
                                  <FileText size={20} />
                                </div>
                                <div>
-                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none">Clinical PDF Node</p>
-                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Medical Audit Evidence</p>
+                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none">Treatment Proof</p>
+                                 <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Medical Document Attached</p>
                                </div>
                              </div>
                              <a 
                                href={selectedCase.evidenceUrl} 
                                target="_blank" 
                                rel="noopener noreferrer"
-                               className="h-9 px-4 bg-slate-900 hover:bg-black text-white rounded-lg flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95"
+                               className="h-9 px-4 bg-slate-900 hover:bg-black text-white rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95"
                              >
                                Open PDF
                              </a>
@@ -542,9 +544,9 @@ export default function DoctorDashboard() {
                 <div className="p-5 sm:p-8 pt-0 pb-6 sm:pb-8 shrink-0">
                   <button
                     onClick={() => setSelectedCase(null)}
-                    className="w-full h-11 sm:h-14 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-slate-200"
+                    className="w-full h-11 sm:h-14 rounded-lg bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-slate-200"
                   >
-                    Close Record
+                    Go Back
                   </button>
                 </div>
               </div>

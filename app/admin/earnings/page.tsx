@@ -162,15 +162,15 @@ function PayoutManagementContent() {
 
   return (
     <DashboardLayout isAdminRoute={true}>
-      <div className="space-y-10 pb-12">
+      <div className="space-y-10 pb-0">
         {/* Elite Cloud Financial Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 shadow-sm">
-               <Activity className="h-3 w-3" /> Real-time Liquidity Stream
+               <Activity className="h-3 w-3" /> Live Payout Updates
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-none uppercase">Financial Archive & Payouts</h1>
-            <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-60">Global Clinical Reward Dispersal Hub</p>
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight leading-none uppercase">Earnings & Payouts</h1>
+            <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-60">Manage doctor earnings and payments</p>
           </div>
           
           <div className="flex h-11 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 p-1 min-w-[320px]">
@@ -191,7 +191,7 @@ function PayoutManagementContent() {
         {/* Global Financial Telemetry */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-2xl">
-            <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">Pending Requests</p>
+            <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">Pending Payouts</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-slate-900 tracking-tighter">₹{pendingAmount.toLocaleString()}</h4>
                <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:rotate-12 transition-transform">
@@ -201,7 +201,7 @@ function PayoutManagementContent() {
           </Card>
 
           <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-2xl">
-            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Dispersed Rewards</p>
+            <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Total Paid</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-slate-900 tracking-tighter">₹{distributedAmount.toLocaleString()}</h4>
                <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:rotate-12 transition-transform">
@@ -211,7 +211,7 @@ function PayoutManagementContent() {
           </Card>
 
           <Card className="p-7 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-2xl text-white">
-            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Liquidity Health</p>
+            <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">System Status</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Optimal</h4>
                <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-all">
@@ -225,9 +225,9 @@ function PayoutManagementContent() {
         <div className="space-y-6">
            <div className="flex items-center justify-between px-2">
              <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-               <FileText className="h-4 w-4 text-blue-600" /> Active Settlement Ledger
+               <FileText className="h-4 w-4 text-blue-600" /> Recent Payout History
              </h2>
-             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{filtered.length} Entries Identified</span>
+             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{filtered.length} Found</span>
            </div>
 
            <div className="grid grid-cols-1 gap-6">
@@ -307,7 +307,7 @@ function PayoutManagementContent() {
                            <div className="flex-1 flex justify-end w-full sm:w-auto">
                               {req.status === 'Paid' ? (
                                 <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-inner border border-slate-800">
-                                  <BadgeCheck size={14} className="text-blue-400" /> Settled Audit
+                                  <BadgeCheck size={14} className="text-blue-400" /> Paid
                                 </div>
                               ) : (
                                 <Button 
@@ -319,7 +319,7 @@ function PayoutManagementContent() {
                                   }}
                                   className="w-full sm:w-auto rounded-xl px-8 sm:px-10 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                 >
-                                  Authorize Settlement <ArrowRight size={14} />
+                                  Pay Doctor <ArrowRight size={14} />
                                 </Button>
                               )}
                            </div>

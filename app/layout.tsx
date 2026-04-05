@@ -19,8 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.className} h-full bg-slate-50`} suppressHydrationWarning>
-      <body className="h-full antialiased text-slate-900 selection:bg-blue-100" suppressHydrationWarning>
+    <html lang="en" className={`${inter.className} bg-slate-50`} suppressHydrationWarning>
+      <body className="antialiased text-slate-900 selection:bg-blue-100" suppressHydrationWarning>
         <AuthProvider>
           <Toaster position="top-center" reverseOrder={false} />
           <Suspense fallback={null}>
