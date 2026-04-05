@@ -57,9 +57,9 @@ function CaseReviewContent() {
   }, [filterStatus]);
 
   const loadData = async () => {
-    setDataLoading(true);
+    if (cases.length === 0) setDataLoading(true);
     const data = await fetchAdminCases(filterStatus);
-    setCases(data);
+    setCases(data || []);
     setDataLoading(false);
   };
 
