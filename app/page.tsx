@@ -100,7 +100,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl font-bold tracking-tight text-slate-900 sm:text-7xl"
+                className="text-2xl font-bold text-slate-900 sm:text-4xl tracking-tighter"
               >
                 The Premium <span className="text-blue-600 whitespace-nowrap">B-Points</span> <br className="sm:hidden" /> Rewards Portal
               </motion.h1>

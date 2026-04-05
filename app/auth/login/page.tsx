@@ -308,7 +308,7 @@ export default function LoginPage() {
                  <div className="h-14 w-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center border border-white/20 mb-8 shadow-2xl">
                    <Lock className="h-7 w-7 text-blue-400" />
                  </div>
-                 <h2 className="text-3xl font-black tracking-tight leading-tight mb-6">Blueteeth B-Points Portal.</h2>
+                 <h2 className="text-xl sm:text-2xl font-black tracking-tight leading-tight mb-6">Blueteeth B-Points Portal.</h2>
                  <p className="text-blue-100 font-medium text-sm leading-relaxed opacity-90">
                    Manage your clinical cases and track your dental rewards securely via Blueteeth Cloud.
                  </p>
