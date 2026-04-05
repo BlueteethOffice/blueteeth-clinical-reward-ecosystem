@@ -285,7 +285,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content area */}
-      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 h-full overflow-y-auto bg-slate-50 overscroll-contain pb-10 sm:pb-0">
+      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 h-full overflow-y-auto bg-slate-50 overscroll-contain pb-10 sm:pb-0 no-scrollbar">
         <header className="relative z-[100] px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-xl px-4 sm:px-6 py-2 shadow-sm">
             <div className="flex items-center lg:hidden">

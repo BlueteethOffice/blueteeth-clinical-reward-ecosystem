@@ -260,7 +260,7 @@ export default function CaseHistory() {
           </div>
 
           {/* Desktop Audit Table */}
-          <div className="hidden lg:block overflow-visible">
+          <div className="hidden lg:block overflow-visible no-scrollbar">
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 border-b border-slate-100">

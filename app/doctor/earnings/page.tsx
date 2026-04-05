@@ -363,7 +363,7 @@ export default function EarningsPage() {
           </div>
 
           {/* Desktop View - Full Professional Table */}
-          <div className="hidden lg:block overflow-visible">
+          <div className="hidden lg:block overflow-visible no-scrollbar">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50/50 text-slate-400 border-b border-slate-100">
