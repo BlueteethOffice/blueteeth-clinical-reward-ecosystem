@@ -57,6 +57,18 @@ export default function DoctorDashboard() {
     setIsMounted(true);
   }, []);
 
+  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  React.useEffect(() => {
+    if (selectedCase) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedCase]);
+
   // 1. REAL-TIME DATA SUBSCRIPTION
   React.useEffect(() => {
     if (!user?.uid || !db) {
@@ -508,7 +520,9 @@ export default function DoctorDashboard() {
                     <div className="pt-0.5 sm:pt-1">
                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Evidence Proof</p>
                       <div className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
-                         {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? (
+                         {(String(selectedCase.evidenceUrl).toLowerCase().includes('.pdf') || 
+                           String(selectedCase.evidenceUrl).includes('application/pdf') || 
+                           String(selectedCase.evidenceUrl).includes('alt=media')) ? (
                            <div className="w-full flex items-center justify-between gap-4">
                              <div className="flex items-center gap-3">
                                <div className="h-10 w-10 bg-rose-50 rounded-md flex items-center justify-center text-rose-600 border border-rose-100">
