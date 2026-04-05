@@ -299,7 +299,7 @@ export default function EarningsPage() {
         </div>
 
         {/* Ledger Section - Scroll Liquidated */}
-        <Card className="border-none rounded-2xl shadow-2xl shadow-slate-200/40 overflow-hidden bg-white min-h-[500px]">
+        <Card className="border-none rounded-2xl shadow-2xl shadow-slate-200/40 bg-white">
           <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
              <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-lg">
@@ -363,7 +363,7 @@ export default function EarningsPage() {
           </div>
 
           {/* Desktop View - Full Professional Table */}
-          <div className="hidden lg:block overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="hidden lg:block overflow-visible">
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50/50 text-slate-400 border-b border-slate-100">
@@ -516,7 +516,7 @@ export default function EarningsPage() {
                  </div>
                  
                  {/* Modal Body - Premium Colorful List */}
-                  <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 bg-slate-50/30">
+                  <div className="p-6 space-y-6 bg-slate-50/30">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 shadow-sm">
                         <p className="text-[10px] font-black text-blue-600 uppercase mb-1">B-Points</p>
