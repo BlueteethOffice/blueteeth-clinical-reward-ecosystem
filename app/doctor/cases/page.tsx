@@ -74,15 +74,18 @@ export default function CaseHistory() {
     setCurrentPage(1);
   }, [searchQuery, filter]);
 
-  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
   useEffect(() => {
     if (selectedCase) {
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     };
   }, [selectedCase]);
 

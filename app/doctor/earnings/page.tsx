@@ -93,15 +93,19 @@ export default function EarningsPage() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
 
-  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
   useEffect(() => {
-    if (selectedCase || showThresholdWarning || showRedeemModal) {
+    const isLocked = !!(selectedCase || showThresholdWarning || showRedeemModal);
+    if (isLocked) {
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     };
   }, [selectedCase, showThresholdWarning, showRedeemModal]);
 
@@ -498,7 +502,7 @@ export default function EarningsPage() {
         {/* Sync Status Overlay (Glassmorphism Modal) */}
         <AnimatePresence>
           {selectedCase && (
-            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 overscroll-contain">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedCase(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
               <motion.div 
                 initial={{ opacity: 0, scale: 0.98, y: 10 }} 

@@ -57,15 +57,18 @@ export default function DoctorDashboard() {
     setIsMounted(true);
   }, []);
 
-  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
   React.useEffect(() => {
     if (selectedCase) {
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
     };
   }, [selectedCase]);
 
