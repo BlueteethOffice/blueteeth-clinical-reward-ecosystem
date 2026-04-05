@@ -496,7 +496,7 @@ export default function CaseHistory() {
                             className="flex items-center gap-4 p-3 sm:p-3 w-full bg-slate-50 text-slate-900 rounded-lg border border-slate-200 hover:bg-slate-900 hover:text-white transition-all group active:scale-95"
                           >
                              <div className="h-8 w-8 bg-slate-900 rounded-md flex items-center justify-center text-white group-hover:bg-white group-hover:text-slate-900 transition-colors">
-                               {selectedCase.evidenceUrl.includes('application/pdf') ? <FileText size={16} /> : <FileImage size={16} />}
+                               {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? <FileText size={16} /> : <FileImage size={16} />}
                              </div>
                              <span className="font-black text-[9px] sm:text-[10px] uppercase tracking-widest">View Archive</span>
                           </button>

@@ -4,7 +4,7 @@ import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Coins, Plus, Clock, CheckCircle2, XCircle, TrendingUp, Activity, ShieldAlert, ShieldCheck, Wifi, WifiOff, ChevronLeft, ChevronRight, X, User, Phone, Stethoscope, Calendar, Hash, BadgeCheck, AlertCircle, Banknote, ArrowRight, Monitor } from 'lucide-react';
+import { Coins, Plus, Clock, CheckCircle2, XCircle, TrendingUp, Activity, ShieldAlert, ShieldCheck, Wifi, WifiOff, ChevronLeft, ChevronRight, X, User, Phone, Stethoscope, Calendar, Hash, BadgeCheck, AlertCircle, Banknote, ArrowRight, Monitor, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -505,12 +505,34 @@ export default function DoctorDashboard() {
                   {selectedCase.evidenceUrl && (
                     <div className="pt-0.5 sm:pt-1">
                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 ml-1">Evidence Proof</p>
-                      <div className="relative group bg-slate-50 rounded-xl border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center">
-                         <img
-                           src={selectedCase.evidenceUrl}
-                           alt="Clinical evidence"
-                           className="w-full h-auto max-h-24 sm:max-h-32 object-contain hover:scale-105 transition-all duration-500"
-                         />
+                      <div className="relative group bg-slate-50 rounded-xl border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
+                         {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? (
+                           <div className="w-full flex items-center justify-between gap-4">
+                             <div className="flex items-center gap-3">
+                               <div className="h-10 w-10 bg-rose-50 rounded-lg flex items-center justify-center text-rose-600 border border-rose-100">
+                                 <FileText size={20} />
+                               </div>
+                               <div>
+                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none">Clinical PDF Node</p>
+                                 <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1">Medical Audit Evidence</p>
+                               </div>
+                             </div>
+                             <a 
+                               href={selectedCase.evidenceUrl} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="h-9 px-4 bg-slate-900 hover:bg-black text-white rounded-lg flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95"
+                             >
+                               Open PDF
+                             </a>
+                           </div>
+                         ) : (
+                           <img
+                             src={selectedCase.evidenceUrl}
+                             alt="Clinical evidence"
+                             className="w-full h-auto max-h-24 sm:max-h-32 object-contain hover:scale-105 transition-all duration-500"
+                           />
+                         )}
                       </div>
                     </div>
                   )}

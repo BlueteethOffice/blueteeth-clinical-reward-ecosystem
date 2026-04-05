@@ -555,15 +555,31 @@ export default function EarningsPage() {
                     <div className="pt-2">
                        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Evidence Proof</p>
                        {selectedCase.evidenceUrl ? (
-                         <div className="aspect-video bg-white rounded-lg overflow-hidden border border-slate-200 relative group shadow-sm">
-                            <img 
-                              src={selectedCase.evidenceUrl} 
-                              alt="Evidence" 
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                               <Button onClick={() => handleViewAttachment(selectedCase.evidenceUrl)} className="bg-white text-slate-900 rounded-lg px-4 py-2 font-black text-[10px] uppercase tracking-widest shadow-xl">Expand Image</Button>
-                            </div>
+                         <div className="aspect-video bg-white rounded-lg overflow-hidden border border-slate-200 relative group shadow-sm flex items-center justify-center">
+                            {selectedCase.evidenceUrl.toLowerCase().includes('.pdf') ? (
+                              <div className="flex flex-col items-center justify-center p-6 space-y-3">
+                                <div className="h-12 w-12 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 border border-rose-100 font-bold">
+                                  <FileText size={24} />
+                                </div>
+                                <Button 
+                                  onClick={() => handleViewAttachment(selectedCase.evidenceUrl)}
+                                  className="bg-slate-900 text-white rounded-lg px-6 py-2 font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                                >
+                                  Open PDF
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <img 
+                                  src={selectedCase.evidenceUrl} 
+                                  alt="Evidence" 
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                   <Button onClick={() => handleViewAttachment(selectedCase.evidenceUrl)} className="bg-white text-slate-900 rounded-lg px-4 py-2 font-black text-[10px] uppercase tracking-widest shadow-xl">Expand Image</Button>
+                                </div>
+                              </>
+                            )}
                          </div>
                        ) : (
                          <div className="bg-slate-50 p-6 rounded-lg border border-dashed border-slate-200 text-center text-slate-400 italic text-[10px] font-bold uppercase tracking-tighter">No Visual Proof Synced</div>

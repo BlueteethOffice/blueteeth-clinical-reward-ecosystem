@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   CheckCircle, XCircle, Eye, User, Phone, MapPin, 
   Calendar, ClipboardList, Coins, Search, Filter, ExternalLink,
-  FileCheck, Image as ImageIcon, ShieldCheck
+  FileCheck, Image as ImageIcon, ShieldCheck, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -426,11 +426,29 @@ function CaseReviewContent() {
                 </div>
                 
                 <div className="flex-1 bg-slate-50/30 overflow-auto flex items-center justify-center p-4">
-                   <img 
-                      src={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]} 
-                      alt="Full Resolution Evidence"
-                      className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm border border-slate-100"
-                   />
+                   {((selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]) || '').toLowerCase().includes('.pdf') ? (
+                      <div className="w-full max-w-md bg-white p-8 rounded-2xl border border-slate-200 shadow-xl flex flex-col items-center text-center space-y-6">
+                         <div className="h-20 w-20 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 border border-rose-100 shadow-inner">
+                            <FileText size={40} />
+                         </div>
+                         <div>
+                            <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Clinical PDF Document</h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Medical Compliance Ledger Evidence</p>
+                         </div>
+                         <Button 
+                            onClick={() => window.open(selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0], '_blank')}
+                            className="w-full h-14 bg-slate-900 hover:bg-black text-white rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-slate-200 transition-all active:scale-95"
+                         >
+                            Open Full Resolution PDF
+                         </Button>
+                      </div>
+                   ) : (
+                      <img 
+                         src={selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]} 
+                         alt="Full Resolution Evidence"
+                         className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-sm border border-slate-100"
+                      />
+                   )}
                 </div>
                 
                 <div className="p-4 bg-white border-t border-slate-50 grid grid-cols-1 sm:grid-cols-2 gap-4">
