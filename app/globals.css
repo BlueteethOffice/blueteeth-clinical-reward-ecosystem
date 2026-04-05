@@ -49,6 +49,15 @@ body {
   mask-image: radial-gradient(circle at center, black, transparent 80%);
 }
 
+/* Global Scrollbar Suppression */
+*::-webkit-scrollbar {
+  display: none !important;
+}
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
 /* Hide native eye/clear icons in Edge, Chrome, IE */
 input::-ms-reveal,
 input::-ms-clear,
@@ -57,15 +66,17 @@ input::-webkit-password-toggle,
 input::-webkit-credentials-auto-fill-button {
   display: none !important;
 }
-.glass-morphism { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
-.glass-morphism-dark { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
-.premium-shadow { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.05); }
 
-/* Global Scrollbar Suppression Utility */
-.no-scrollbar::-webkit-scrollbar {
-  display: none !important;
+.glass-morphism { 
+  background: rgba(255, 255, 255, 0.7); 
+  backdrop-filter: blur(12px); 
+  border: 1px solid rgba(255, 255, 255, 0.3); 
 }
-.no-scrollbar {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+.glass-morphism-dark { 
+  background: rgba(15, 23, 42, 0.85); 
+  backdrop-filter: blur(16px); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+}
+.premium-shadow { 
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.05); 
 }
