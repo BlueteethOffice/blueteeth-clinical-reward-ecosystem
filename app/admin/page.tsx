@@ -50,18 +50,17 @@ export default function AdminDashboard() {
       <div className="space-y-12 pb-12 relative">
         {/* Elite Ambient Glow */}
         <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-blue-50/50 to-transparent -z-10 pointer-events-none" />
-        
-        {/* Elite Admin Header - Compact & Professional Refined */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pt-0">
+               {/* Elite Admin Header - Compact & Professional Refined */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pt-0 px-2 sm:px-0">
           <div className="space-y-4 max-w-xl">
-             <motion.div 
-               initial={{ opacity: 0, y: -10 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-900 text-[9px] font-black uppercase tracking-[0.2em] text-blue-400 shadow-xl shadow-blue-900/10 ring-1 ring-white/10"
-             >
-               <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-               System Administrator Mode
-             </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-900 text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-blue-400 shadow-xl shadow-blue-900/10 ring-1 ring-white/10"
+              >
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                System Administrator Mode
+              </motion.div>
              
              <div className="space-y-3">
                <h1 className="text-3xl sm:text-4xl font-black text-blue-900 tracking-tight leading-[1] flex flex-col">
@@ -69,37 +68,37 @@ export default function AdminDashboard() {
                  <span className="text-blue-600">Intelligence.</span>
                </h1>
                <div className="h-1 w-12 bg-blue-600 rounded-full" />
-               <p className="text-slate-500 font-medium text-sm leading-relaxed max-w-lg opacity-80">
+               <p className="text-slate-500 font-medium text-xs sm:text-sm leading-relaxed max-w-lg opacity-80">
                   Securely managing clinical reward distributions and global practitioner authentication protocols with high-performance cloud sync.
                </p>
              </div>
           </div>
           
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
              <motion.div 
                whileHover={{ scale: 1.02 }}
-               className="h-20 w-28 bg-white rounded-xl shadow-lg shadow-slate-200/40 border border-slate-100 flex flex-col items-center justify-center gap-1 relative overflow-hidden group"
+               className="h-16 sm:h-20 w-full sm:w-28 bg-white rounded-xl shadow-lg shadow-slate-200/40 border border-slate-100 flex flex-col items-center justify-center gap-0.5 sm:gap-1 relative overflow-hidden group"
              >
                 <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Uptime</span>
-                <span className="text-xl font-black text-blue-900 tracking-tight">99.9%</span>
+                <span className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest">Uptime</span>
+                <span className="text-lg sm:text-xl font-black text-blue-900 tracking-tight">99.9%</span>
                 <div className="flex items-center gap-1 mt-0.5">
                    <div className="h-1 w-1 rounded-full bg-blue-500" />
-                   <span className="text-[8px] font-bold text-blue-600 uppercase">Stable</span>
+                   <span className="text-[7px] sm:text-[8px] font-bold text-blue-600 uppercase">Stable</span>
                 </div>
              </motion.div>
 
              <motion.div 
                whileHover={{ scale: 1.02 }}
-               className="h-20 px-6 bg-slate-900 rounded-xl shadow-xl shadow-slate-900/20 flex items-center gap-4 text-white border border-white/5 relative overflow-hidden group"
+               className="h-16 sm:h-20 px-4 sm:px-6 bg-slate-900 rounded-xl shadow-xl shadow-slate-900/20 flex items-center gap-3 sm:gap-4 text-white border border-white/5 relative overflow-hidden group"
              >
                 <div className="absolute top-0 left-0 w-full h-1 bg-blue-500" />
-                <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/10 group-hover:bg-blue-600 transition-colors duration-500">
-                  <Activity className="h-5 w-5 text-blue-400 group-hover:text-white" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-white/10 rounded-lg flex items-center justify-center backdrop-blur-md border border-white/10 group-hover:bg-blue-600 transition-colors duration-500">
+                  <Activity className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400 group-hover:text-white" />
                 </div>
                 <div>
-                   <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-0.5">Global Load</p>
-                   <p className="text-lg font-black tracking-tight">Optimized</p>
+                   <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 mb-0.5">Global Load</p>
+                   <p className="text-sm sm:text-lg font-black tracking-tight">Optimized</p>
                 </div>
              </motion.div>
           </div>
@@ -193,19 +192,19 @@ export default function AdminDashboard() {
                     <motion.div 
                       key={i}
                       whileHover={{ x: 5 }}
-                      className="flex items-center p-6 bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/20 gap-6 group cursor-pointer transition-all"
+                      className="flex flex-col sm:flex-row sm:items-center p-4 sm:p-6 bg-white rounded-xl border border-slate-100 shadow-xl shadow-slate-200/20 gap-4 sm:gap-6 group cursor-pointer transition-all"
                     >
-                      <div className={`h-14 w-14 rounded-xl flex items-center justify-center ${notif.bg} border border-slate-100 group-hover:scale-105 transition-transform`}>
-                        <notif.icon className={`h-7 w-7 ${notif.color}`} />
+                      <div className={`h-12 w-12 sm:h-14 sm:w-14 rounded-xl flex items-center justify-center shrink-0 ${notif.bg} border border-slate-100 group-hover:scale-105 transition-transform`}>
+                        <notif.icon className={`h-6 w-6 sm:h-7 sm:w-7 ${notif.color}`} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                           <p className="text-lg font-black text-slate-900 tracking-tight">{notif.title}</p>
+                           <p className="text-base sm:text-lg font-black text-slate-900 tracking-tight">{notif.title}</p>
                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-100 text-slate-500">Live</span>
                         </div>
-                        <p className="text-sm font-medium text-slate-400 mt-1 leading-relaxed">{notif.msg}</p>
+                        <p className="text-xs sm:text-sm font-medium text-slate-400 mt-1 leading-relaxed">{notif.msg}</p>
                       </div>
-                      <Button size="sm" variant="ghost" className="h-11 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">{notif.action}</Button>
+                      <Button size="sm" variant="ghost" className="w-full sm:w-auto h-10 sm:h-11 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-50/50 sm:border-transparent">{notif.action}</Button>
                     </motion.div>
                   ))}
                </div>

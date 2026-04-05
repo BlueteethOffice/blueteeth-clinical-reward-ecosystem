@@ -57,13 +57,17 @@ export default function DoctorDashboard() {
     setIsMounted(true);
   }, []);
 
-  // 1. CONNECTION DIAGNOSTICS & LIVE DATA SYNC
-  const refreshDashboard = React.useCallback(async () => {
-    if (!user?.uid || !db) return;
-    try {
-      const q = query(collection(db, 'cases'), where('doctorUid', '==', user.uid));
-      const querySnapshot = await getDocs(q);
+  // 1. REAL-TIME DATA SUBSCRIPTION
+  React.useEffect(() => {
+    if (!user?.uid || !db) {
+      if (!db) setConnectionStatus('Disconnected');
+      return;
+    }
 
+    setLoading(true);
+    const q = query(collection(db, 'cases'), where('doctorUid', '==', user.uid));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       setConnectionStatus('Connected');
       setErrorMsg(null);
       const allCases: any[] = [];
@@ -73,15 +77,13 @@ export default function DoctorDashboard() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      querySnapshot.forEach((docSnap) => {
+      snapshot.forEach((docSnap) => {
         const data = docSnap.data();
         const caseItem = {
           id: docSnap.id,
           ...data,
           date: data.submittedAt?.toDate()?.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
+            month: 'short', day: 'numeric', year: 'numeric'
           }) || 'Recently'
         };
         allCases.push(caseItem);
@@ -89,21 +91,18 @@ export default function DoctorDashboard() {
         const isAdminEntry = String(data.patientName || '').trim().toUpperCase() === 'ADMIN MANUAL ADJUSTMENT';
         if (!isAdminEntry) {
           if (data.status === 'Approved') {
-            totalP += data.points || 0;
+            totalP += (Number(data.points) || 0) + (Number(data.bonusPoints) || 0);
             const approvedAt = data.approvedAt?.toDate();
             if (approvedAt && approvedAt >= today) approvedT++;
           } else if (data.status === 'Pending') {
             pendingC++;
           }
+        } else {
+          totalP += Number(data.points) || 0;
         }
       });
 
-      const sortedCases = allCases.sort((a, b) => {
-        const timeA = a.submittedAt?.seconds || 0;
-        const timeB = b.submittedAt?.seconds || 0;
-        return timeB - timeA;
-      });
-
+      const sortedCases = allCases.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
       setCases(sortedCases);
       setDbStats({
         totalPoints: totalP,
@@ -112,24 +111,15 @@ export default function DoctorDashboard() {
         approvedToday: approvedT
       });
       setLoading(false);
-    } catch (err: any) {
+    }, (err: any) => {
       console.warn("Dashboard Sync Error:", err.message);
       setConnectionStatus('Disconnected');
       setErrorMsg(err.code === 'permission-denied' ? "Security Error: Missing cloud permissions." : "Network Error: System is offline.");
       setLoading(false);
-    }
-  }, [user]);
+    });
 
-  React.useEffect(() => {
-    if (!user?.uid || !db) {
-      if (!db) setConnectionStatus('Disconnected');
-      return;
-    }
-    setLoading(true);
-    refreshDashboard();
-    const interval = setInterval(refreshDashboard, 30000); // 30s Poll
-    return () => clearInterval(interval);
-  }, [user, refreshDashboard]);
+    return () => unsubscribe();
+  }, [user]);
 
   const filteredCases = React.useMemo(() => {
     const visibleCases = cases.filter(c =>

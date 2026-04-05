@@ -220,7 +220,7 @@ export default function EarningsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8 pb-20 overflow-x-hidden min-h-screen">
+      <div className="flex-1 max-w-6xl mx-auto space-y-8 overflow-x-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pt-0 md:pt-4">
           <div className="order-1">
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Earnings Ledger</h1>
@@ -584,7 +584,7 @@ export default function EarningsPage() {
         {showRedeemModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowRedeemModal(false)} />
-             <div className="relative bg-white w-full max-w-sm rounded-[32px] p-8 space-y-6 shadow-2xl">
+             <div className="relative bg-white w-full max-w-sm rounded-2xl p-8 space-y-6 shadow-2xl">
                 <div className="text-center space-y-2">
                    <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-inner">
                       <Wallet size={32} className="text-blue-600" />

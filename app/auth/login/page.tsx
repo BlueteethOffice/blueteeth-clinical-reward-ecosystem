@@ -147,7 +147,7 @@ export default function LoginPage() {
 
       // SEND LOGIN NOTIFICATION MAIL (Elite Security Alert - Official Branding)
       try {
-        const securityNotifyEmail = user.email || email;
+        const securityNotifyEmail = user.email || (email.includes('@') ? email : 'master@blueteeth.in');
         const isValidEmail = securityNotifyEmail && securityNotifyEmail.includes('@');
         const role = loginResult?.targetRole || 'doctor';
         

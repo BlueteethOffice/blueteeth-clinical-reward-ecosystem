@@ -207,7 +207,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/50 flex overflow-hidden relative">
+    <div className="fixed inset-0 h-[100svh] min-h-[100svh] bg-slate-50 flex overflow-hidden relative">
       {/* Premium Background Layers */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute top-[-10%] left-[5%] w-[60rem] h-[60rem] bg-indigo-100/40 rounded-full blur-[140px] animate-pulse-soft" />
@@ -281,7 +281,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main content area */}
-      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 h-screen overflow-y-auto bg-slate-100/30">
+      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 h-full overflow-y-auto bg-slate-50 overscroll-contain pb-10 sm:pb-0">
         <header className="relative z-[100] px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-xl px-4 sm:px-6 py-2 shadow-sm">
             <div className="flex items-center lg:hidden">
@@ -317,7 +317,7 @@ export default function DashboardLayout({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:pt-2">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:pt-2 min-h-full flex flex-col">
           {children}
         </main>
       </div>

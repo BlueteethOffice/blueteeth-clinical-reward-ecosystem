@@ -70,7 +70,7 @@ export default function Home() {
                 <Button variant="ghost" size="sm">Doctor Login</Button>
               </Link>
               <Link href="/auth/login">
-                <Button variant="primary" size="sm" className="rounded-full">Admin Portal</Button>
+                <Button variant="primary" size="sm" className="rounded-xl">Admin Portal</Button>
               </Link>
             </div>
           </div>
@@ -87,7 +87,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-6 flex justify-center"
               >
-                <div className="relative rounded-full px-4 py-1.5 text-sm leading-6 text-slate-600 ring-1 ring-slate-900/10 hover:ring-slate-900/20 transition-all bg-white shadow-sm">
+                <div className="relative rounded-xl px-4 py-1.5 text-sm leading-6 text-slate-600 ring-1 ring-slate-900/10 hover:ring-slate-900/20 transition-all bg-white shadow-sm">
                   <span className="font-semibold text-blue-600">New:</span> V1.0.0 Stable Version released.{' '}
                   <a href="#" className="font-semibold text-blue-600">
                     <span className="absolute inset-0" aria-hidden="true" />
@@ -100,9 +100,9 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-4xl font-bold tracking-tight text-slate-900 sm:text-7xl"
+                className="text-3xl font-bold tracking-tight text-slate-900 sm:text-7xl"
               >
-                The Premium <span className="text-blue-600">B-Points</span> Rewards Portal
+                The Premium <span className="text-blue-600 whitespace-nowrap">B-Points</span> <br className="sm:hidden" /> Rewards Portal
               </motion.h1>
 
               <motion.p 
@@ -193,10 +193,10 @@ function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNod
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="relative group overflow-hidden rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:-translate-y-1"
+      className="relative group overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:-translate-y-1"
     >
       <div className="absolute top-0 right-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity blur-2xl" />
-      <div className="mb-6 inline-flex rounded-2xl bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-inner">
+      <div className="mb-6 inline-flex rounded-xl bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-inner">
         {icon}
       </div>
       <h3 className="text-xl font-bold text-slate-900 mb-3">{title}</h3>

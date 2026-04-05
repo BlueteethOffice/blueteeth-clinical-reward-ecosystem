@@ -52,6 +52,7 @@ function CaseReviewContent() {
   );
 
   React.useEffect(() => {
+    setSelectedCase(null); // Clear selected audit node on status shift
     loadData();
   }, [filterStatus]);
 
@@ -63,7 +64,7 @@ function CaseReviewContent() {
   };
 
   const handleAction = async (caseId: string, action: 'approve' | 'reject' | 'revoke') => {
-    setLoading(caseId);
+    setLoading(`${caseId}-${action}`);
     
     try {
       let result;
@@ -148,28 +149,28 @@ function CaseReviewContent() {
                           selectedCase?.id === c.id ? 'border-l-blue-600 ring-2 ring-blue-500/10 scale-[1.01] bg-blue-50/20' : 'border-l-transparent hover:border-l-slate-300 shadow-sm'
                         }`}
                       >
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 bg-blue-50 rounded-xl flex items-center justify-center font-black text-blue-600 text-xs ring-1 ring-blue-500/10">
-                              {globalIdx}
+                        <CardContent className="p-3 sm:p-4 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-blue-50 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-blue-600 text-[10px] sm:text-xs ring-1 ring-blue-500/10 shrink-0">
+                               {globalIdx}
                             </div>
-                            <div>
-                              <h4 className="font-bold text-blue-900 group-hover:text-blue-600 transition-colors uppercase">{c.patientName}</h4>
-                              <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest">ID: {c.patientMobile}</p>
-                              <p className="text-[10px] text-slate-500 font-medium mt-0.5">By <span className="font-bold text-slate-700">{c.doctorName || 'Dr. Unknown'}</span></p>
+                            <div className="min-w-0">
+                               <h4 className="font-bold text-blue-900 group-hover:text-blue-600 transition-colors uppercase text-xs sm:text-sm truncate pr-1">{c.patientName}</h4>
+                               <p className="text-[8px] sm:text-[9px] text-blue-600 font-black uppercase tracking-widest truncate">ID: {c.patientMobile}</p>
+                               <p className="text-[9px] sm:text-[10px] text-slate-500 font-medium mt-0.5 truncate overflow-hidden">By <span className="font-bold text-slate-700">{c.doctorName?.split(' ')[0] || 'Dr. Unknown'}</span></p>
                             </div>
                           </div>
-                          <div className="text-right flex items-center gap-6">
+                          <div className="text-right flex items-center gap-3 sm:gap-6 shrink-0">
                             <div className="hidden sm:block">
-                              <p className="text-[11px] font-black text-slate-600 uppercase italic">{c.treatment}</p>
-                              <p className="text-[9px] text-slate-400 font-bold">{new Date(c.submittedAt?.seconds * 1000).toLocaleDateString()}</p>
+                               <p className="text-[11px] font-black text-slate-600 uppercase italic">{c.treatment}</p>
+                               <p className="text-[9px] text-slate-400 font-bold">{new Date(c.submittedAt?.seconds * 1000).toLocaleDateString()}</p>
                             </div>
-                            <div className="flex flex-col items-center justify-center h-10 w-14 bg-blue-50 rounded-lg ring-1 ring-blue-500/10">
-                              <span className="text-xs font-black text-blue-700">{c.points}</span>
-                              <span className="text-[7px] font-black text-blue-500 uppercase tracking-tighter">PTS</span>
+                            <div className="flex flex-col items-center justify-center h-9 w-12 sm:h-10 sm:w-14 bg-blue-50 rounded-lg ring-1 ring-blue-500/10 shadow-sm border border-blue-100/20">
+                               <span className="text-[10px] sm:text-xs font-black text-blue-700">{c.points}</span>
+                               <span className="text-[6px] sm:text-[7px] font-black text-blue-500 uppercase tracking-tighter">PTS</span>
                             </div>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg group bg-blue-50/50 hover:bg-blue-100/50 border border-blue-100/20">
-                              <Eye className="h-4 w-4 text-blue-500 group-hover:scale-110 transition-transform" />
+                            <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9 p-0 rounded-lg group bg-blue-50/50 hover:bg-blue-100/50 border border-blue-100/20 hidden sm:flex">
+                               <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 group-hover:scale-110 transition-transform" />
                             </Button>
                           </div>
                         </CardContent>
@@ -330,8 +331,8 @@ function CaseReviewContent() {
                       </div>
                     </div>
 
-                     {/* Decision Actions - Conditional for Pending only */}
-                    <div className="pt-2">
+                    {/* Decision Actions - Conditional for Pending only */}
+                    <div className="pt-2 pb-2 mb-1">
                       {selectedCase.status === 'Approved' ? (
                         <div className="space-y-3">
                           <div className="w-full h-10 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-[10px] uppercase tracking-widest shadow-sm">
@@ -339,7 +340,7 @@ function CaseReviewContent() {
                           </div>
                           <Button
                             onClick={() => handleAction(selectedCase.id, 'revoke')}
-                            isLoading={loading === selectedCase.id}
+                                                        isLoading={loading === `${selectedCase.id}-revoke`}
                             variant="outline"
                             className="w-full h-8 rounded-lg text-slate-500 border-slate-200 hover:bg-slate-50 text-[9px] font-black uppercase tracking-widest"
                           >
@@ -350,7 +351,7 @@ function CaseReviewContent() {
                         <div className="grid grid-cols-2 gap-3">
                           <Button 
                             onClick={() => handleAction(selectedCase.id, 'reject')}
-                            isLoading={loading === selectedCase.id}
+                                                        isLoading={loading === `${selectedCase.id}-reject`}
                             variant="outline" 
                             className="h-10 rounded-lg text-red-600 border-red-50 hover:bg-red-50 text-[10px] font-black uppercase tracking-widest"
                           >
@@ -358,7 +359,7 @@ function CaseReviewContent() {
                           </Button>
                           <Button 
                             onClick={() => handleAction(selectedCase.id, 'approve')}
-                            isLoading={loading === selectedCase.id}
+                                                        isLoading={loading === `${selectedCase.id}-approve`}
                             className="h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 shadow-sm text-[10px] font-black uppercase tracking-widest text-white"
                           >
                             <CheckCircle className="mr-2 h-4 w-4" /> Approve

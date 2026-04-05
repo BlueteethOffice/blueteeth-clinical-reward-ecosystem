@@ -17,9 +17,19 @@ const EMAILJS_CONFIG = {
 
 export const sendEmail = async (params: Record<string, any>) => {
   try {
-    // Identity Authorization (Explicit Handshake)
+    // 🩺 IDENTITY & RECIPIENT VALIDATION (Anti-Crash Node)
     if (!EMAILJS_CONFIG.PUBLIC_KEY || !EMAILJS_CONFIG.SERVICE_ID) {
       throw new Error("Security Node: Credentials Not Initialized");
+    }
+
+    const recipient = params.to_email || params.email;
+    if (!recipient || (typeof recipient === 'string' && !recipient.includes('@'))) {
+      console.warn(">>> [ELITE DISPATCH] ABORT: Invalid or Empty Recipient Address.");
+      return { 
+        success: false, 
+        error: "Recipient address is missing or invalid. Clinical notification deferred.",
+        status: 422
+      };
     }
 
     const templateParams = {

@@ -248,82 +248,84 @@ function PayoutManagementContent() {
                      }}
                      className="cursor-pointer"
                    >
-                     <Card className="bg-white border border-slate-100 hover:shadow-2xl transition-all rounded-xl overflow-hidden group">
-                     <div className="flex flex-col lg:flex-row">
-                       {/* Identity Cell */}
-                       <div className="flex-1 p-7 flex items-center gap-6">
-                         <div className="h-14 w-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all">
-                           <User size={24} />
-                         </div>
-                         <div>
-                           <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1.5 opacity-50">#SETTLEMENT-{req.id.slice(-6).toUpperCase()}</p>
-                           <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none mb-2">{req.doctorName}</h4>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                              <RefreshCcw size={10} className="text-emerald-500" /> Requested: {req.requestedAt ? new Date(req.requestedAt.seconds * 1000).toLocaleDateString() : 'Pending'}
-                           </p>
-                         </div>
-                       </div>
+                    <Card className="bg-white border border-slate-100 hover:shadow-2xl transition-all rounded-xl overflow-hidden group">
+                      <div className="flex flex-col lg:flex-row">
+                        {/* Identity Cell */}
+                        <div className="flex-1 p-5 sm:p-7 flex items-center gap-4 sm:gap-6">
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all shrink-0">
+                            <User size={20} className="sm:w-6 sm:h-6" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[8px] sm:text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1 sm:mb-1.5 opacity-50 truncate">#SETTLEMENT-{req.id.slice(-6).toUpperCase()}</p>
+                            <h4 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight leading-none mb-1 sm:mb-2 truncate">{req.doctorName}</h4>
+                            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 truncate">
+                               <RefreshCcw size={10} className="text-emerald-500" /> {req.requestedAt ? new Date(req.requestedAt.seconds * 1000).toLocaleDateString() : 'Pending'}
+                            </p>
+                          </div>
+                        </div>
 
-                       {/* Payout Target Cell */}
-                       <div className="lg:w-80 px-8 py-7 bg-slate-50/40 border-y lg:border-y-0 lg:border-x border-slate-50 flex flex-col justify-center gap-3">
-                          <div className="flex items-center gap-3 group/copy">
-                             <div className="h-9 w-9 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center">
-                                {req.method === 'upi' ? <Smartphone size={16} className="text-indigo-600" /> : <Landmark size={16} className="text-indigo-600" />}
-                             </div>
-                             <div className="flex-1 overflow-hidden">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{req.method} Identity</p>
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-xs font-black text-slate-700 truncate max-w-[120px]">{req.details || 'Locked'}</p>
-                                    <button 
-                                      onClick={() => {
-                                        navigator.clipboard.writeText(req.details);
-                                        toast.success("Identity Copied!");
-                                      }}
-                                      className="p-1.5 hover:bg-white rounded-lg text-slate-300 hover:text-blue-600 transition-colors opacity-0 group-hover/copy:opacity-100"
-                                    >
-                                      <FileText size={12} />
-                                    </button>
-                                  </div>
-                                  {req.verifiedName && (
-                                    <div className="flex items-center gap-1.5 mt-1">
-                                      <div className="h-1 w-1 bg-emerald-500 rounded-full animate-pulse" />
-                                      <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none">Verified: {req.verifiedName}</p>
-                                    </div>
-                                  )}
+                        {/* Payout Target Cell */}
+                        <div className="lg:w-80 px-5 sm:px-8 py-5 sm:py-7 bg-slate-50/40 border-y lg:border-y-0 lg:border-x border-slate-100 flex flex-col justify-center gap-3">
+                           <div className="flex items-center gap-3 group/copy">
+                              <div className="h-9 w-9 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                                 {req.method === 'upi' ? <Smartphone size={16} className="text-indigo-600" /> : <Landmark size={16} className="text-indigo-600" />}
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{req.method} Identity</p>
+                                 <div className="flex flex-col">
+                                   <div className="flex items-center gap-2">
+                                     <p className="text-xs font-black text-slate-700 truncate max-w-[150px]">{req.details || 'Locked'}</p>
+                                     <button 
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         navigator.clipboard.writeText(req.details);
+                                         toast.success("Identity Copied!");
+                                       }}
+                                       className="p-1.5 hover:bg-white rounded-lg text-slate-300 hover:text-blue-600 transition-colors opacity-0 group-hover/copy:opacity-100"
+                                     >
+                                       <FileText size={12} />
+                                     </button>
+                                   </div>
+                                   {req.verifiedName && (
+                                     <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
+                                       <div className="h-1 w-1 bg-emerald-500 rounded-full animate-pulse" />
+                                       <p className="text-[8px] font-black text-emerald-600 uppercase tracking-widest leading-none truncate">Verified: {req.verifiedName}</p>
+                                     </div>
+                                   )}
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Liquidity Control Cell */}
+                        <div className="lg:w-[450px] px-5 sm:px-8 py-5 sm:py-7 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-10">
+                           <div className="text-center sm:text-right w-full sm:w-auto">
+                              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Value</p>
+                              <h3 className="text-2xl font-black text-slate-900 tracking-tighter">₹{Number(req.amount || 0).toLocaleString()}</h3>
+                              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{Number(req.points || 0).toFixed(1)} B-PTS</p>
+                           </div>
+                           <div className="flex-1 flex justify-end w-full sm:w-auto">
+                              {req.status === 'Paid' ? (
+                                <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-inner border border-slate-800">
+                                  <BadgeCheck size={14} className="text-blue-400" /> Settled Audit
                                 </div>
-                             </div>
-                          </div>
-                       </div>
-
-                       {/* Liquidity Control Cell */}
-                       <div className="lg:w-[450px] px-8 py-7 flex items-center justify-between gap-10">
-                          <div className="text-right">
-                             <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Value</p>
-                             <h3 className="text-2xl font-black text-slate-900 tracking-tighter">₹{Number(req.amount || 0).toLocaleString()}</h3>
-                             <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{Number(req.points || 0).toFixed(1)} B-PTS</p>
-                          </div>
-                          <div className="flex-1 flex justify-end">
-                             {req.status === 'Paid' ? (
-                               <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-inner border border-slate-800">
-                                 <BadgeCheck size={14} className="text-blue-400" /> Settled Audit
-                               </div>
-                             ) : (
-                               <Button 
-                                 isLoading={processingId === req.id}
-                                 onClick={() => {
-                                    setPayoutToConfirm(req);
-                                    setShowConfirmModal(true);
-                                 }}
-                                 className="rounded-xl px-10 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2"
-                               >
-                                 Authorize & Deduct Balance <ArrowRight size={14} />
-                               </Button>
-                             )}
-                          </div>
-                       </div>
-                     </div>
-                   </Card>
+                              ) : (
+                                <Button 
+                                  isLoading={processingId === req.id}
+                                  onClick={(e) => {
+                                     e.stopPropagation();
+                                     setPayoutToConfirm(req);
+                                     setShowConfirmModal(true);
+                                  }}
+                                  className="w-full sm:w-auto rounded-xl px-8 sm:px-10 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                >
+                                  Authorize Settlement <ArrowRight size={14} />
+                                </Button>
+                              )}
+                           </div>
+                        </div>
+                      </div>
+                    </Card>
                  </motion.div>
                ))
              ) : (

@@ -315,30 +315,36 @@ export const updateUserProfile = async (uid: string, profileData: any) => {
     console.warn('Profile Sync Skipped or Using Local Baseline:', error.message);
     return { success: false, error: error.message };
   }
-}; // 8. Admin: Fetch Cases by Status - Enhanced with Categorical Fail-Safe Data
+}; // 8. Admin: Fetch Cases by Status - Optimized with Doctor Identity Cache
 export const fetchAdminCases = async (status: 'Pending' | 'Approved' = 'Pending') => {
   console.log(`[DEBUG] Opening Case Review Stream: ${status}...`);
   try {
-    const q = query(collection(db, 'cases'), where('status', '==', status));
+    // 1. Fetch All Doctors for Identity Mapping (Batch Retrieval)
+    const drQuery = query(collection(db as any, 'users'), where('role', '==', 'doctor'));
+    const drSnap = await getDocs(drQuery);
+    const drCache: Record<string, any> = {};
+    drSnap.forEach(d => {
+      drCache[d.id] = { 
+        name: d.data().name || 'Unknown Practitioner', 
+        phone: d.data().phone || d.data().mobile || 'N/A' 
+      };
+    });
+
+    // 2. Fetch Cases
+    const q = query(collection(db as any, 'cases'), where('status', '==', status));
     const querySnapshot = await getDocs(q);
     
-    const casePromises = querySnapshot.docs.map(async (docSnap) => {
+    const cases = querySnapshot.docs.map((docSnap) => {
       const data = docSnap.data();
-      let doctorName = 'Unknown Practitioner';
-      let doctorPhone = 'N/A';
-      try {
-        if (data.doctorUid) {
-           const doctorSnap = await getDoc(doc(db, 'users', data.doctorUid));
-           if (doctorSnap.exists()) {
-             doctorName = doctorSnap.data().name || doctorName;
-             doctorPhone = doctorSnap.data().phone || doctorSnap.data().mobile || doctorPhone;
-           }
-        }
-      } catch(e) {}
-      return { id: docSnap.id, ...data, doctorName, doctorPhone };
+      const dr = drCache[data.doctorUid] || { name: 'Unknown Practitioner', phone: 'N/A' };
+      return { 
+        id: docSnap.id, 
+        ...data, 
+        doctorName: dr.name, 
+        doctorPhone: dr.phone 
+      };
     });
     
-    const cases = await Promise.all(casePromises);
     return cases.sort((a: any, b: any) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
   } catch (error: any) {
     console.error(`Error fetching ${status} cases:`, error);
@@ -465,33 +471,36 @@ export const fetchAdminStats = async () => {
   }
 };
 
-// 9b. Admin: Fetch Withdrawal Requests
+// 9b. Admin: Fetch Withdrawal Requests - Optimized with Identity Cache
 export const fetchWithdrawals = async () => {
   try {
-    const q = query(collection(db, 'withdrawals'));
+    // 1. Fetch Doctor Cache
+    const drQuery = query(collection(db as any, 'users'), where('role', '==', 'doctor'));
+    const drSnap = await getDocs(drQuery);
+    const drCache: Record<string, any> = {};
+    drSnap.forEach(d => {
+      drCache[d.id] = { name: d.data().name || 'Unknown Practitioner', phone: d.data().phone || d.data().mobile || 'N/A' };
+    });
+
+    const q = query(collection(db as any, 'withdrawals'));
     const snapshot = await getDocs(q);
     const withdrawals: any[] = [];
     
-    for (const docSnap of snapshot.docs) {
+    snapshot.forEach((docSnap) => {
       const data = docSnap.data();
-      try {
-        const doctorSnap = await getDoc(doc(db, 'users', data.doctorUid));
-        const doctorData = doctorSnap.exists() ? doctorSnap.data() : { name: 'Unknown Practitioner' };
-        withdrawals.push({ 
-          id: docSnap.id, 
-          ...data, 
-          doctorName: doctorData.name, 
-          phone: doctorData.phone || 'N/A' 
-        });
-      } catch(e) { /* Recoverable */ }
-    }
+      const dr = drCache[data.doctorUid] || { name: 'Unknown Practitioner', phone: 'N/A' };
+      withdrawals.push({ 
+        id: docSnap.id, 
+        ...data, 
+        doctorName: dr.name, 
+        phone: dr.phone 
+      });
+    });
+
     return withdrawals.sort((a, b) => (b.requestedAt?.seconds || 0) - (a.requestedAt?.seconds || 0));
   } catch (error: any) {
-    console.warn('Withdrawal Sync Failure (Using Financial Archive Baseline):', error.message);
-    return [
-      { id: 'WDR-401', doctorName: 'Dr. Vivek Garg', phone: '9876543210', amount: 1200, method: { type: 'UPI', upiId: 'sharma@okaxis' }, status: 'Pending', requestedAt: { seconds: Date.now()/1000 - 18000 } },
-      { id: 'WDR-402', doctorName: 'Dr. Neha Smith', phone: '8877665544', amount: 3500, method: { type: 'BANK', accountNumber: '901234567 • SBIN0012345' }, status: 'Processing', requestedAt: { seconds: Date.now()/1000 - 172800 } }
-    ];
+    console.warn('Withdrawal Sync Failure:', error.message);
+    return [];
   }
 };
 
