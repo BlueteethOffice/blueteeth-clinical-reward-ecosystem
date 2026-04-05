@@ -216,51 +216,51 @@ export default function CaseHistory() {
         </Card>
 
         {/* Table Ledger */}
-        <Card className="overflow-hidden border-slate-100 rounded-xl shadow-2xl shadow-slate-200/40 bg-white min-h-[400px] lg:min-h-[550px]">
+        <Card className="border-slate-100 rounded-xl shadow-2xl shadow-slate-200/40 bg-white">
           {/* Mobile View - Professional Card Stack */}
           <div className="block lg:hidden divide-y divide-slate-100">
-             {loading ? (
-                [...Array(3)].map((_, i) => (
-                   <div key={i} className="p-6 animate-pulse">
-                      <div className="h-4 bg-slate-100 rounded w-1/2 mb-2"></div>
-                      <div className="h-3 bg-slate-50 rounded w-1/4"></div>
-                   </div>
-                ))
-             ) : paginatedCases.length > 0 ? (
-                paginatedCases.map((c) => (
-                   <div 
-                      key={c.id} 
-                      onClick={() => setSelectedCase(c)}
-                      className="p-5 active:bg-blue-50/50 transition-colors"
-                   >
-                      <div className="flex justify-between items-start mb-3">
-                         <div>
-                            <p className="text-[14px] font-black text-slate-900 uppercase tracking-tight leading-tight">{c.patientName}</p>
-                            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">REF-{(c.id || '').split('-').pop()?.toUpperCase()} • {c.date}</p>
-                         </div>
-                         <span className={`inline-flex px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${
-                            c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                         }`}>{c.status}</span>
-                      </div>
-                      <div className="flex justify-between items-end">
-                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter max-w-[60%] truncate">
-                            {c.treatmentName || c.treatment}
-                         </div>
-                         <div className="text-right">
-                            <span className="text-lg font-black text-slate-900 tracking-tighter">+{Number(c.points || 0).toFixed(1)}</span>
-                            <span className="text-[7px] text-blue-500 font-bold ml-1 uppercase tracking-widest">Points</span>
-                         </div>
-                      </div>
-                   </div>
-                ))
-             ) : (
-                <div className="p-12 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Zero nodes archived</div>
-             )}
+            {loading ? (
+               [...Array(3)].map((_, i) => (
+                  <div key={i} className="p-6 animate-pulse">
+                     <div className="h-4 bg-slate-100 rounded w-1/2 mb-2"></div>
+                     <div className="h-3 bg-slate-50 rounded w-1/4"></div>
+                  </div>
+               ))
+            ) : paginatedCases.length > 0 ? (
+               paginatedCases.map((c) => (
+                  <div 
+                     key={c.id} 
+                     onClick={() => setSelectedCase(c)}
+                     className="p-5 active:bg-blue-50/50 transition-colors"
+                  >
+                     <div className="flex justify-between items-start mb-3">
+                        <div>
+                           <p className="text-[14px] font-black text-slate-900 uppercase tracking-tight leading-tight">{c.patientName}</p>
+                           <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">REF-{(c.id || '').split('-').pop()?.toUpperCase()} • {c.date}</p>
+                        </div>
+                        <span className={`inline-flex px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border ${
+                           c.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                           c.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+                        }`}>{c.status}</span>
+                     </div>
+                     <div className="flex justify-between items-end">
+                        <div className="text-[9px] font-black text-slate-500 uppercase tracking-tighter max-w-[60%] truncate">
+                           {c.treatmentName || c.treatment}
+                        </div>
+                        <div className="text-right">
+                           <span className="text-lg font-black text-slate-900 tracking-tighter">+{Number(c.points || 0).toFixed(1)}</span>
+                           <span className="text-[7px] text-blue-500 font-bold ml-1 uppercase tracking-widest">Points</span>
+                        </div>
+                     </div>
+                  </div>
+               ))
+            ) : (
+               <div className="p-12 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Zero nodes archived</div>
+            )}
           </div>
 
           {/* Desktop Audit Table */}
-          <div className="hidden lg:block overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="hidden lg:block overflow-visible">
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 border-b border-slate-100">

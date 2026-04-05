@@ -950,7 +950,7 @@ function DoctorListContent() {
                             </div>
 
                             {/* Professional Table View */}
-                            <div className="flex-1 overflow-hidden flex flex-col">
+                            <div className="flex-1 flex flex-col">
                                                              <div className="px-4 sm:px-8 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-5 gap-1 sm:gap-4 items-center">
                                                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none sm:leading-tight">Practitioner <br className="sm:hidden" /> / Outcome</span>
                                                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Reward <br className="sm:hidden" /> Yield</span>
@@ -959,7 +959,7 @@ function DoctorListContent() {
                                                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-right leading-none sm:leading-tight">Audit <br className="sm:hidden" /> Action</span>
                               </div>
 
-                              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 custom-scrollbar">
+                              <div className="divide-y divide-slate-100">
                                 {loadingCases ? (
                                   <div className="h-full flex flex-col items-center justify-center space-y-4 py-20">
                                     <div className="animate-spin h-8 w-8 border-[3px] border-blue-600 border-t-transparent rounded-full" />
