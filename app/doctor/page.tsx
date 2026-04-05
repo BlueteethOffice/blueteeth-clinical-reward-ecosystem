@@ -440,14 +440,8 @@ export default function DoctorDashboard() {
       {/* ── CASE DETAIL MODAL ── */}
       <AnimatePresence>
         {selectedCase && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200]"
-              onClick={() => setSelectedCase(null)}
-            />
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 overscroll-contain">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedCase(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -568,7 +562,7 @@ export default function DoctorDashboard() {
                 </div>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </DashboardLayout>
