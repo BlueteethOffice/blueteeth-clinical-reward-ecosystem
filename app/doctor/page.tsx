@@ -444,6 +444,7 @@ export default function DoctorDashboard() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedCase(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" />
 
             <motion.div
+              key={selectedCase?.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -518,8 +519,7 @@ export default function DoctorDashboard() {
                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Evidence Proof</p>
                       <div className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
                          {(String(selectedCase.evidenceUrl).toLowerCase().includes('.pdf') || 
-                           String(selectedCase.evidenceUrl).includes('application/pdf') || 
-                           String(selectedCase.evidenceUrl).includes('alt=media')) ? (
+                           String(selectedCase.evidenceUrl).toLowerCase().includes('application/pdf')) ? (
                            <div className="w-full flex items-center justify-between gap-4">
                              <div className="flex items-center gap-3">
                                <div className="h-10 w-10 bg-rose-50 rounded-md flex items-center justify-center text-rose-600 border border-rose-100">
