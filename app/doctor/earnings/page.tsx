@@ -314,7 +314,7 @@ export default function EarningsPage() {
         </div>
 
         {/* Ledger Section - Scroll Liquidated */}
-        <Card className="border-none rounded-lg shadow-2xl shadow-slate-200/40 bg-white">
+        <Card className="border-none rounded-lg shadow-2xl shadow-slate-200/40 bg-white overflow-visible">
           <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
              <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-slate-900 rounded-lg flex items-center justify-center text-white shadow-lg">
@@ -382,11 +382,11 @@ export default function EarningsPage() {
             <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-slate-50/50 text-slate-700 border-b border-slate-100">
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Patient Name</th>
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Points Earned</th>
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Cash Value</th>
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-center">Status</th>
-                  <th className="w-32 px-10 pr-16 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-right">Details</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Patient Name</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Points Earned</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Cash Value</th>
+                  <th className="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-center">Status</th>
+                  <th className="px-6 pr-12 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -406,7 +406,7 @@ export default function EarningsPage() {
                       key={item.id}
                       className="group transition-colors hover:bg-slate-50/40"
                     >
-                      <td className="px-10 py-6">
+                      <td className="px-6 py-6">
                         <div className="flex flex-col">
                           <span className="font-black text-slate-900 text-[14px] group-hover:text-blue-600 transition-colors uppercase tracking-tight leading-none">{item.patientName}</span>
                           <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest mt-2 flex items-center gap-2">
@@ -414,7 +414,7 @@ export default function EarningsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-10 py-6">
+                      <td className="px-6 py-6">
                         <div className="flex flex-col">
                            <span className="font-black text-blue-600 text-sm">
                              +{(Number(item.points || 0)).toFixed(1)}
@@ -423,13 +423,13 @@ export default function EarningsPage() {
                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mt-1">Reward Points</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6">
+                      <td className="px-6 py-6">
                         <div className="flex flex-col">
                            <span className="font-black text-slate-800 text-[16px] tracking-tighter">₹{Math.round((Number(item.points || 0) + Number(item.bonusPoints || 0)) * 50).toLocaleString()}</span>
                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">Cash Value</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-center">
+                      <td className="px-6 py-6 text-center">
                         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border mx-auto ${
                            item.status === 'Approved' ? 'bg-emerald-50/50 border-emerald-100 text-emerald-600 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 
                            item.status === 'Pending' ? 'bg-amber-50/50 border-amber-100 text-amber-600' : 'bg-rose-50 border-rose-100 text-rose-500'
@@ -438,7 +438,7 @@ export default function EarningsPage() {
                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{item.status}</span>
                         </div>
                       </td>
-                      <td className="w-32 px-10 pr-16 py-6 text-right">
+                      <td className="px-6 pr-12 py-6 text-right">
                         <button 
                            onClick={() => setSelectedCase(item)}
                            className="h-11 w-10 rounded-lg bg-white border border-slate-100 text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:shadow-xl transition-all flex items-center justify-center active:scale-90 ml-auto"

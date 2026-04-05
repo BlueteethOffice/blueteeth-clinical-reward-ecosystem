@@ -231,7 +231,7 @@ export default function CaseHistory() {
         </Card>
 
         {/* Table Ledger */}
-        <Card className="border-slate-100 rounded-xl shadow-2xl shadow-slate-200/40 bg-white">
+        <Card className="border-slate-100 rounded-xl shadow-2xl shadow-slate-200/40 bg-white overflow-visible">
           {/* Mobile View - Professional Card Stack */}
           <div className="block lg:hidden divide-y divide-slate-100">
             {loading ? (
@@ -275,26 +275,26 @@ export default function CaseHistory() {
           </div>
 
           {/* Desktop Audit Table */}
-          <div className="hidden lg:block">
-            <table className="min-w-full border-collapse">
+          <div className="hidden lg:block overflow-x-auto custom-scrollbar">
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-600 border-b border-slate-100">
-                  <th className="px-10 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Patient Name</th>
-                  <th className="px-10 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Treatment Details</th>
-                  <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Points</th>
-                  <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Status</th>
-                  <th className="w-32 px-10 pr-16 py-5 text-right text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Record</th>
+                <tr className="bg-slate-50/50 text-slate-700 border-b border-slate-100">
+                  <th className="px-4 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap w-[22%]">Patient Name</th>
+                  <th className="px-4 py-5 text-left text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap w-[22%]">Treatment Details</th>
+                  <th className="px-4 py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Points</th>
+                  <th className="px-6 py-5 text-center text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap">Status</th>
+                  <th className="px-4 pr-10 py-5 text-right text-[10px] font-black uppercase tracking-[0.1em] whitespace-nowrap">Record</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                    [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-md w-32 mb-2"></div><div className="h-2 bg-slate-50/50 rounded-md w-20"></div></td>
-                      <td className="px-10 py-8"><div className="h-4 bg-slate-50 rounded-md w-24"></div></td>
-                      <td className="px-10 py-8"><div className="h-6 bg-slate-50 rounded-xl w-16 mx-auto"></div></td>
-                      <td className="px-10 py-8"><div className="h-11 bg-slate-50 rounded-xl w-24 mx-auto"></div></td>
-                      <td className="px-10 py-8"></td>
+                      <td className="px-6 py-8"><div className="h-4 bg-slate-50 rounded-md w-32 mb-2"></div><div className="h-2 bg-slate-50/50 rounded-md w-20"></div></td>
+                      <td className="px-6 py-8"><div className="h-4 bg-slate-50 rounded-md w-24"></div></td>
+                      <td className="px-6 py-8"><div className="h-6 bg-slate-50 rounded-xl w-16 mx-auto"></div></td>
+                      <td className="px-6 py-8"><div className="h-11 bg-slate-50 rounded-xl w-24 mx-auto"></div></td>
+                      <td className="px-6 py-8"></td>
                     </tr>
                    ))
                 ) : paginatedCases.length > 0 ? (
@@ -303,10 +303,10 @@ export default function CaseHistory() {
                         key={c.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="hover:bg-blue-50/40 transition-colors group cursor-default"
+                        className="group transition-all hover:bg-slate-50/70 border-b border-slate-50 last:border-0"
                         onClick={() => setSelectedCase(c)}
                       >
-                      <td className="px-10 py-6">
+                      <td className="px-6 py-6">
                         <div className="flex flex-col gap-1.5">
                            <span className="text-[14px] font-black text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate max-w-[150px] sm:max-w-none">{c.patientName}</span>
                            <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -315,34 +315,30 @@ export default function CaseHistory() {
                            </div>
                         </div>
                       </td>
-                      <td className="px-10 py-6">
-                        <div className="flex flex-col gap-1">
-                           <span className="text-[12px] font-black text-slate-900 leading-none whitespace-nowrap">{c.treatmentName || c.treatment}</span>
-                           <span className="text-[9px] text-blue-500/60 font-black uppercase tracking-widest italic">{c.date}</span>
+                      <td className="px-4 py-6">
+                        <div className="flex flex-col">
+                           <span className="font-extrabold text-slate-800 text-[13.5px] uppercase tracking-tight group-hover:text-blue-600 transition-colors">{c.treatmentName || c.treatment}</span>
+                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5 flex items-center gap-2">
+                             <Calendar size={11} className="text-slate-300" /> {c.date}
+                           </span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-center">
-                        <span className="inline-flex flex-col items-center rounded-md bg-white px-3 py-1.5 border border-slate-100 shadow-sm transition-transform group-hover:scale-105 group-hover:border-blue-200">
-                           <span className="text-[11px] font-black text-slate-900 tracking-tighter whitespace-nowrap">
-                             +{Number(c.points || 0).toFixed(1)}
-                             {c.bonusPoints > 0 && <span className="text-emerald-500 ml-1"> (+{Number(c.bonusPoints).toFixed(1)})</span>}
-                           </span>
-                           <span className="text-[8px] font-black text-blue-600 uppercase tracking-tighter">Points</span>
-                        </span>
+                      <td className="px-4 py-6 text-center">
+                        <div className="inline-flex flex-col items-center gap-1.5 p-3 px-4 bg-blue-50/30 rounded-xl border border-blue-100 ring-1 ring-inset ring-blue-500/5">
+                           <span className="text-sm font-black text-blue-700 tracking-tighter">+{Number(c.points || 0).toFixed(1)}</span>
+                           <span className="text-[7.5px] font-black text-blue-400 uppercase tracking-widest leading-none">Points</span>
+                        </div>
                       </td>
-                      <td className="px-10 py-6 text-center whitespace-nowrap">
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-md border mx-auto backdrop-blur-sm transition-all ${
-                           c.status === 'Approved' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600' : 
-                           c.status === 'Pending' ? 'bg-amber-500/5 border-amber-500/20 text-amber-600' : 'bg-rose-500/5 border-rose-500/20 text-rose-600'
+                      <td className="px-6 py-6 text-center">
+                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border shadow-sm ${
+                           c.status === 'Approved' ? 'bg-emerald-50/30 border-emerald-100 text-emerald-600' :
+                           c.status === 'Pending' ? 'bg-amber-50/30 border-amber-100 text-amber-600' : 'bg-red-50/30 border-red-100 text-red-600'
                         }`}>
-                           <div className={`h-1.5 w-1.5 rounded-full ${
-                             c.status === 'Approved' ? 'bg-emerald-500 animate-pulse ring-4 ring-emerald-500/10 shadow-[0_0_8px_#10b981]' : 
-                             c.status === 'Pending' ? 'bg-amber-400 ring-4 ring-amber-400/10' : 'bg-rose-500 ring-4 ring-rose-500/10'
-                           }`} />
+                           <div className={`h-1.5 w-1.5 rounded-full ${c.status === 'Approved' ? 'bg-emerald-500 animate-pulse' : c.status === 'Pending' ? 'bg-amber-500' : 'bg-red-500'}`} />
                            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{c.status}</span>
                         </div>
                       </td>
-                      <td className="w-32 px-10 pr-16 py-6 text-right">
+                      <td className="px-4 pr-10 py-6 text-right">
                         <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedCase(c); }}
                            className="h-10 w-9 rounded-md bg-white border border-slate-100 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50 ml-auto"
@@ -354,7 +350,7 @@ export default function CaseHistory() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-10 py-32 text-center">
+                    <td colSpan={5} className="px-6 py-32 text-center">
                       <div className="flex flex-col items-center">
                          <div className="h-16 w-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 border border-slate-100 shadow-inner text-slate-300">
                            <ListTodo size={32} />
