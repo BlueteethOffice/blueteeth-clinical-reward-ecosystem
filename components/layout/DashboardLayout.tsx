@@ -198,9 +198,13 @@ export default function DashboardLayout({
   const avatarName = displayName.startsWith('Dr. ') ? displayName.slice(4) : displayName;
   const initials = avatarName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'D';
 
-  if (loading || !mounted) {
+  // OPTIMISTIC UI: Eliminate white flash by showing the shell if we have identity snapshot
+  const isOptimisticReady = mounted && !!userData;
+  const shouldShowLoader = (loading || !mounted) && !isOptimisticReady;
+
+  if (shouldShowLoader) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-[100svh] bg-slate-50 flex items-center justify-center">
         <div className="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );

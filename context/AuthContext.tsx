@@ -27,6 +27,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // OPTIMISTIC INITIALIZATION: Load clinical snapshot from local storage to eliminate white-flicker
+  useEffect(() => {
+    try {
+      const lastUid = localStorage.getItem('last_clinical_uid');
+      if (lastUid) {
+        const snapshot = localStorage.getItem(`clinical_identity_snapshot_${lastUid}`);
+        if (snapshot) {
+           const parsed = JSON.parse(snapshot);
+           setUserData({ name: parsed.name, role: parsed.role });
+           setIsAdmin(parsed.role === 'admin');
+           // We keep loading=true until Firebase confirms, but now the UI has a skeleton data
+        }
+      }
+    } catch (e) {}
+  }, []);
+
   const logout = async () => {
     if (auth) {
       try {
@@ -51,7 +67,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(authUser);
       
       if (authUser) {
-        // ROBUST FETCH: Retrieve identity baseline via high-reliability direct GET
+        localStorage.setItem('last_clinical_uid', authUser.uid);
+        // [OPTIMIZATION 1] FAST-PATH ADMIN DETECTION: Determine role via email prefix to bypass DB latency
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+        const lowerEmail = authUser.email?.toLowerCase() || '';
+        const isMaster = masterEmails.includes(lowerEmail);
+        
+        if (isMaster) {
+           console.log(">>> [AUTH GATEWAY] ELITE ADMIN IDENTITY RESOLVED (FAST-PATH)");
+           setIsAdmin(true);
+           // Release UI lock early for admin-speed navigation
+           setLoading(false); 
+        }
+
         const fetchUserData = async () => {
           try {
             const userRef = doc(db, 'users', authUser.uid);
@@ -61,18 +89,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               const data = snapshot.data();
               setUserData(data);
               
-              const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
-              const isMaster = Boolean(authUser.email && masterEmails.includes(authUser.email.toLowerCase())) || data.role === 'admin';
+              const verifiedAdmin = isMaster || data.role === 'admin';
+              setIsAdmin(verifiedAdmin);
               
-              console.log(">>> [AUTH SYSTEM] Verified Role:", isMaster ? 'ADMIN' : 'DOCTOR');
-              setIsAdmin(isMaster);
+              // Persist minimal identity for next-session optimistic rendering
+              localStorage.setItem(`clinical_identity_snapshot_${authUser.uid}`, JSON.stringify({
+                 role: verifiedAdmin ? 'admin' : 'doctor',
+                 name: data.name
+              }));
             } else {
-              // Default Clinical Baseline if document missing
-              const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
-              const isMaster = Boolean(authUser.email && masterEmails.includes(authUser.email.toLowerCase()));
-              
               setUserData({ 
-                 name: isMaster ? 'Master Admin' : (authUser.displayName || 'Nimona Singh'), 
+                 name: isMaster ? 'Master Admin' : (authUser.displayName || 'Practitioner'), 
                  role: isMaster ? 'admin' : 'doctor', 
                  pending: false 
               });
@@ -80,23 +107,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
             setLoading(false);
           } catch (error) {
-            console.warn("Identity Fetch Latency (Network Check Req):", error);
-            // Default recovery to prevent blocking the UI
-            const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
-            const isMaster = Boolean(authUser.email && masterEmails.includes(authUser.email.toLowerCase()));
-
-            setUserData({ name: isMaster ? 'Master Admin' : 'System Doctor', role: isMaster ? 'admin' : 'doctor', pending: false });
+            console.warn("Identity Fetch Latency:", error);
+            // Default recovery to avoid blocking the UI
             setIsAdmin(isMaster);
             setLoading(false);
           }
         };
-        // Safety Timeout for Identity Fetch to prevent forever-spinner
+
+        // Safety Timeout shortened for microsecond-feel navigation
         const timeoutId = setTimeout(() => {
           if (loading) {
-            console.warn("Identity Fetch Timeout - Forcing Session Release");
+            console.warn("Identity Fetch Latency Identified - Bypassing Profile Dependency");
             setLoading(false);
           }
-        }, 8000);
+        }, 3000); // 3s instead of 8s
         fetchUserData().finally(() => clearTimeout(timeoutId));
       } else {
         setUserData(null);

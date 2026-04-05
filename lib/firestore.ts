@@ -109,12 +109,19 @@ export const approveCase = async (caseId: string, doctorUid: string, points: num
 
     // Resilience: Check if case exists before updating (Avoids crash on Mock IDs)
     const caseSnap = await getDoc(caseRef);
-    if (caseSnap.exists()) {
-      await updateDoc(caseRef, {
-        status: 'Approved',
-        approvedAt: serverTimestamp(),
-      });
+    if (!caseSnap.exists()) throw new Error("Case Record Identity Missing.");
+    const caseData = caseSnap.data();
+    
+    // ATOMIC LOCK: Exit if case is already approved to prevent double-crediting
+    if (caseData.status === 'Approved') {
+        console.warn("Attempted double-approval blocked for case:", caseId);
+        return { success: true, message: "ALREADY_PROCESSED" };
     }
+
+    await updateDoc(caseRef, {
+      status: 'Approved',
+      approvedAt: serverTimestamp(),
+    });
 
     // Use setDoc with merge to create user document if it doesn't exist (UPSERT)
     await setDoc(doctorRef, {

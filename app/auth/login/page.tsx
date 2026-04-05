@@ -94,7 +94,7 @@ export default function LoginPage() {
           
           const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
           const isMaster = user.email && masterEmails.includes(user.email.toLowerCase());
-          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.includes('admin')) ? 'admin' : 'doctor';
+          const targetRole = (isMaster || sanitizedEmail.toLowerCase() === 'niteen02' || sanitizedEmail.toLowerCase() === 'admin@blueteeth.in') ? 'admin' : 'doctor';
 
           if (userSnap.exists()) {
             const userData = userSnap.data();
@@ -232,7 +232,7 @@ export default function LoginPage() {
 
       if (userSnap.exists()) {
         const data = userSnap.data();
-        if (data.otp === otp || otp === '123456') {
+        if (data.otp === otp) {
           await updateDoc(userRef, {
             pending: false,
             emailVerified: true,

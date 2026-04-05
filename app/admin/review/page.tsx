@@ -163,7 +163,7 @@ function CaseReviewContent() {
                           <div className="text-right flex items-center gap-3 sm:gap-6 shrink-0">
                             <div className="hidden sm:block">
                                <p className="text-[11px] font-black text-slate-600 uppercase italic">{c.treatment}</p>
-                               <p className="text-[9px] text-slate-400 font-bold">{new Date(c.submittedAt?.seconds * 1000).toLocaleDateString()}</p>
+                               <p className="text-[9px] text-slate-400 font-bold">{c.submittedAt ? new Date(c.submittedAt.seconds * 1000).toLocaleDateString() : 'Pending Registry'}</p>
                             </div>
                             <div className="flex flex-col items-center justify-center h-9 w-12 sm:h-10 sm:w-14 bg-blue-50 rounded-lg ring-1 ring-blue-500/10 shadow-sm border border-blue-100/20">
                                <span className="text-[10px] sm:text-xs font-black text-blue-700">{c.points}</span>

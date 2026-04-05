@@ -171,21 +171,11 @@ export default function SignupPage() {
     toast.success(isRepair ? 'Identity Repaired. Proceed to Verification.' : 'Professional identity check initiated.');
     setLoading(false);
   };
-
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (otp === '123456') {
-          const userRef = doc(db, 'users', userId);
-          console.log(">>> [MASTER BYPASS] AUTHORIZED IDENTITY...");
-          updateDoc(userRef, { pending: false, emailVerified: true }).catch(() => {});
-          setStep('SUCCESS');
-          toast.success('Professional Identity Secured.');
-          return;
-      }
-
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
