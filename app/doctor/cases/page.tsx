@@ -74,6 +74,18 @@ export default function CaseHistory() {
     setCurrentPage(1);
   }, [searchQuery, filter]);
 
+  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  useEffect(() => {
+    if (selectedCase) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedCase]);
+
   const filteredCases = useMemo(() => {
     return cases.filter(c => {
       const isManualAdjustment = String(c.patientName || '').trim().toUpperCase() === "ADMIN MANUAL ADJUSTMENT";
@@ -268,7 +280,7 @@ export default function CaseHistory() {
                   <th className="px-10 py-5 text-left text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Treatment Details</th>
                   <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Points</th>
                   <th className="px-10 py-5 text-center text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Status</th>
-                  <th className="px-10 py-5 text-right text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Record</th>
+                  <th className="w-32 px-10 pr-16 py-5 text-right text-[10px] font-black uppercase tracking-[0.3em] whitespace-nowrap">Record</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -327,10 +339,10 @@ export default function CaseHistory() {
                            <span className="text-[9px] font-black tracking-[0.2em] uppercase">{c.status}</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-right">
+                      <td className="w-32 px-10 pr-16 py-6 text-right">
                         <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedCase(c); }}
-                           className="h-10 w-9 rounded-md bg-white border border-slate-100 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50"
+                           className="h-10 w-9 rounded-md bg-white border border-slate-100 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50 ml-auto"
                         >
                            <Eye className="h-5 w-5" />
                         </button>

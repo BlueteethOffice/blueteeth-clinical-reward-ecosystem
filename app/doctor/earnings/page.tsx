@@ -90,9 +90,20 @@ export default function EarningsPage() {
   const [totalRedeemedAmount, setTotalRedeemedAmount] = useState(0);
   const [showThresholdWarning, setShowThresholdWarning] = useState(false);
 
-  // Identity Hydration Guard
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
+
+  // [UX OPTIMIZATION] Prevent background scroll when case details are open
+  useEffect(() => {
+    if (selectedCase || showThresholdWarning || showRedeemModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedCase, showThresholdWarning, showRedeemModal]);
 
   // Synchronizing Official Clinical Wallet & History with Cache Logic
   useEffect(() => {
@@ -371,7 +382,7 @@ export default function EarningsPage() {
                   <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Points Earned</th>
                   <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em]">Cash Value</th>
                   <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-center">Status</th>
-                  <th className="px-10 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-right">Details</th>
+                  <th className="w-32 px-10 pr-16 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-right">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -423,10 +434,10 @@ export default function EarningsPage() {
                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">{item.status}</span>
                         </div>
                       </td>
-                      <td className="px-10 py-6 text-right">
+                      <td className="w-32 px-10 pr-16 py-6 text-right">
                         <button 
                            onClick={() => setSelectedCase(item)}
-                           className="h-11 w-10 rounded-lg bg-white border border-slate-100 text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:shadow-xl transition-all flex items-center justify-center active:scale-90"
+                           className="h-11 w-10 rounded-lg bg-white border border-slate-100 text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:shadow-xl transition-all flex items-center justify-center active:scale-90 ml-auto"
                         >
                            <Eye className="h-5 w-5" />
                         </button>
