@@ -354,9 +354,9 @@ export default function CaseHistory() {
           </div>
           
           {totalPages > 1 && (
-            <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex-1">
-                Node {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredCases.length)} <span className="mx-2 text-slate-200">|</span> Archive Count: {filteredCases.length}
+            <div className="p-4 sm:p-8 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest sm:tracking-[0.2em] flex-1 text-center sm:text-left">
+                Node {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, filteredCases.length)} <span className="mx-1 sm:mx-2 text-slate-200">|</span> Archive Count: {filteredCases.length}
               </p>
               <div className="flex items-center gap-2">
                 <Button 

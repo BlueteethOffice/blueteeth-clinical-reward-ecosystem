@@ -445,9 +445,9 @@ export default function EarningsPage() {
           </div>
 
           {totalPages > 1 && (
-            <div className="p-8 bg-slate-50/20 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  Archive Node {currentPage} OF {totalPages} <span className="mx-2 opacity-20">|</span> Total {filteredHistory.length}
+            <div className="p-5 sm:p-8 bg-slate-50/20 border-t border-slate-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+               <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest text-center sm:text-left">
+                  Archive Node {currentPage} OF {totalPages} <span className="mx-1 sm:mx-2 opacity-20">|</span> Total {filteredHistory.length}
                </p>
                <div className="flex items-center gap-2">
                   <Button 
