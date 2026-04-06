@@ -53,9 +53,6 @@ export default function DashboardLayout({
   
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [displayName, setDisplayName] = useState('');
-  const [displaySpec, setDisplaySpec] = useState('Clinical Practitioner');
-  const [displayPhoto, setDisplayPhoto] = useState('');
 
   const navigation = isAdminRoute ? adminLinks : doctorLinks;
 
@@ -74,35 +71,10 @@ export default function DashboardLayout({
     }
   }, [sidebarOpen]);
 
-  React.useEffect(() => {
-    const updateProfile = () => {
-      if (!user) return;
-      if (userData?.name || userData?.photoURL) {
-          if (userData.name) setDisplayName(userData.name);
-          if (userData.photoURL) setDisplayPhoto(userData.photoURL);
-      } else {
-          const localProfile = localStorage.getItem(`clinical_identity_snapshot_${user.uid}`);
-          if (localProfile) {
-            try {
-              const parsed = JSON.parse(localProfile);
-              if (parsed.name) setDisplayName(parsed.name);
-              if (parsed.photoURL) setDisplayPhoto(parsed.photoURL);
-            } catch (e) {}
-          } else {
-            setDisplayName(user.displayName || '');
-            setDisplayPhoto(user.photoURL || '');
-          }
-      }
-      if (userData?.role === 'admin' || isUserAdmin) setDisplaySpec('Master Admin');
-    };
-    updateProfile();
-    window.addEventListener('clinical-identity-update', updateProfile);
-    window.addEventListener('focus', updateProfile);
-    return () => {
-      window.removeEventListener('clinical-identity-update', updateProfile);
-      window.removeEventListener('focus', updateProfile);
-    };
-  }, [user, userData, isUserAdmin]);
+  // Identity is now derived directly from userData for real-time Cloud Sync
+  const displayName = userData?.name || user?.displayName || 'Doctor';
+  const displayPhoto = userData?.photoURL || user?.photoURL || '';
+  const displaySpec = (userData?.role === 'admin' || isUserAdmin) ? 'Master Admin' : 'Clinical Practitioner';
 
   React.useEffect(() => {
     if (!user || !db) return;
