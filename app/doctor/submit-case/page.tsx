@@ -126,14 +126,30 @@ export default function SubmitCase() {
         submittedAt: serverTimestamp()
       };
 
-      // FIRE AND FORGET (BACKGROUND SYNC)
-      addDoc(collection(db, 'cases'), clinicalData)
-        .catch(err => {
-           toast.error("Background sync failed. Data may be lost.");
-        });
+      // [HARDENED SYNC] Await confirmation and update global registry
+      const docRef = await addDoc(collection(db, 'cases'), clinicalData);
+      
+      // Notify System for Dashboard Feed
+      try {
+        const { createNotification } = await import('@/lib/firestore');
+        await createNotification(
+          user.uid, 
+          'New Case Submitted', 
+          `Case for ${formData.patientName} (${selectedTreatment?.name}) registered successfully.`, 
+          'success'
+        );
+      } catch (notifErr) { console.warn("Identity Notification Delayed"); }
+
+      // Clear local caches to force fresh fetch in History/Dashboard
+      localStorage.removeItem('blueteeth_cases_cache');
+      localStorage.removeItem('clinical_cases_v2_cache');
+      localStorage.removeItem(`doctor_stats_${user.uid}`);
+      localStorage.removeItem(`clinical_stats_${user.uid}`);
+      localStorage.removeItem(`clinical_cases_${user.uid}`);
+      window.dispatchEvent(new Event('clinical-identity-update'));
 
       // INSTANT SUCCESS FEEDBACK
-      toast.success("Case Registered Successfully!", { id: toastId });
+      toast.success("Case Registered in Cloud Registry!", { id: toastId });
       
       setFormData({
         patientName: '',

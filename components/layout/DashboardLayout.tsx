@@ -206,7 +206,8 @@ export default function DashboardLayout({
                 <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                 <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1.5">Clinical Support</p>
                 <p className="text-[11px] text-white font-bold leading-relaxed mb-2">Our clinical experts are here for you 24/7.</p>
-                <a href="mailto:support@blueteeth.in" className="flex items-center gap-2 text-[10px] text-blue-300 hover:text-blue-100 font-black transition-colors block mb-4 underline underline-offset-2 group/mail">
+                <a href="mailto:support@blueteeth.in" 
+                   className="flex items-center gap-2 text-[10px] text-blue-300 hover:text-blue-100 font-black transition-colors block mb-4 underline underline-offset-4 group/mail">
                   <Mail className="h-3.5 w-3.5 text-blue-400 group-hover/mail:text-white transition-colors" />
                   support@blueteeth.in
                 </a>

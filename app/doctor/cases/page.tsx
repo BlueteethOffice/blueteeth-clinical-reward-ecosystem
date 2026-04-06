@@ -141,6 +141,22 @@ export default function CaseHistory() {
 
   const handleViewAttachment = (url: string) => {
     if (!url) return;
+
+    // [UX FIX] Convert DataURL to Blob for stable browser rendering (Fixes blank PDF issue)
+    let displayUrl = url;
+    if (url.startsWith('data:application/pdf')) {
+      try {
+        const byteCharacters = atob(url.split(',')[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        displayUrl = URL.createObjectURL(blob);
+      } catch (e) { console.error("PDF Blob Conversion Failed", e); }
+    }
+
     const newTab = window.open();
     if (newTab) {
       newTab.document.write(`
@@ -151,7 +167,7 @@ export default function CaseHistory() {
               body { margin: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: sans-serif; }
               .container { text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; }
               img { max-width: 95%; max-height: 90%; object-fit: contain; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 8px; margin: auto; border: 1px solid rgba(255,255,255,0.1); }
-              embed { width: 100%; height: 100%; border: none; }
+              iframe { width: 100%; height: 100%; border: none; }
               .header { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
               .badge { background: #3b82f6; padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
             </style>
@@ -163,8 +179,8 @@ export default function CaseHistory() {
                  <span class="badge">SECURE AUDIT VIEW</span>
               </div>
               ${url.includes('application/pdf') 
-                ? `<embed src="${url}" type="application/pdf">`
-                : `<img src="${url}" alt="Attachment">`
+                ? `<iframe src="${displayUrl}"></iframe>`
+                : `<img src="${displayUrl}" alt="Attachment">`
               }
             </div>
           </body>
