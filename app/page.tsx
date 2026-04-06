@@ -149,7 +149,7 @@ export default function Home() {
                 </div>
                 <p className="text-sm font-bold text-slate-900">Blueteeth Reward System</p>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-[10px] sm:text-sm text-slate-500 whitespace-nowrap">
                 &copy; {new Date().getFullYear()} Blueteeth Ecosystem. All rights reserved.
               </p>
               <div className="flex gap-6">
