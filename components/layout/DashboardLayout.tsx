@@ -71,10 +71,10 @@ export default function DashboardLayout({
     }
   }, [sidebarOpen]);
 
-  // Identity is now derived directly from userData for real-time Cloud Sync
-  const displayName = userData?.name || user?.displayName || 'Doctor';
-  const displayPhoto = userData?.photoURL || user?.photoURL || '';
-  const displaySpec = (userData?.role === 'admin' || isUserAdmin) ? 'Master Admin' : 'Clinical Practitioner';
+  // Identity is now derived safely with hydration-aware guard
+  const displayName = mounted ? (userData?.name || user?.displayName || 'Doctor') : 'Doctor';
+  const displayPhoto = mounted ? (userData?.photoURL || user?.photoURL || '') : '';
+  const displaySpec = mounted ? ((userData?.role === 'admin' || isUserAdmin) ? 'Master Admin' : 'Clinical Practitioner') : 'Practitioner';
 
   React.useEffect(() => {
     if (!user || !db) return;

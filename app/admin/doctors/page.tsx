@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
   Users, Search, UserCheck, ShieldAlert, Mail, Phone,
-  MapPin, Coins, ArrowRight, Filter, Download, MoreVertical,
+  FilePlus, MapPin, Coins, ArrowRight, Filter, Download, MoreVertical,
   Activity, Award, UserPlus, X, CreditCard, ChevronRight,
   TrendingUp, Clock, History, ShieldCheck, Share2, Trash2, PlusCircle,
   IndianRupee, Smartphone, Gift, BadgeCheck, Lock
@@ -567,7 +567,7 @@ function DoctorListContent() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="inline-flex flex-col items-center gap-0.5 p-2 bg-emerald-50 rounded-lg border border-emerald-100 ring-1 ring-inset ring-emerald-500/10">
-                        <span className="text-xs font-black text-emerald-700 tracking-tight">₹{Math.round(doc.walletBalance || 0).toLocaleString()}</span>
+                        <span className="text-xs font-black text-emerald-700 tracking-tight">₹{Math.round((doc.totalPoints || 0) * exchangeRate).toLocaleString()}</span>
                         <span className="text-[8px] font-black text-emerald-600/50 uppercase tracking-widest">{Number(doc.totalPoints || 0).toFixed(1)} PTS</span>
                       </div>
                     </td>
@@ -635,7 +635,7 @@ function DoctorListContent() {
                       <p className="font-black text-blue-900 uppercase tracking-tight truncate pr-2">{doc.name || 'Practitioner'}</p>
                       <p className="text-[9px] font-medium text-slate-400 mt-0.5 truncate">{doc.email}</p>
                       <div className="flex items-center gap-2 mt-2">
-                         <span className="text-[10px] font-black text-emerald-600">₹{Math.round(doc.walletBalance || 0).toLocaleString()}</span>
+                         <span className="text-[10px] font-black text-emerald-600">₹{Math.round((doc.totalPoints || 0) * exchangeRate).toLocaleString()}</span>
                          <span className="h-1 w-1 bg-slate-200 rounded-full" />
                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{Number(doc.totalPoints || 0).toFixed(1)} PTS</span>
                       </div>
@@ -754,7 +754,7 @@ function DoctorListContent() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm text-center">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Cash</p>
-                      <h4 className="text-lg font-black text-slate-900 mt-1">₹{Math.round(selectedDoctor.walletBalance || 0).toLocaleString()}</h4>
+                      <h4 className="text-lg font-black text-slate-900 mt-1">₹{Math.round((selectedDoctor.totalPoints || 0) * exchangeRate).toLocaleString()}</h4>
                     </div>
                     <div className="p-4 rounded-xl border border-slate-100 bg-white shadow-sm text-center">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Points</p>
@@ -1106,21 +1106,60 @@ function DoctorListContent() {
 
                             <div className="p-4 space-y-2.5">
                               {/* Clinical Evidence Image */}
-                              <div className="relative h-24 group overflow-hidden bg-slate-100 rounded-2xl border border-slate-200 shadow-inner">
+                              <div 
+                                onClick={() => {
+                                  const url = selectedAuditCase.evidenceUrl;
+                                  if (!url) return;
+                                  
+                                  if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
+                                    const toastId = toast.loading("Opening clinical PDF...");
+                                    try {
+                                      if (url.startsWith('data:application/pdf')) {
+                                        const base64Data = url.split(',')[1];
+                                        const byteCharacters = atob(base64Data);
+                                        const byteNumbers = new Array(byteCharacters.length);
+                                        for (let i = 0; i < byteCharacters.length; i++) {
+                                          byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                        }
+                                        const byteArray = new Uint8Array(byteNumbers);
+                                        const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                        const blobUrl = URL.createObjectURL(blob);
+                                        window.open(blobUrl, '_blank');
+                                      } else {
+                                        window.open(url, '_blank');
+                                      }
+                                      toast.success("Document opened.", { id: toastId });
+                                    } catch (e) {
+                                      toast.error("Format error. Try again.", { id: toastId });
+                                      window.open(url, '_blank');
+                                    }
+                                  } else {
+                                    window.open(url, '_blank');
+                                  }
+                                }}
+                                className="relative h-24 group overflow-hidden bg-slate-100 rounded-2xl border border-slate-200 shadow-inner cursor-pointer"
+                              >
                                 {selectedAuditCase.evidenceUrl ? (
-                                  <img
-                                    src={selectedAuditCase.evidenceUrl}
-                                    alt="Diagnostic Proof"
-                                    className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
-                                  />
+                                  (selectedAuditCase.evidenceUrl.startsWith('data:application/pdf') || selectedAuditCase.evidenceUrl.toLowerCase().includes('.pdf')) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-rose-50/50 group-hover:bg-rose-100/50 transition-colors">
+                                      <FilePlus className="h-8 w-8 text-rose-500 mb-1 group-hover:scale-110 transition-transform" />
+                                      <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest">Open Clinical PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={selectedAuditCase.evidenceUrl}
+                                      alt="Diagnostic Proof"
+                                      className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                    />
+                                  )
                                 ) : (
                                   <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-slate-50">
                                     <ShieldCheck className="h-10 w-10 text-slate-300 mb-3" />
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">Official System Record:<br /><span className="text-blue-600">Manual Asset Sync</span></p>
                                   </div>
                                 )}
-                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[8px] font-black text-slate-900 uppercase shadow-sm border border-slate-200/50">
-                                  Encrypted Proof
+                                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[8px] font-black text-slate-900 uppercase shadow-sm border border-slate-200/50 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                  {selectedAuditCase.evidenceUrl?.includes('pdf') ? 'SECURE PDF' : 'Encrypted Proof'}
                                 </div>
                               </div>
 

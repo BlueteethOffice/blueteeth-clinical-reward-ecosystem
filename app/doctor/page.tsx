@@ -41,6 +41,7 @@ const getCaseBorderClass = (id: string) => {
 export default function DoctorDashboard() {
   const { user, userData } = useAuth();
   const [dbStats, setDbStats] = React.useState<any>({ totalPoints: 0, totalEarnings: 0, pendingCases: 0, approvedToday: 0 });
+  const [exchangeRate, setExchangeRate] = React.useState(50);
   const [cases, setCases] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
@@ -78,6 +79,16 @@ export default function DoctorDashboard() {
       document.body.style.overflow = '';
     };
   }, [selectedCase]);
+
+  // 0. FETCH GLOBAL SETTINGS (Exchange Rate)
+  React.useEffect(() => {
+    const loadSettings = async () => {
+       const { fetchGlobalSettings } = await import('@/lib/firestore');
+       const settings = await fetchGlobalSettings();
+       if (settings?.exchangeRate) setExchangeRate(settings.exchangeRate);
+    };
+    loadSettings();
+  }, []);
 
   // 1. REAL-TIME DATA SUBSCRIPTION
   React.useEffect(() => {
@@ -127,7 +138,7 @@ export default function DoctorDashboard() {
       const sortedCases = allCases.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
       const statsPayload = {
         totalPoints: totalP,
-        totalEarnings: totalP * 50,
+        totalEarnings: totalP * exchangeRate,
         pendingCases: pendingC,
         approvedToday: approvedT
       };
@@ -150,7 +161,7 @@ export default function DoctorDashboard() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, exchangeRate]);
 
   const filteredCases = React.useMemo(() => {
     const visibleCases = cases.filter(c =>
@@ -505,7 +516,7 @@ export default function DoctorDashboard() {
                     </div>
                     <div className="flex-1 bg-emerald-50/50 rounded-lg px-4 sm:px-5 py-2 sm:py-3 border border-emerald-100 flex items-center justify-between group hover:bg-emerald-50 transition-colors">
                       <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-600">Points Value</p>
-                      <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter">₹{((selectedCase.points || 0) * 50).toLocaleString()}</p>
+                      <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter">₹{((selectedCase.points || 0) * exchangeRate).toLocaleString()}</p>
                     </div>
                   </div>
 
@@ -533,27 +544,55 @@ export default function DoctorDashboard() {
                   {selectedCase.evidenceUrl && (
                     <div className="pt-0.5 sm:pt-1">
                        <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Evidence Proof</p>
-                      <div className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4">
+                      <div 
+                        onClick={() => {
+                          const url = selectedCase.evidenceUrl;
+                          if (!url) return;
+                          
+                          if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
+                            const toastId = toast.loading("Opening clinical PDF...");
+                            try {
+                              if (url.startsWith('data:application/pdf')) {
+                                const base64Data = url.split(',')[1];
+                                const byteCharacters = atob(base64Data);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) {
+                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                const byteArray = new Uint8Array(byteNumbers);
+                                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                const blobUrl = URL.createObjectURL(blob);
+                                window.open(blobUrl, '_blank');
+                              } else {
+                                window.open(url, '_blank');
+                              }
+                              toast.success("Document opened.", { id: toastId });
+                            } catch (e) {
+                              toast.error("Format error. Try again.", { id: toastId });
+                              window.open(url, '_blank');
+                            }
+                          } else {
+                            // If it's an image, just open in new tab
+                            window.open(url, '_blank');
+                          }
+                        }}
+                        className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all active:scale-[0.99]"
+                      >
                          {(String(selectedCase.evidenceUrl).toLowerCase().includes('.pdf') || 
                            String(selectedCase.evidenceUrl).toLowerCase().includes('application/pdf')) ? (
                            <div className="w-full flex items-center justify-between gap-4">
                              <div className="flex items-center gap-3">
-                               <div className="h-10 w-10 bg-rose-50 rounded-md flex items-center justify-center text-rose-600 border border-rose-100">
+                               <div className="h-10 w-10 bg-rose-50 rounded-md flex items-center justify-center text-rose-600 border border-rose-100 group-hover:scale-110 transition-transform">
                                  <FileText size={20} />
                                </div>
                                <div>
-                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none">Treatment Proof</p>
+                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none group-hover:text-blue-600 transition-colors">Treatment Proof</p>
                                  <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Medical Document Attached</p>
                                </div>
                              </div>
-                             <a 
-                               href={selectedCase.evidenceUrl} 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="h-9 px-4 bg-slate-900 hover:bg-black text-white rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all active:scale-95"
-                             >
+                             <div className="h-9 px-4 bg-slate-900 group-hover:bg-blue-600 text-white rounded-md flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all">
                                Open PDF
-                             </a>
+                             </div>
                            </div>
                          ) : (
                            <img

@@ -81,6 +81,7 @@ export default function EarningsPage() {
   });
 
   const [loading, setLoading] = useState(history.length === 0);
+  const [exchangeRate, setExchangeRate] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
   
@@ -104,6 +105,12 @@ export default function EarningsPage() {
     if (userData?.payoutNode?.method) {
       setPayoutMethod(userData.payoutNode.method);
     }
+    const loadSettings = async () => {
+       const { fetchGlobalSettings } = await import('@/lib/firestore');
+       const settings = await fetchGlobalSettings();
+       if (settings?.exchangeRate) setExchangeRate(settings.exchangeRate);
+    };
+    loadSettings();
   }, [userData]);
 
   // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
@@ -195,13 +202,13 @@ export default function EarningsPage() {
           clP += Number(curr.points || 0);
           adP += Number(curr.bonusPoints || 0);
           if (cTime > lastT) {
-             avR += (Number(curr.points || 0) + Number(curr.bonusPoints || 0)) * 50;
+             avR += (Number(curr.points || 0) + Number(curr.bonusPoints || 0)) * exchangeRate;
           }
         }
       } else {
         adP += Number(curr.points || 0);
         if (cTime > lastT) {
-           avR += Number(curr.points || 0) * 50;
+           avR += Number(curr.points || 0) * exchangeRate;
         }
       }
     });
@@ -210,13 +217,13 @@ export default function EarningsPage() {
       casePoints: clP,
       pendingPoints: adP,
       totalPoints: clP + adP,
-      totalRevenue: (clP + adP) * 50,
+      totalRevenue: (clP + adP) * exchangeRate,
       availableRevenue: avR
     };
 
     setStats(newStats);
     localStorage.setItem('blueteeth_stats_cache', JSON.stringify(newStats));
-  }, [history, redemptions]);
+  }, [history, redemptions, exchangeRate]);
 
   const filteredHistory = useMemo(() => {
     return history.filter(item => {
@@ -389,7 +396,7 @@ export default function EarningsPage() {
                   <div className="flex justify-between items-end">
                      <div>
                         <p className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1 leading-none">Net Cash Value</p>
-                        <p className="text-xl font-black text-slate-900 tracking-tighter italic leading-none">₹{Math.round((Number(item.points || 0) + Number(item.bonusPoints || 0)) * 50).toLocaleString()}</p>
+                        <p className="text-xl font-black text-slate-900 tracking-tighter italic leading-none">₹{Math.round((Number(item.points || 0) + Number(item.bonusPoints || 0)) * exchangeRate).toLocaleString()}</p>
                      </div>
                      <div className="text-right">
                         <p className="text-[14px] font-black text-blue-600 leading-none">
@@ -456,7 +463,7 @@ export default function EarningsPage() {
                       </td>
                       <td className="px-6 py-6">
                         <div className="flex flex-col">
-                           <span className="font-black text-slate-800 text-[16px] tracking-tighter">₹{Math.round((Number(item.points || 0) + Number(item.bonusPoints || 0)) * 50).toLocaleString()}</span>
+                           <span className="font-black text-slate-800 text-[16px] tracking-tighter">₹{Math.round((Number(item.points || 0) + Number(item.bonusPoints || 0)) * exchangeRate).toLocaleString()}</span>
                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">Cash Value</span>
                         </div>
                       </td>
@@ -573,7 +580,7 @@ export default function EarningsPage() {
                       </div>
                       <div className="bg-emerald-50/50 p-4 rounded-lg border border-emerald-100/50 shadow-sm">
                         <p className="text-[10px] font-black text-emerald-600 uppercase mb-1">Yield</p>
-                        <span className="text-2xl font-black text-emerald-700 leading-none">₹{Math.round((Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)) * 50).toLocaleString()}</span>
+                        <span className="text-2xl font-black text-emerald-700 leading-none">₹{Math.round((Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)) * exchangeRate).toLocaleString()}</span>
                       </div>
                     </div>
 

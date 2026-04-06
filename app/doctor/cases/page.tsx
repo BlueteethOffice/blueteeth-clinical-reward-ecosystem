@@ -142,21 +142,28 @@ export default function CaseHistory() {
   const handleViewAttachment = (url: string) => {
     if (!url) return;
 
-    // [UX FIX] Convert DataURL to Blob for stable browser rendering (Fixes blank PDF issue)
-    let displayUrl = url;
     if (url.startsWith('data:application/pdf')) {
+      const toastId = toast.loading("Opening clinical PDF...");
       try {
-        const byteCharacters = atob(url.split(',')[1]);
+        const base64Data = url.split(',')[1];
+        const byteCharacters = atob(base64Data);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'application/pdf' });
-        displayUrl = URL.createObjectURL(blob);
-      } catch (e) { console.error("PDF Blob Conversion Failed", e); }
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+        toast.success("Document opened.", { id: toastId });
+      } catch (e) {
+        toast.error("Format error. Opening raw link...", { id: toastId });
+        window.open(url, '_blank');
+      }
+      return;
     }
 
+    // [UX OPTIMIZATION] For images or regular URLs, use high-fidelity viewer
     const newTab = window.open();
     if (newTab) {
       newTab.document.write(`
@@ -164,29 +171,27 @@ export default function CaseHistory() {
           <head>
             <title>Blueteeth Clinical Evidence | ${selectedCase?.patientName || 'Record'}</title>
             <style>
-              body { margin: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; font-family: sans-serif; }
-              .container { text-align: center; width: 100%; height: 100%; display: flex; flex-direction: column; }
-              img { max-width: 95%; max-height: 90%; object-fit: contain; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 8px; margin: auto; border: 1px solid rgba(255,255,255,0.1); }
-              iframe { width: 100%; height: 100%; border: none; }
-              .header { background: #1e293b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+              body { margin: 0; background: #0f172a; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: auto; font-family: sans-serif; }
+              .container { text-align: center; width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+              img { max-width: 100%; height: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+              .header { background: #1e293b; color: white; padding: 12px 24px; position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; z-index: 100; }
               .badge { background: #3b82f6; padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
             </style>
           </head>
           <body>
-            <div class="container">
-              <div class="header">
-                 <span style="font-weight: 900; font-size: 14px; letter-spacing: -0.5px;">Blueteeth Clinical Archive</span>
-                 <span class="badge">SECURE AUDIT VIEW</span>
-              </div>
-              ${url.includes('application/pdf') 
-                ? `<iframe src="${displayUrl}"></iframe>`
-                : `<img src="${displayUrl}" alt="Attachment">`
-              }
+            <div class="header">
+               <span style="font-weight: 900; font-size: 14px; letter-spacing: -0.5px;">Blueteeth Clinical Archive</span>
+               <span class="badge">SECURE AUDIT VIEW</span>
+            </div>
+            <div class="container" style="margin-top: 60px;">
+               <img src="${url}" alt="Attachment">
             </div>
           </body>
         </html>
       `);
       newTab.document.close();
+    } else {
+      window.open(url, '_blank');
     }
   };
 

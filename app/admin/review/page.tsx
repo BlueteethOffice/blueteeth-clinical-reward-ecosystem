@@ -315,15 +315,41 @@ function CaseReviewContent() {
                       </div>
                       <div 
                         onClick={() => {
-                          if (selectedCase?.evidenceUrl || selectedCase?.proofUrl || selectedCase?.imageUrl || selectedCase?.url || (selectedCase?.evidenceUrls && selectedCase.evidenceUrls.length > 0)) {
-                            setShowPreview(true);
-                          } else {
+                          const url = (selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                          if (!url) {
                             setModalState({
                               open: true,
                               title: 'Missing Photo',
                               message: 'No photos were uploaded for this case. Please verify this case manually before approving.',
                               type: 'warning'
                             });
+                            return;
+                          }
+
+                          if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
+                            const toastId = toast.loading("Opening clinical PDF...");
+                            try {
+                              if (url.startsWith('data:application/pdf')) {
+                                const base64Data = url.split(',')[1];
+                                const byteCharacters = atob(base64Data);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) {
+                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                const byteArray = new Uint8Array(byteNumbers);
+                                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                const blobUrl = URL.createObjectURL(blob);
+                                window.open(blobUrl, '_blank');
+                              } else {
+                                window.open(url, '_blank');
+                              }
+                              toast.success("Document opened.", { id: toastId });
+                            } catch (e) {
+                              toast.error("Format error. Try again.", { id: toastId });
+                              window.open(url, '_blank');
+                            }
+                          } else {
+                            setShowPreview(true);
                           }
                         }}
                         className="h-24 sm:h-44 min-h-[96px] bg-slate-50/50 rounded-md flex flex-col items-center justify-center border border-dashed border-slate-200 group hover:border-blue-400 transition-all cursor-pointer relative overflow-hidden shadow-inner"
@@ -331,9 +357,9 @@ function CaseReviewContent() {
                          {/* SMART DETECTION: Checking all possible proof fields with Ultra Precision */}
                          {((selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]) || '').toLowerCase().includes('.pdf') ? (
                            <div className="flex flex-col items-center justify-center py-4 bg-white w-full h-full text-center p-4">
-                              <FileText className="h-6 w-6 text-rose-500 mb-2 group-hover:scale-110 transition-transform" />
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">PDF Attached</p>
-                              <p className="text-[7px] text-slate-400 mt-1 uppercase">Click to open</p>
+                              <FileText className="h-10 w-10 text-rose-500 mb-2 group-hover:scale-110 transition-transform" />
+                              <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest leading-none">PDF ATTACHED</p>
+                              <p className="text-[8px] text-slate-400 mt-2 uppercase font-black tracking-widest">CLICK TO OPEN DOCUMENT</p>
                            </div>
                          ) : (selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || (selectedCase.evidenceUrls && selectedCase.evidenceUrls.length > 0)) ? (
                            <>
@@ -346,7 +372,10 @@ function CaseReviewContent() {
                                  console.warn("Evidence Image Load Failure for Case:", selectedCase.id);
                                  e.currentTarget.style.display = 'none';
                                  const fallback = document.getElementById('thumb-fallback-' + selectedCase.id);
-                                 if (fallback) fallback.style.display = 'flex';
+                                 if (fallback) {
+                                   fallback.classList.remove('hidden');
+                                   fallback.classList.add('flex');
+                                 }
                                }}
                              />
                              <div id={'thumb-fallback-' + selectedCase.id} className="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-100 z-10 p-4">
@@ -586,20 +615,34 @@ function CaseReviewContent() {
                          Download
                       </Button>
                       <Button 
-                        onClick={async () => {
+                        onClick={() => {
                           const url = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0];
                           if (!url) return;
-                          const tId = toast.loading("Syncing secure view...");
-                          try {
-                            const response = await fetch(url);
-                            const blob = await response.blob();
-                            const blobUrl = window.URL.createObjectURL(blob);
-                            window.open(blobUrl, '_blank');
-                            toast.dismiss(tId);
-                          } catch (e) {
-                            toast.dismiss(tId);
-                            toast.error("Sync failed, falling back to network link.");
-                            window.open(url, '_blank', 'noopener,noreferrer');
+                          
+                          if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
+                            const toastId = toast.loading("Opening clinical PDF...");
+                            try {
+                              if (url.startsWith('data:application/pdf')) {
+                                const base64Data = url.split(',')[1];
+                                const byteCharacters = atob(base64Data);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) {
+                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                const byteArray = new Uint8Array(byteNumbers);
+                                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                const blobUrl = URL.createObjectURL(blob);
+                                window.open(blobUrl, '_blank');
+                              } else {
+                                window.open(url, '_blank');
+                              }
+                              toast.success("Document opened.", { id: toastId });
+                            } catch (e) {
+                              toast.error("Format error. Try again.", { id: toastId });
+                              window.open(url, '_blank');
+                            }
+                          } else {
+                            window.open(url, '_blank');
                           }
                         }}
                         variant="outline" 
