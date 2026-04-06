@@ -20,9 +20,9 @@ export default function Home() {
     <div className="relative isolate min-h-screen bg-slate-50 selection:bg-blue-100 overflow-x-hidden">
       {/* Premium Background Layer */}
       <div className="absolute inset-0 -z-10 overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-white to-slate-50">
-        {/* Animated Glow Orbs */}
-        <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] bg-blue-400/10 rounded-full blur-[120px] animate-pulse-soft" />
-        <div className="absolute bottom-[20%] right-[-10%] w-[35rem] h-[35rem] bg-indigo-400/10 rounded-full blur-[120px] animate-pulse-soft-delayed" />
+        {/* Glow Orbs */}
+        <div className="absolute top-[-10%] left-[-5%] w-[40rem] h-[40rem] bg-blue-400/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[20%] right-[-10%] w-[35rem] h-[35rem] bg-indigo-400/10 rounded-full blur-[120px]" />
         
         {/* Soft Grid Pattern */}
         <svg
@@ -48,7 +48,7 @@ export default function Home() {
       {/* Hero Orbs */}
       <div className="absolute left-1/2 top-0 -z-10 -translate-x-1/2 blur-3xl overflow-hidden" aria-hidden="true">
         <div 
-          className="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-blue-300 to-indigo-400 opacity-[0.12] animate-float"
+          className="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-blue-300 to-indigo-400 opacity-[0.12]"
           style={{ clipPath: 'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)' }}
         />
       </div>
@@ -82,11 +82,7 @@ export default function Home() {
         <div className="relative pt-6 lg:pt-10 pb-20">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6 flex justify-center"
-              >
+              <div className="mb-6 flex justify-center">
                 <div className="relative rounded-xl px-4 py-1.5 text-sm leading-6 text-slate-600 ring-1 ring-slate-900/10 hover:ring-slate-900/20 transition-all bg-white shadow-sm">
                   <span className="font-semibold text-blue-600">New:</span> V1.0.0 Stable Version released.{' '}
                   <a href="#" className="font-semibold text-blue-600">
@@ -94,34 +90,19 @@ export default function Home() {
                     Read more <span aria-hidden="true">&rarr;</span>
                   </a>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.h1 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="text-2xl font-bold text-slate-900 sm:text-4xl tracking-tighter"
-              >
+              <h1 className="text-2xl font-bold text-slate-900 sm:text-4xl tracking-tighter">
                 The Premium <span className="text-blue-600 whitespace-nowrap">B-Points</span> <br className="sm:hidden" /> Rewards Portal
-              </motion.h1>
+              </h1>
 
-              <motion.p 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mt-6 text-lg leading-8 text-slate-600"
-              >
+              <p className="mt-6 text-lg leading-8 text-slate-600">
                 A specialized rewards ecosystem for professional dentists. 
                 Monetize every successful patient case with transparent 
                 payouts and comprehensive case tracking.
-              </motion.p>
+              </p>
 
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-10 flex items-center justify-center gap-x-6"
-              >
+              <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link href="/auth/login">
                   <Button variant="primary" size="lg" className="rounded-xl shadow-xl shadow-blue-100 group">
                     Doctor Login
@@ -132,29 +113,26 @@ export default function Home() {
                   Admin Access 
                   <ChevronRight className="ml-0.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
-              </motion.div>
+              </div>
             </div>
 
-            {/* Feature Cards Grid - Fixed & Responsive */}
+            {/* Feature Cards Grid */}
             <div className="mx-auto mt-20 max-w-7xl px-0 lg:px-8">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <FeatureCard 
                   icon={<Coins className="h-6 w-6" />}
                   title="Earn Points"
                   description="1 B-Point = ₹50. Earn up to 10 points per implant case. Instant reflection in your wallet."
-                  delay={0.4}
                 />
                 <FeatureCard 
                   icon={<Zap className="h-6 w-6" />}
                   title="Quick Payouts"
                   description="Secure UPI/Bank transfers with a minimum ₹500 withdrawal. Processing within 24 hours."
-                  delay={0.5}
                 />
                 <FeatureCard 
                   icon={<Activity className="h-6 w-6" />}
                   title="Real-time Tracking"
                   description="Comprehensive dashboard to track cases, status updates, and historical earnings records."
-                  delay={0.6}
                 />
               </div>
             </div>
@@ -187,14 +165,9 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNode, title: string, description: string, delay: number }) {
+function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className="relative group overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:-translate-y-1"
-    >
+    <div className="relative group overflow-hidden rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200 transition-all hover:shadow-xl hover:-translate-y-1">
       <div className="absolute top-0 right-0 -mr-4 -mt-4 h-24 w-24 rounded-full bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity blur-2xl" />
       <div className="mb-6 inline-flex rounded-xl bg-blue-50 p-3 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-inner">
         {icon}
@@ -203,7 +176,7 @@ function FeatureCard({ icon, title, description, delay }: { icon: React.ReactNod
       <p className="text-slate-600 leading-relaxed">
         {description}
       </p>
-    </motion.div>
+    </div>
   );
 }
 

@@ -55,7 +55,14 @@ export default function DoctorDashboard() {
 
   React.useEffect(() => {
     setIsMounted(true);
-  }, []);
+    // [PERFORMANCE] Instant Cache Load
+    try {
+      const cachedStats = localStorage.getItem(`clinical_stats_${user?.uid}`);
+      const cachedCases = localStorage.getItem(`clinical_cases_${user?.uid}`);
+      if (cachedStats) setDbStats(JSON.parse(cachedStats));
+      if (cachedCases) setCases(JSON.parse(cachedCases));
+    } catch (e) {}
+  }, [user?.uid]);
 
   // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
   React.useEffect(() => {
@@ -118,13 +125,22 @@ export default function DoctorDashboard() {
       });
 
       const sortedCases = allCases.sort((a, b) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0));
-      setCases(sortedCases);
-      setDbStats({
+      const statsPayload = {
         totalPoints: totalP,
         totalEarnings: totalP * 50,
         pendingCases: pendingC,
         approvedToday: approvedT
-      });
+      };
+
+      setCases(sortedCases);
+      setDbStats(statsPayload);
+      
+      // [PERFORMANCE] Persist to Cache
+      try {
+        localStorage.setItem(`clinical_stats_${user.uid}`, JSON.stringify(statsPayload));
+        localStorage.setItem(`clinical_cases_${user.uid}`, JSON.stringify(sortedCases.slice(0, 10))); // Only cache first 10 for speed
+      } catch (e) {}
+
       setLoading(false);
     }, (err: any) => {
       console.warn("Dashboard Sync Error:", err.message);

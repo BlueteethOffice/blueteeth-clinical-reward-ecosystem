@@ -7,10 +7,15 @@ import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   title: 'Blueteeth B-Points Reward System',
   description: 'A premium reward portal for doctors to earn B-points based on patient cases.',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
 };
 
 export default function RootLayout({

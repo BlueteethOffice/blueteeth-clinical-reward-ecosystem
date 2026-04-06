@@ -82,11 +82,11 @@ function PayoutManagementContent() {
       // ENTERPRISE DIAGNOSTIC FEEDBACK — CUSTOM PREMIUM TOASTS
       if (payoutData.simulation) {
          toast.custom((t) => (
-           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-slate-900 shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-white/10 backdrop-blur-md`}>
+           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-slate-900 shadow-2xl rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-white/10 backdrop-blur-md`}>
              <div className="flex-1 w-0 p-5">
                <div className="flex items-start">
                  <div className="flex-shrink-0 pt-0.5">
-                   <div className="h-10 w-10 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 shadow-xl shadow-amber-500/10">
+                   <div className="h-10 w-10 bg-amber-500/20 rounded-lg flex items-center justify-center text-amber-500 shadow-xl shadow-amber-500/10">
                      <Activity size={20} />
                    </div>
                  </div>
@@ -104,11 +104,11 @@ function PayoutManagementContent() {
          ), { duration: 6000 });
       } else {
          toast.custom((t) => (
-           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-blue-600 shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-10`}>
+           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-blue-600 shadow-2xl rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-10`}>
              <div className="flex-1 w-0 p-5">
                <div className="flex items-start">
                  <div className="flex-shrink-0 pt-0.5">
-                   <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center text-white backdrop-blur-md">
+                   <div className="h-10 w-10 bg-white/20 rounded-lg flex items-center justify-center text-white backdrop-blur-md">
                      <BadgeCheck size={20} />
                    </div>
                  </div>
@@ -153,7 +153,17 @@ function PayoutManagementContent() {
   const filtered = redemptions.filter(r => {
     const matchesTab = filter === 'All' || r.status === filter;
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || (r.doctorName || '').toLowerCase().includes(q) || (r.details || '').toLowerCase().includes(q) || String(r.points || '').includes(q);
+    
+    // Safety check for details object
+    const detailsStr = r.method === 'upi' 
+      ? (r.details?.upiId || '') 
+      : `${r.details?.accountNumber || ''} ${r.details?.bankName || ''}`;
+
+    const matchesSearch = !q || 
+      (r.doctorName || '').toLowerCase().includes(q) || 
+      detailsStr.toLowerCase().includes(q) || 
+      String(r.amount || '').includes(q);
+      
     return matchesTab && matchesSearch;
   });
   
@@ -173,12 +183,12 @@ function PayoutManagementContent() {
             <p className="text-slate-500 font-bold text-sm uppercase tracking-wider opacity-60">Manage doctor earnings and payments</p>
           </div>
           
-          <div className="flex h-11 bg-white rounded-xl shadow-xl shadow-slate-200/50 border border-slate-100 p-1 min-w-[320px]">
+          <div className="flex h-11 bg-white rounded-lg shadow-xl shadow-slate-200/50 border border-slate-100 p-1 min-w-[320px]">
             {['Pending', 'Paid', 'All'].map(f => (
               <button 
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`flex-1 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`flex-1 px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${
                   filter === f ? 'bg-slate-900 text-white shadow-lg scale-105' : 'text-slate-400 hover:bg-slate-50'
                 }`}
               >
@@ -190,31 +200,31 @@ function PayoutManagementContent() {
 
         {/* Global Financial Telemetry */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-2xl">
+          <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-lg">
             <p className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] mb-4">Pending Payouts</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-slate-900 tracking-tighter">₹{pendingAmount.toLocaleString()}</h4>
-               <div className="h-12 w-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-500 group-hover:rotate-12 transition-transform">
+               <div className="h-12 w-12 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500 group-hover:rotate-12 transition-transform">
                   <Clock className="h-6 w-6" />
                </div>
             </div>
           </Card>
 
-          <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-2xl">
+          <Card className="p-7 bg-white border border-slate-100 shadow-xl relative overflow-hidden group rounded-lg">
             <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] mb-4">Total Paid</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-slate-900 tracking-tighter">₹{distributedAmount.toLocaleString()}</h4>
-               <div className="h-12 w-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:rotate-12 transition-transform">
+               <div className="h-12 w-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500 group-hover:rotate-12 transition-transform">
                   <BadgeCheck className="h-6 w-6" />
                </div>
             </div>
           </Card>
 
-          <Card className="p-7 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-2xl text-white">
+          <Card className="p-7 bg-slate-900 border-none shadow-2xl relative overflow-hidden group rounded-lg text-white">
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">System Status</p>
             <div className="flex items-center justify-between">
                <h4 className="text-3xl font-black text-white tracking-tighter uppercase">Optimal</h4>
-               <div className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 transition-all">
+               <div className="h-12 w-12 bg-white/10 rounded-lg flex items-center justify-center text-blue-400 group-hover:scale-110 transition-all">
                   <Activity className="h-6 w-6" />
                </div>
             </div>
@@ -233,7 +243,7 @@ function PayoutManagementContent() {
            <div className="grid grid-cols-1 gap-6">
              {loading ? (
                 [...Array(3)].map((_, i) => (
-                  <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-2xl"></div>
+                  <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-lg"></div>
                 ))
              ) : filtered.length > 0 ? (
                filtered.map((req, idx) => (
@@ -248,11 +258,11 @@ function PayoutManagementContent() {
                      }}
                      className="cursor-pointer"
                    >
-                    <Card className="bg-white border border-slate-100 hover:shadow-2xl transition-all rounded-xl overflow-hidden group">
+                    <Card className="bg-white border border-slate-100 hover:shadow-2xl transition-all rounded-lg overflow-hidden group">
                       <div className="flex flex-col lg:flex-row">
                         {/* Identity Cell */}
                         <div className="flex-1 p-5 sm:p-7 flex items-center gap-4 sm:gap-6">
-                          <div className="h-12 w-12 sm:h-14 sm:w-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all shrink-0">
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center text-slate-300 group-hover:bg-blue-50 group-hover:text-blue-500 transition-all shrink-0">
                             <User size={20} className="sm:w-6 sm:h-6" />
                           </div>
                           <div className="min-w-0">
@@ -267,18 +277,19 @@ function PayoutManagementContent() {
                         {/* Payout Target Cell */}
                         <div className="lg:w-80 px-5 sm:px-8 py-5 sm:py-7 bg-slate-50/40 border-y lg:border-y-0 lg:border-x border-slate-100 flex flex-col justify-center gap-3">
                            <div className="flex items-center gap-3 group/copy">
-                              <div className="h-9 w-9 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                              <div className="h-9 w-9 bg-white rounded-lg shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
                                  {req.method === 'upi' ? <Smartphone size={16} className="text-indigo-600" /> : <Landmark size={16} className="text-indigo-600" />}
                               </div>
                               <div className="flex-1 overflow-hidden">
                                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{req.method} Identity</p>
                                  <div className="flex flex-col">
                                    <div className="flex items-center gap-2">
-                                     <p className="text-xs font-black text-slate-700 truncate max-w-[150px]">{req.details || 'Locked'}</p>
+                                     <p className="text-xs font-black text-slate-700 truncate max-w-[150px]">{req.method === 'upi' ? req.details?.upiId : (req.details?.accountNumber || 'Locked')}</p>
                                      <button 
                                        onClick={(e) => {
                                          e.stopPropagation();
-                                         navigator.clipboard.writeText(req.details);
+                                         const textToCopy = req.method === 'upi' ? req.details?.upiId : req.details?.accountNumber || '';
+                                          navigator.clipboard.writeText(textToCopy);
                                          toast.success("Identity Copied!");
                                        }}
                                        className="p-1.5 hover:bg-white rounded-lg text-slate-300 hover:text-blue-600 transition-colors opacity-0 group-hover/copy:opacity-100"
@@ -302,11 +313,11 @@ function PayoutManagementContent() {
                            <div className="text-center sm:text-right w-full sm:w-auto">
                               <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Asset Value</p>
                               <h3 className="text-2xl font-black text-slate-900 tracking-tighter">₹{Number(req.amount || 0).toLocaleString()}</h3>
-                              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{Number(req.points || 0).toFixed(1)} B-PTS</p>
+                              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{req.points?.toFixed(1) || '0.0'} B-PTS</p>
                            </div>
                            <div className="flex-1 flex justify-end w-full sm:w-auto">
                               {req.status === 'Paid' ? (
-                                <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-12 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-inner border border-slate-800">
+                                <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 h-12 rounded-lg bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest shadow-inner border border-slate-800">
                                   <BadgeCheck size={14} className="text-blue-400" /> Paid
                                 </div>
                               ) : (
@@ -317,7 +328,7 @@ function PayoutManagementContent() {
                                      setPayoutToConfirm(req);
                                      setShowConfirmModal(true);
                                   }}
-                                  className="w-full sm:w-auto rounded-xl px-8 sm:px-10 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                  className="w-full sm:w-auto rounded-lg px-8 sm:px-10 h-12 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                 >
                                   Pay Doctor <ArrowRight size={14} />
                                 </Button>
@@ -329,13 +340,13 @@ function PayoutManagementContent() {
                  </motion.div>
                ))
              ) : (
-               <div className="py-24 text-center bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <div className="h-20 w-20 bg-slate-50 rounded-xl flex items-center justify-center mx-auto mb-6 transition-transform hover:scale-110">
+               <div className="py-24 text-center bg-white rounded-lg border border-slate-100 shadow-sm">
+                  <div className="h-20 w-20 bg-slate-50 rounded-lg flex items-center justify-center mx-auto mb-6 transition-transform hover:scale-110">
                      {searchQuery ? <Search className="h-8 w-8 text-slate-300" /> : <AlertCircle className="h-8 w-8 text-slate-200" />}
                   </div>
                   <h4 className="text-slate-900 font-black text-xl mb-2 uppercase tracking-tight">{searchQuery ? 'Zero Matches' : 'Ledger Synchronized.'}</h4>
                   <p className="text-slate-400 font-bold text-xs max-w-xs mx-auto mb-8 opacity-60 uppercase tracking-widest leading-relaxed">{searchQuery ? `No active payouts matching "${searchQuery}".` : 'No active clinical payout requests detected in the protocol cloud.'}</p>
-                  {!searchQuery && <Button variant="ghost" onClick={() => toast.success('Redemption Stream Validated')} className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 rounded-xl px-10 border border-blue-100/50 h-11">Refresh Local Stream</Button>}
+                  {!searchQuery && <Button variant="ghost" onClick={() => toast.success('Redemption Stream Validated')} className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 rounded-lg px-10 border border-blue-100/50 h-11">Refresh Local Stream</Button>}
                </div>
              )}
             </div>
@@ -354,10 +365,10 @@ function PayoutManagementContent() {
                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
                      animate={{ opacity: 1, scale: 1, y: 0 }}
                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                     className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col"
+                     className="relative w-full max-w-md bg-white rounded-lg shadow-2xl overflow-hidden border border-slate-100 flex flex-col"
                    >
                       <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center gap-4">
-                         <div className="h-12 w-12 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                         <div className="h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
                             <ShieldCheck size={24} />
                          </div>
                          <div>
@@ -371,11 +382,11 @@ function PayoutManagementContent() {
                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity: {payoutToConfirm.doctorName}</p>
                              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">₹{payoutToConfirm.amount.toLocaleString()}</h2>
                              <div className="inline-flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100">
-                                <Activity size={10} /> Deduct: {payoutToConfirm.points.toFixed(1)} B-PTS
+                                <Activity size={10} /> Deduct: {payoutToConfirm.points?.toFixed(1) || '0.0'} B-PTS
                              </div>
                          </div>
                          
-                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
+                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg flex gap-3">
                             <AlertCircle className="text-amber-500 shrink-0 h-4 w-4" />
                             <p className="text-[10px] font-bold text-amber-800 leading-relaxed uppercase tracking-wider">Warning: This action will permanently deduct clinical points from the practitioner's global wallet. Ensure bank transfer is successful before authorization.</p>
                          </div>
@@ -387,7 +398,7 @@ function PayoutManagementContent() {
                              setShowConfirmModal(false);
                              handleProcess(payoutToConfirm);
                            }}
-                           className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-blue-500/20 active:scale-95"
+                           className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-lg shadow-xl shadow-blue-500/20 active:scale-95"
                          >
                            ✓ Confirm Authorization
                          </Button>
@@ -416,12 +427,12 @@ function PayoutManagementContent() {
                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
                      animate={{ opacity: 1, scale: 1, y: 0 }}
                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                     className="relative w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-100 flex flex-col my-4"
+                     className="relative w-full max-w-lg bg-white rounded-lg shadow-2xl overflow-hidden border border-slate-100 flex flex-col my-4"
                    >
                       {/* Premium Audit Header */}
                       <div className="p-5 bg-slate-900 text-white flex justify-between items-center">
                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
                                <FileText size={20} />
                             </div>
                             <div>
@@ -445,19 +456,19 @@ function PayoutManagementContent() {
 
                          {/* Financial Values */}
                          <div className="grid grid-cols-2 gap-3">
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 text-center">
                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Net Disbursed</p>
                                <h3 className="text-xl font-black text-slate-900 tracking-tighter">₹{selectedPayout.amount.toLocaleString()}</h3>
                             </div>
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                            <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 text-center">
                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Wallets Sync</p>
-                               <h3 className="text-xl font-black text-blue-600 tracking-tighter">{selectedPayout.points.toFixed(1)} <span className="text-xs">PTS</span></h3>
+                               <h3 className="text-xl font-black text-blue-600 tracking-tighter">{selectedPayout.points?.toFixed(1) || '0.0'} <span className="text-xs">PTS</span></h3>
                             </div>
                          </div>
 
                          {/* Destination Details Section */}
                          <div className="space-y-3">
-                            <div className="bg-white border border-slate-100 rounded-xl p-5 space-y-4 shadow-sm">
+                            <div className="bg-white border border-slate-100 rounded-lg p-5 space-y-4 shadow-sm">
                                <div className="flex items-center justify-between">
                                   <div className="space-y-1">
                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">Receiver Node</p>
@@ -471,7 +482,7 @@ function PayoutManagementContent() {
                                <div className="flex items-center justify-between border-t border-slate-50 pt-4">
                                   <div className="space-y-0.5">
                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest italic">Protocol Target ({selectedPayout.method.toUpperCase()})</p>
-                                     <p className="text-[11px] font-black text-blue-600 tracking-widest leading-none">{selectedPayout.details}</p>
+                                     <p className="text-[11px] font-black text-blue-600 tracking-widest leading-none">{selectedPayout.method === 'upi' ? selectedPayout.details?.upiId : selectedPayout.details?.accountNumber}</p>
                                      {selectedPayout.verifiedName && <p className="text-[9px] font-bold text-emerald-600 uppercase flex items-center gap-1 mt-1 font-mono">✔ ID Confirmed: {selectedPayout.verifiedName}</p>}
                                   </div>
                                   <div className="h-8 w-8 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
@@ -483,7 +494,7 @@ function PayoutManagementContent() {
 
                          {/* Forensic Data / Transaction Keys */}
                          {selectedPayout.status === 'Paid' && (
-                            <div className="bg-slate-900 rounded-xl p-5 space-y-3">
+                            <div className="bg-slate-900 rounded-lg p-5 space-y-3">
                                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
                                   <Activity size={10} /> External Settlement Keys
                                </p>
@@ -504,7 +515,7 @@ function PayoutManagementContent() {
                       <div className="p-5 border-t border-slate-50 flex gap-3">
                          <button 
                            onClick={() => setShowDetailModal(false)}
-                           className="w-full h-11 bg-slate-900 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200/50"
+                           className="w-full h-11 bg-slate-900 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-lg hover:bg-slate-800 transition-all active:scale-95 shadow-xl shadow-slate-200/50"
                          >
                            Dismiss Log Archive
                          </button>

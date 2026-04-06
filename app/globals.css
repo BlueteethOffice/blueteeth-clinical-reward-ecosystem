@@ -21,13 +21,10 @@ html, body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden !important;
-  overflow-y: scroll !important; /* Force scroller to prevent layout jumping */
+  overflow-y: scroll; /* Force scroller to prevent layout jumping, but allow override */
   width: 100% !important;
   min-height: 100vh !important;
   position: relative !important;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translate3d(0,0,0);
 }
 
 /* Global Overflow Purge: Everything that isn't body should not scroll unless explicitly allowed */

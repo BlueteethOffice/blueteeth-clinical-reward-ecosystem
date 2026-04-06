@@ -24,6 +24,7 @@ import {
   FileBadge, 
   Award, 
   ShieldCheck, 
+  Landmark, 
   Gift, 
   Mail, 
   Key, 
@@ -42,11 +43,12 @@ import {
   ChevronRight, 
   Search, 
   Filter,
-  Clock
+  Clock,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { sendEmail } from '@/lib/email';
@@ -80,18 +82,29 @@ export default function EarningsPage() {
 
   const [loading, setLoading] = useState(history.length === 0);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 4;
   
   const [selectedCase, setSelectedCase] = useState<any | null>(null);
   const [showPerksModal, setShowPerksModal] = useState(false);
   const [perks, setPerks] = useState<any[]>([]);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [hasPendingWithdrawal, setHasPendingWithdrawal] = useState(false);
+  const [redemptions, setRedemptions] = useState<any[]>([]);
   const [totalRedeemedAmount, setTotalRedeemedAmount] = useState(0);
   const [showThresholdWarning, setShowThresholdWarning] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<'upi' | 'bank'>('upi');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [redemptionPage, setRedemptionPage] = useState(1);
+  const redemptionsPerPage = 4;
+  const [isPayoutEditing, setIsPayoutEditing] = useState(false);
 
   const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  useEffect(() => {
+    setIsMounted(true);
+    if (userData?.payoutNode?.method) {
+      setPayoutMethod(userData.payoutNode.method);
+    }
+  }, [userData]);
 
   // [UX OPTIMIZATION] Hard-Lock background scroll including HTML tag to prevent "chaining"
   useEffect(() => {
@@ -125,6 +138,7 @@ export default function EarningsPage() {
       });
       setTotalRedeemedAmount(redeemed);
       setHasPendingWithdrawal(pending);
+      setRedemptions(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
     // Listen to Case History
@@ -149,43 +163,60 @@ export default function EarningsPage() {
       const sortedData = data.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
       setHistory(sortedData);
       localStorage.setItem('blueteeth_earnings_cache', JSON.stringify(sortedData));
-      
-      let clinicalCasePoints = 0;
-      let totalAdminPerks = 0;
-
-      sortedData.forEach(curr => {
-        const isManual = String(curr.patientName || '').trim().toUpperCase() === "ADMIN MANUAL ADJUSTMENT";
-        if (!isManual) {
-          if (curr.status === 'Approved') {
-            clinicalCasePoints += Number(curr.points || 0);
-            totalAdminPerks += Number(curr.bonusPoints || 0);
-          }
-        } else {
-          totalAdminPerks += Number(curr.points || 0);
-        }
-      });
-
-      const EXCHANGE_RATE = 50;
-      const totalAllPoints = clinicalCasePoints + totalAdminPerks;
-      const liveRevenue = totalAllPoints * EXCHANGE_RATE;
-
-      const newStats = {
-        casePoints: clinicalCasePoints,
-        pendingPoints: totalAdminPerks,
-        totalPoints: totalAllPoints,
-        totalRevenue: liveRevenue
-      };
-
-      setStats(newStats);
-      localStorage.setItem('blueteeth_stats_cache', JSON.stringify(newStats));
       setLoading(false);
     }, (error) => {
       console.error("Clinical Sync Failure:", error);
       setLoading(false);
     });
 
-    return () => { unsubCases(); unsubRedemptions(); };
-  }, [user]);
+    return () => {
+      unsubRedemptions();
+      unsubCases();
+    };
+  }, [user, db]);
+
+  // 📊 Reactive Stats Engine (History + Redemptions change)
+  useEffect(() => {
+    if (!history.length && !redemptions.length) return;
+
+    let clP = 0;
+    let adP = 0;
+    let avR = 0;
+
+    const lastR = [...redemptions].sort((a,b) => (b.requestedAt?.seconds || 0) - (a.requestedAt?.seconds || 0))[0];
+    const lastT = lastR?.requestedAt?.seconds || 0;
+
+    history.forEach(curr => {
+      const isM = String(curr.patientName || '').trim().toUpperCase() === "ADMIN MANUAL ADJUSTMENT";
+      const cTime = curr.submittedAt?.seconds || 0;
+
+      if (!isM) {
+        if (curr.status === 'Approved') {
+          clP += Number(curr.points || 0);
+          adP += Number(curr.bonusPoints || 0);
+          if (cTime > lastT) {
+             avR += (Number(curr.points || 0) + Number(curr.bonusPoints || 0)) * 50;
+          }
+        }
+      } else {
+        adP += Number(curr.points || 0);
+        if (cTime > lastT) {
+           avR += Number(curr.points || 0) * 50;
+        }
+      }
+    });
+
+    const newStats = {
+      casePoints: clP,
+      pendingPoints: adP,
+      totalPoints: clP + adP,
+      totalRevenue: (clP + adP) * 50,
+      availableRevenue: avR
+    };
+
+    setStats(newStats);
+    localStorage.setItem('blueteeth_stats_cache', JSON.stringify(newStats));
+  }, [history, redemptions]);
 
   const filteredHistory = useMemo(() => {
     return history.filter(item => {
@@ -250,7 +281,7 @@ export default function EarningsPage() {
                     setShowRedeemModal(true);
                   }
                 }}
-                disabled={hasPendingWithdrawal || Math.max(0, stats.totalRevenue - totalRedeemedAmount) <= 0}
+                disabled={stats.availableRevenue <= 0}
                 className="h-12 w-full md:w-auto px-8 rounded-lg md:rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 transition-all active:scale-95 text-[10px] font-black uppercase tracking-[0.2em]"
             >
               Request Payout
@@ -265,7 +296,7 @@ export default function EarningsPage() {
             <div className="relative z-10 flex flex-col h-full justify-between">
               <div className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Available to Withdraw</div>
               <div className="space-y-1">
-                <h3 className="text-3xl font-black text-white tracking-tighter italic">₹{Math.max(0, stats.totalRevenue - totalRedeemedAmount).toLocaleString()}</h3>
+                <h3 className="text-3xl font-black text-white tracking-tighter italic">₹{(stats as any).availableRevenue?.toLocaleString() || '0'}</h3>
                 <div className="flex items-center gap-2">
                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse" />
                    <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">Ready to be paid out</span>
@@ -632,34 +663,309 @@ export default function EarningsPage() {
 
         {/* Withdrawal Modal & Logic Placeholder */}
         {showRedeemModal && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setShowRedeemModal(false)} />
-             <div className="relative bg-white w-full max-w-sm rounded-2xl p-8 space-y-6 shadow-2xl">
-                <div className="text-center space-y-2">
-                   <div className="h-20 w-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-inner">
-                      <Wallet size={32} className="text-blue-600" />
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-2 sm:p-4">
+             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowRedeemModal(false)} />
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               className="relative bg-white w-full max-w-lg rounded-lg p-4 sm:p-5 space-y-4 shadow-2xl border border-slate-100 overflow-y-auto no-scrollbar max-h-[95vh]"
+             >
+                <button 
+                  onClick={() => setShowRedeemModal(false)}
+                  className="absolute top-2 right-2 h-10 w-10 flex items-center justify-center rounded-lg bg-slate-50 text-slate-400 hover:text-slate-900 transition-all active:scale-95 z-[310] border border-slate-100/50"
+                 >
+                    <X size={20} />
+                </button>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-10 -mr-16 -mt-16" />
+                
+                <div className="text-center space-y-1 relative z-10">
+                   <div className="h-14 w-14 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2 shadow-xl shadow-blue-600/20 text-white leading-none">
+                      <Wallet size={24} />
                    </div>
-                   <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Cash Withdrawal</h2>
-                   <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Are you ready to withdraw your money?</p>
+                   <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">Clinical Payout Hub</h2>
+                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic leading-none">Financial Identity node active</p>
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 text-center">
-                   <p className="text-[9px] font-black text-slate-600 uppercase mb-2">Available Balance</p>
-                   <h4 className="text-4xl font-black text-slate-900 tracking-tighter italic">₹{Math.max(0, stats.totalRevenue - totalRedeemedAmount).toLocaleString()}</h4>
+                <div className="bg-slate-900 py-3.5 px-6 rounded-lg text-center shadow-inner relative overflow-hidden group text-white">
+                   <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-2xl opacity-10 -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
+                   <div className="flex flex-col items-center">
+                      <p className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1 relative z-10">Available Redemption Balance</p>
+                      <h1 className="text-3xl font-black text-white tracking-tighter italic relative z-10">₹{stats.availableRevenue.toLocaleString()}</h1>
+                   </div>
+                </div>
+
+                <div className="space-y-4 relative z-10">
+                  {/* Step 1: Selection */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-blue-600 pl-3">Step 1: Select Transfer Node</p>
+                    <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
+                      {['upi', 'bank'].map((method) => (
+                        <button
+                          key={method}
+                          onClick={() => setPayoutMethod(method as 'upi' | 'bank')}
+                          className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${payoutMethod === method ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-slate-500 hover:text-slate-700'}`}
+                        >
+                          {method === 'upi' ? `Saved UPI ${userData?.payoutNode?.method === 'upi' ? '✓' : ''}` : `Bank Node ${userData?.payoutNode?.method === 'bank' ? '✓' : ''}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Step 2: Credentials */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-emerald-500 pl-3">
+                         Step 2: Financial Credentials {userData?.payoutNode && <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] rounded border border-emerald-100">IDENTITY VERIFIED</span>}
+                      </p>
+                      <button 
+                        onClick={() => {
+                          setIsPayoutEditing(!isPayoutEditing);
+                          if (!isPayoutEditing) toast.success("Security Node: Edit Mode Active");
+                        }}
+                        className={`text-[8px] font-black uppercase tracking-widest hover:underline ${isPayoutEditing ? 'text-amber-600' : 'text-blue-600'}`}
+                      >
+                         {isPayoutEditing ? '[ LOCK & SAVE VIEW ]' : '[ EDIT / UPDATE NODE ]'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {payoutMethod === 'bank' ? (
+                        <>
+                          <input id="payout_bank_acc" key={`acc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.accountNumber} placeholder="Account Number" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
+                          <input id="payout_bank_ifsc" key={`ifsc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.ifsc} placeholder="IFSC Code" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all uppercase disabled:opacity-60" disabled={!isPayoutEditing} />
+                          <input id="payout_bank_name" key={`bank_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.bankName} placeholder="Bank Name" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
+                          <input id="payout_bank_holder" key={`hold_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.holderName} placeholder="Account Holder Name" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
+                        </>
+                      ) : (
+                        <input id="payout_upi_id" key={`upi_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.upiId} placeholder="Enter UPI ID (e.g. name@upi)" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all sm:col-span-2 disabled:opacity-60" disabled={!isPayoutEditing} />
+                      )}
+                    </div>
+                  </div>
+ 
+                  {/* Step 3: KYC */}
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-rose-500 pl-3">Step 3: Identity Verification (KYC)</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                       <input id="payout_kyc_pan" key={`pan_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.pan} disabled={!isPayoutEditing} placeholder="PAN Number (10 Digits)" maxLength={10} className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-600 transition-all uppercase disabled:opacity-60" />
+                       <input id="payout_kyc_aadhar" key={`aad_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.aadhar} disabled={!isPayoutEditing} placeholder="Aadhaar Number (12 Digits)" maxLength={12} className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-600 transition-all disabled:opacity-60" />
+                    </div>
+                    
+                    <div className="group relative">
+                       <input 
+                         type="file" 
+                         id="payout_pan_image" 
+                         accept="image/*"
+                         disabled={!isPayoutEditing}
+                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 disabled:cursor-not-allowed" 
+                         onChange={(e) => {
+                            const fileName = e.target.files?.[0]?.name;
+                            if (fileName) {
+                               const label = document.getElementById('pan_label');
+                               if (label) label.innerText = `PAN: ${fileName}`;
+                            }
+                         }}
+                       />
+                       <div className="w-full h-12 bg-rose-50 border-2 border-dashed border-rose-200 rounded-xl flex items-center justify-center gap-3 group-hover:bg-rose-100 transition-all group-hover:border-rose-300">
+                          <FileImage className="text-rose-500" size={16} />
+                          <span id="pan_label" className="text-[8px] font-black text-rose-700 uppercase tracking-widest">Upload PAN Image Proof</span>
+                       </div>
+                    </div>
+                  </div>
+
+                  {/* Step 4: Security Sync (OTP) */}
+                  <div className="space-y-3 pt-1">
+                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-indigo-600 pl-3">Step 4: Security Verification (OTP)</p>
+                    {isOtpSent ? (
+                      <div className="grid grid-cols-1 gap-2.5">
+                         <input id="payout_otp" placeholder="Enter 6-Digit OTP from Email" maxLength={6} className="w-full h-11 bg-indigo-50 border border-indigo-200 rounded-lg px-4 text-[12px] font-black outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 text-center tracking-[0.5em] transition-all" />
+                         <p className="text-[8px] font-bold text-slate-500 uppercase text-center">OTP synced to registered clinical mail</p>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={async () => {
+                          const tid = toast.loading("Syncing Security Node...");
+                          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                          (window as any).payout_otp_val = otp;
+                          try {
+                            await sendEmail({ 
+                              to_email: user?.email, 
+                              otp, 
+                              message: `Your Blueteeth Security OTP for Payout Verification is: ${otp}. Do not share this code.`,
+                              subject: "SECURITY: Payout Node Verification"
+                            });
+                            setIsOtpSent(true);
+                            toast.success("Security OTP Dispatched!", { id: tid });
+                          } catch (err) { toast.error("Mail Sync Failure", { id: tid }); }
+                        }}
+                        className="w-full h-11 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest active:scale-95"
+                      >
+                         <Key size={14} className="mr-2" /> Request Security OTP
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <Button 
-                   onClick={() => {
-                     toast.success("Request Initiated! Admin team will verify your payout node.");
-                     setShowRedeemModal(false);
+                   onClick={async () => {
+                     const method = (window as any).payoutNodeMethod || userData?.payoutNode?.method || 'upi';
+                     const toastId = toast.loading('Initiating Security Protocol...');
+                     
+                     try {
+                        const enteredOtp = (document.getElementById('payout_otp') as HTMLInputElement)?.value;
+                        const correctOtp = (window as any).payout_otp_val;
+                        
+                        if (!isOtpSent) throw new Error("Security Check Required: Please request OTP first.");
+                        if (enteredOtp !== correctOtp) throw new Error("Invalid Security OTP: Verification failed.");
+                        
+                        const upiVal = (document.getElementById('payout_upi_id') as HTMLInputElement)?.value;
+                        const accVal = (document.getElementById('payout_bank_acc') as HTMLInputElement)?.value;
+                        const ifscVal = (document.getElementById('payout_bank_ifsc') as HTMLInputElement)?.value;
+                        const bNameVal = (document.getElementById('payout_bank_name') as HTMLInputElement)?.value;
+                        const hNameVal = (document.getElementById('payout_bank_holder') as HTMLInputElement)?.value;
+                        const panVal = (document.getElementById('payout_kyc_pan') as HTMLInputElement)?.value;
+                        const aadharVal = (document.getElementById('payout_kyc_aadhar') as HTMLInputElement)?.value;
+
+                        if (!panVal || !aadharVal) throw new Error("KYC missing.");
+                        if (method === 'upi' && !upiVal) throw new Error("UPI Node blank.");
+                        if (method === 'bank' && (!accVal || !ifscVal)) throw new Error("Bank Node blank.");
+
+                        // 1. UNIQUE NODE VALIDATION
+                        const { getDocs, query, collection, where, doc, updateDoc } = await import('firebase/firestore');
+                        const nodeKey = method === 'upi' ? 'payoutNode.details.upiId' : 'payoutNode.details.accountNumber';
+                        const nodeVal = method === 'upi' ? upiVal : accVal;
+
+                        const qConflict = query(collection(db, 'users'), where(nodeKey, '==', nodeVal));
+                        const conflictSnap = await getDocs(qConflict);
+                        
+                        const conflictDoc = conflictSnap.docs.find(d => d.id !== user?.uid);
+                        if (conflictDoc) {
+                           throw new Error("Identity Breach: Payout node already assigned to another doctor.");
+                        }
+
+                        // 2. SAVE/UPDATE PERMANENT NODE
+                        const payoutNode = {
+                           method,
+                           details: method === 'upi' ? { upiId: upiVal } : { accountNumber: accVal, ifsc: ifscVal.toUpperCase(), bankName: bNameVal, holderName: hNameVal },
+                           kyc: { pan: panVal.toUpperCase(), aadhar: aadharVal }
+                        };
+                        
+                        await updateDoc(doc(db, 'users', user?.uid as string), { payoutNode });
+
+                        // 3. CREATE REDEMPTION
+                        const payload: any = {
+                          doctorUid: user?.uid,
+                          doctorName: userData?.name || user?.displayName || 'Doctor',
+                          amount: stats.availableRevenue,
+                          points: stats.availableRevenue / 50,
+                          method,
+                          details: payoutNode.details,
+                          kyc: payoutNode.kyc,
+                          status: 'Pending',
+                          requestedAt: serverTimestamp()
+                        };
+
+                        await (await import('firebase/firestore')).addDoc(collection(db, 'redemptions'), payload);
+                        toast.success("Security Sync: Profile Updated & Request Sent.", { id: toastId });
+                        setShowRedeemModal(false);
+                     } catch (err: any) {
+                        toast.error(err.message || "Cloud Sync Failed.", { id: toastId });
+                     }
                    }}
-                   className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-[12px] uppercase tracking-[0.3em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                   className="w-full h-14 bg-slate-900 hover:bg-black text-white rounded-lg font-black text-[12px] uppercase tracking-[0.3em] shadow-xl shadow-slate-300 active:scale-95 transition-all relative overflow-hidden group"
                 >
-                   Confirm Payout
+                   <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                   <span className="relative z-10 flex items-center justify-center gap-3">
+                     <ShieldCheck size={18} /> Confirm Professional Withdrawal
+                   </span>
                 </Button>
-             </div>
+                
+                <div className="flex items-center justify-center gap-6 pt-2">
+                   <div className="flex items-center gap-1.5 grayscale opacity-50"><Lock size={10} /> <span className="text-[8px] font-black uppercase tracking-tighter">AES-256 SYNC</span></div>
+                   <div className="flex items-center gap-1.5 grayscale opacity-50"><ShieldCheck size={10} /> <span className="text-[8px] font-black uppercase tracking-tighter">FINANCIAL AUDIT</span></div>
+                </div>
+             </motion.div>
           </div>
         )}
+        {/* Secure Withdrawal History - Auditor View */}
+        <div className="space-y-6 pt-10">
+           <div className="flex items-center justify-between px-2">
+             <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+               <Wallet className="h-4 w-4 text-emerald-600" /> Redemption & Withdrawal History
+             </h2>
+             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{redemptions.length} Secure Logs Found</span>
+           </div>
+
+               <div className="grid grid-cols-1 gap-4">
+                 {redemptions.length > 0 ? (
+                   redemptions
+                    .sort((a,b) => (b.requestedAt?.seconds || 0) - (a.requestedAt?.seconds || 0))
+                    .slice((redemptionPage - 1) * redemptionsPerPage, redemptionPage * redemptionsPerPage)
+                    .map((red, idx) => (
+                     <motion.div
+                       key={red.id}
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       transition={{ delay: idx * 0.05 }}
+                       className="bg-white border border-slate-100 rounded-lg p-5 hover:shadow-xl transition-all group"
+                     >
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                           <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                              <div className={`h-12 w-12 rounded-lg flex items-center justify-center transition-all ${red.status === 'Paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                 {red.method === 'upi' ? <Smartphone size={20} /> : <Landmark size={20} />}
+                              </div>
+                              <div>
+                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">#RED-{red.id.slice(-6).toUpperCase()}</p>
+                                 <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{red.method === 'upi' ? 'UPI Transfer' : 'Bank Node'} Settlement</h4>
+                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                                    {red.requestedAt ? new Date(red.requestedAt.seconds * 1000).toLocaleString() : 'Processing...'}
+                                 </p>
+                              </div>
+                           </div>
+    
+                           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-10 w-full sm:w-auto justify-between sm:justify-end">
+                              <div className="text-center sm:text-right">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Requested Amount</p>
+                                 <h3 className="text-xl font-black text-slate-900 tracking-tighter italic">₹{Number(red.amount).toLocaleString()}</h3>
+                              </div>
+                              <div className={`px-5 py-2 rounded-lg font-black text-[9px] uppercase tracking-[0.2em] border ${
+                                 red.status === 'Paid' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-amber-50 border-amber-100 text-amber-600 animate-pulse'
+                              }`}>
+                                 {red.status} Node
+                              </div>
+                           </div>
+                        </div>
+                     </motion.div>
+                   ))
+                 ) : (
+                   <div className="py-16 text-center bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic leading-relaxed">No financial redemption logs identified in the clinical stream node.</p>
+                   </div>
+                 )}
+               </div>
+
+               {/* Redemption History Pagination */}
+               {redemptions.length > redemptionsPerPage && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2 border-t border-slate-50 mt-4">
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                        Showing {Math.min(redemptions.length, (redemptionPage - 1) * redemptionsPerPage + 1)}-{Math.min(redemptions.length, redemptionPage * redemptionsPerPage)} of {redemptions.length} Secure Logs
+                     </p>
+                     <div className="flex items-center gap-2">
+                        <Button 
+                          onClick={() => setRedemptionPage(p => Math.max(1, p - 1))}
+                          disabled={redemptionPage === 1}
+                          className="h-9 px-4 bg-white border border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest disabled:opacity-30 rounded-md"
+                        >PREV PROTOCOL</Button>
+                        <div className="h-9 w-9 bg-slate-900 text-white rounded-md flex items-center justify-center text-[10px] font-black">
+                           {redemptionPage}
+                        </div>
+                        <Button 
+                          onClick={() => setRedemptionPage(p => Math.min(Math.ceil(redemptions.length / redemptionsPerPage), p + 1))}
+                          disabled={redemptionPage >= Math.ceil(redemptions.length / redemptionsPerPage)}
+                          className="h-9 px-4 bg-white border border-slate-200 text-slate-600 font-black text-[9px] uppercase tracking-widest disabled:opacity-30 rounded-md"
+                        >NEXT PROTOCOL</Button>
+                     </div>
+                  </div>
+               )}
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -40,6 +40,11 @@ export default function SettingsPage() {
   const { user, userData } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('');
   
   // Crop System States
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -183,8 +188,37 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const triggerSecuritySync = async () => {
+    setLoading(true);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    
+    try {
+      const { sendEmail } = await import('@/lib/email');
+      await sendEmail({
+        to_email: user?.email,
+        otp,
+        message: `Your Blueteeth Security OTP for Profile Update is: ${otp}. This code expires in 5 minutes.`,
+        subject: "SECURITY: Profile Identity Sync"
+      });
+      setIsOtpSent(true);
+      setShowOtpModal(true);
+      toast.success("Security OTP sent to your email!");
+    } catch (err) {
+      toast.error("Failed to sync security node.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    if (!isOtpVerified) {
+       await triggerSecuritySync();
+       return;
+    }
+
     if (!user) {
       toast.error("Error: Login expired.");
       return;
@@ -304,7 +338,7 @@ export default function SettingsPage() {
                <div className="flex flex-col gap-4 relative z-10">
                   <div className="flex items-center justify-between">
                      <p className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] italic">Identity Vault</p>
-                     <ShieldCheck size={16} className="text-blue-500" />
+                     {isEditing ? <Edit2 size={16} className="text-blue-500 animate-pulse" /> : <Lock size={16} className="text-slate-400" />}
                   </div>
                   <div className="space-y-3">
                      <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
@@ -312,14 +346,14 @@ export default function SettingsPage() {
                         <p className="text-[10px] sm:text-[8px] font-black text-emerald-600">AES-256 BIT</p>
                      </div>
                      <div className="flex items-center justify-between border-b border-slate-200/50 pb-2">
-                        <p className="text-[10px] sm:text-[8px] font-black text-slate-400">CLOUD NODE</p>
-                        <p className="text-[10px] sm:text-[8px] font-black text-blue-600 italic">D-BH-01</p>
+                        <p className="text-[10px] sm:text-[8px] font-black text-slate-400">SESSION MODE</p>
+                        <p className={`text-[10px] sm:text-[8px] font-black italic ${isEditing ? 'text-amber-600' : 'text-blue-600'}`}>{isEditing ? 'UNLOCKED / EDITING' : 'READ-ONLY LOCK'}</p>
                      </div>
                      <div className="flex items-center justify-between">
                         <p className="text-[10px] sm:text-[8px] font-black text-slate-400">STATUS</p>
                         <div className="flex items-center gap-1.5">
-                           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                           <p className="text-[10px] sm:text-[8px] font-black text-slate-700">PROTECTED</p>
+                           <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${isEditing ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                           <p className="text-[10px] sm:text-[8px] font-black text-slate-700">{isEditing ? 'ACTIVE SESSION' : 'PROTECTED'}</p>
                         </div>
                      </div>
                   </div>
@@ -409,6 +443,50 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+  <AnimatePresence>
+        {showOtpModal && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 backdrop-blur-lg bg-slate-900/60 transition-all duration-500">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-md rounded-xl p-8 shadow-2xl relative overflow-hidden border border-slate-100">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600" />
+               <div className="text-center space-y-6">
+                  <div className="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-blue-600/20 text-white transition-transform hover:rotate-6">
+                    <ShieldCheck size={32} />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-2">Security Verification</h2>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">We sent a 6-digit sync code to your registered clinical email to verify this profile update.</p>
+                  </div>
+                  
+                  <input 
+                    type="text" maxLength={6} placeholder="· · · · · ·" 
+                    className="w-full h-16 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-center text-3xl font-black tracking-[0.5em] outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
+                    value={otpInput} onChange={(e) => setOtpInput(e.target.value)}
+                  />
+
+                  <div className="flex flex-col gap-3">
+                    <Button 
+                      onClick={async () => {
+                        if (otpInput === generatedOtp) {
+                          setIsOtpVerified(true);
+                          setShowOtpModal(false);
+                          toast.success("Security Sync Success!");
+                          setTimeout(() => handleUpdate(), 100);
+                        } else {
+                          toast.error("Invalid Security OTP");
+                        }
+                      }}
+                      className="h-14 bg-slate-900 text-white rounded-lg font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800"
+                    >
+                      Verify & Save Changes
+                    </Button>
+                    <button onClick={() => setShowOtpModal(false)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">Abort Update</button>
+                  </div>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isCropModalOpen && rawImage && (

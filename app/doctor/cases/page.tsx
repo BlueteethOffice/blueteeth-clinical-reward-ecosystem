@@ -17,19 +17,24 @@ export default function CaseHistory() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
   
-  const [cases, setCases] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-       const cached = localStorage.getItem('blueteeth_cases_cache');
-       return cached ? JSON.parse(cached) : [];
-    }
-    return [];
-  });
-  
-  const [loading, setLoading] = useState(cases.length === 0);
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [selectedCase, setSelectedCase] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isMounted, setIsMounted] = useState(false);
   const ITEMS_PER_PAGE = 5;
+
+  useEffect(() => {
+    setIsMounted(true);
+    if (typeof window !== 'undefined') {
+       const cached = localStorage.getItem('blueteeth_cases_cache');
+       if (cached) {
+          setCases(JSON.parse(cached));
+          setLoading(false);
+       }
+    }
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -173,6 +178,7 @@ export default function CaseHistory() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedCases = filteredCases.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
+  if (!isMounted) return null;
   return (
     <DashboardLayout>
       <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-6 lg:px-8 space-y-5 lg:space-y-8 pb-2 pt-0">

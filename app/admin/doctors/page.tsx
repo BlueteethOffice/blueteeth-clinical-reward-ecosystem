@@ -9,7 +9,7 @@ import {
   MapPin, Coins, ArrowRight, Filter, Download, MoreVertical,
   Activity, Award, UserPlus, X, CreditCard, ChevronRight,
   TrendingUp, Clock, History, ShieldCheck, Share2, Trash2, PlusCircle,
-  IndianRupee, Smartphone, Gift, BadgeCheck
+  IndianRupee, Smartphone, Gift, BadgeCheck, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -64,6 +64,8 @@ function DoctorListContent() {
     message: string;
     onAction: () => void;
     type: 'danger' | 'info' | 'success';
+    confirmLabel?: string;
+    hideCancel?: boolean;
   } | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [bonusReason, setBonusReason] = useState('Administrative Performance Bonus');
@@ -342,13 +344,35 @@ function DoctorListContent() {
     }
   };
 
-  const handleDeleteTransaction = async (caseId: string, points: number, bonusPoints: number = 0) => {
-    if (!selectedDoctor) return;
-    setConfirmConfig({
-      title: "Revoke Clinical Credit",
-      message: `Are you sure you want to REVOKE this clinical credit of ${points + bonusPoints} pts? This will subtract points/cash from the practitioner's balance and delete the case record permanently.`,
-      type: 'danger',
-      onAction: async () => {
+   const handleDeleteTransaction = async (caseId: string, points: number, bonusPoints: number = 0, caseSubmittedAt: any) => {
+     if (!selectedDoctor) return;
+
+     // 🛑 FINANCIAL AUDIT LOCK: Check if this case is already liquidated in a payout
+     const drRedemptions = redemptions.filter(r => r.doctorUid === selectedDoctor.id);
+     if (drRedemptions.length > 0) {
+        const lastRequest = drRedemptions[0]; // Ordered by requestedAt desc
+        const requestTime = lastRequest.requestedAt?.seconds || (lastRequest.requestedAt instanceof Date ? lastRequest.requestedAt.getTime() / 1000 : 0);
+        const caseTime = caseSubmittedAt?.seconds || (caseSubmittedAt instanceof Date ? caseSubmittedAt.getTime() / 1000 : 0);
+
+        if (caseTime <= requestTime) {
+           setConfirmConfig({
+              title: "FINANCIAL AUDIT LOCK",
+              message: "SECURED ASSET: This clinical entry has already been managed in a paid payout request. To maintain absolute clinical ledger integrity, this record is permanently locked and cannot be revoked.",
+              type: 'info',
+              confirmLabel: "I UNDERSTAND",
+              hideCancel: true,
+              onAction: () => setShowConfirmModal(false)
+           });
+           setShowConfirmModal(true);
+           return;
+        }
+     }
+
+     setConfirmConfig({
+       title: "Revoke Clinical Credit",
+       message: `Are you sure you want to REVOKE this clinical credit of ${points + bonusPoints} pts? This will subtract points/cash from the practitioner's balance and delete the case record permanently.`,
+       type: 'danger',
+       onAction: async () => {
         try {
           const { doc, deleteDoc, updateDoc } = await import('firebase/firestore');
 
@@ -380,6 +404,19 @@ function DoctorListContent() {
     });
     setShowConfirmModal(true);
   };
+
+  if (!hasMounted) {
+    return (
+      <DashboardLayout isAdminRoute={true}>
+        <div className="flex-1 min-h-[60vh] flex items-center justify-center">
+           <div className="flex flex-col items-center gap-4">
+              <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] animate-pulse italic">Synchronizing Global Clinical Node...</p>
+           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout isAdminRoute={true}>
@@ -985,7 +1022,7 @@ function DoctorListContent() {
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              handleDeleteTransaction(c.id, c.points, c.bonusPoints);
+                                              handleDeleteTransaction(c.id, c.points, c.bonusPoints, c.submittedAt);
                                             }}
                                             className="h-7 w-7 rounded-lg border border-rose-50 text-rose-300 hover:text-white hover:bg-rose-500 hover:border-rose-500 transition-all flex items-center justify-center bg-white"
                                           >
@@ -1330,20 +1367,22 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
         {showConfirmModal && confirmConfig && (
           <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowConfirmModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white rounded-2xl shadow-3xl w-full max-w-sm overflow-hidden border border-slate-100">
-              <div className={`p-6 ${confirmConfig.type === 'danger' ? 'bg-red-50' : 'bg-blue-50'} border-b border-slate-100 flex items-center gap-4`}>
-                <div className={`h-12 w-12 ${confirmConfig.type === 'danger' ? 'bg-red-600' : 'bg-blue-600'} text-white rounded-xl flex items-center justify-center shadow-lg`}>
-                  <ShieldCheck className="h-6 w-6" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white rounded-lg shadow-3xl w-full max-w-[340px] overflow-hidden border border-slate-100 mx-auto">
+              <div className={`p-5 ${confirmConfig.type === 'danger' ? 'bg-red-50' : 'bg-blue-50'} border-b border-slate-100 flex items-center gap-4`}>
+                <div className={`h-10 w-10 ${confirmConfig.type === 'danger' ? 'bg-red-600' : 'bg-blue-600'} text-white rounded-lg flex items-center justify-center shadow-lg`}>
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">{confirmConfig.title}</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Access Authority Verification Required</p>
+                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{confirmConfig.title}</h3>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Access Authority Verification</p>
                 </div>
               </div>
-              <div className="p-8 space-y-6">
-                <p className="text-sm font-bold text-slate-600 leading-relaxed">{confirmConfig.message}</p>
-                <div className="flex gap-3 pt-2">
-                  <Button variant="ghost" onClick={() => setShowConfirmModal(false)} className="flex-1 rounded-xl font-black text-[10px] uppercase tracking-widest h-12">Decline</Button>
+              <div className="p-6 space-y-5 text-center sm:text-left">
+                <p className="text-[12px] font-bold text-slate-600 leading-relaxed px-1">{confirmConfig.message}</p>
+                <div className="flex flex-row gap-2 pt-2">
+                  {!confirmConfig.hideCancel && (
+                    <Button variant="ghost" onClick={() => setShowConfirmModal(false)} className="flex-1 rounded-lg border border-slate-200 font-black text-[9px] uppercase tracking-widest h-11">Decline</Button>
+                  )}
                   <Button
                     onClick={async () => {
                       setConfirming(true);
@@ -1352,8 +1391,10 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
                       setShowConfirmModal(false);
                     }}
                     isLoading={confirming}
-                    className={`flex-1 rounded-xl ${confirmConfig.type === 'danger' ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} text-white font-black text-[10px] uppercase tracking-widest h-12 shadow-xl`}
-                  >Authorize Action</Button>
+                    className={`flex-1 rounded-lg ${confirmConfig.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-black text-[9px] uppercase tracking-widest h-11 shadow-md`}
+                  >
+                    {confirmConfig.confirmLabel || 'Authorize Action'}
+                  </Button>
                 </div>
               </div>
             </motion.div>
