@@ -189,22 +189,34 @@ export default function SettingsPage() {
   };
 
   const triggerSecuritySync = async () => {
+    if (!user?.email) {
+      toast.error("Security Node: Valid email not found in profile.");
+      return;
+    }
+
     setLoading(true);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(otp);
     
     try {
       const { sendEmail } = await import('@/lib/email');
-      await sendEmail({
-        to_email: user?.email,
+      const result = await sendEmail({
+        to_email: user.email,
         otp,
         message: `Your Blueteeth Security OTP for Profile Update is: ${otp}. This code expires in 5 minutes.`,
         subject: "SECURITY: Profile Identity Sync"
       });
-      setIsOtpSent(true);
-      setShowOtpModal(true);
-      toast.success("Security OTP sent to your email!");
+
+      if (result.success) {
+        setIsOtpSent(true);
+        setShowOtpModal(true);
+        toast.success("Security OTP sent to your email!");
+      } else {
+        console.error("Email Dispatch Error:", result.error);
+        toast.error(`Delivery Failed: ${result.error || "Service Busy"}`);
+      }
     } catch (err) {
+      console.error("Security Sync Exception:", err);
       toast.error("Failed to sync security node.");
     } finally {
       setLoading(false);
