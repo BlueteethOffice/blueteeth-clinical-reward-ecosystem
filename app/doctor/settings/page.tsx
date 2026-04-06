@@ -186,56 +186,55 @@ export default function SettingsPage() {
   const handleUpdate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    setLoading(true);
-
     if (!user) {
       toast.error("Error: Login expired.");
-      setLoading(false);
       return;
     }
-    
-    // 1. OPTIMISTIC UPDATE: Instant response (Zero Latency)
-    if (user?.uid) {
-      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(formData));
-      window.dispatchEvent(new Event('clinical-identity-update'));
-    }
-    
-    // UI Instant Lock & Reward
-    toast.success("Profile saved locally! Syncing with cloud...", { id: 'save-profile' });
-    setIsEditing(false);
-    setLoading(false);
 
-    // 2. BACKGROUND CLOUD SYNC (Fire & Forget)
-    (async () => {
-      try {
-        let finalPhotoURL = formData.photoURL;
+    setLoading(true);
+    const toastId = toast.loading("Syncing with Cloud Identity...");
 
-        // Photo Upload (Background)
-        if (formData.photoURL && formData.photoURL.startsWith('data:image')) {
-          const uploadResult = await uploadProfileImage(user.uid, formData.photoURL);
-          if (uploadResult.success && uploadResult.url) {
-            finalPhotoURL = uploadResult.url;
-          }
+    try {
+      let finalPhotoURL = formData.photoURL;
+
+      // 1. Mandatory Photo Upload Sync (if base64)
+      if (formData.photoURL && formData.photoURL.startsWith('data:image')) {
+        const uploadResult = await uploadProfileImage(user.uid, formData.photoURL);
+        if (uploadResult.success && uploadResult.url) {
+          finalPhotoURL = uploadResult.url;
         }
-
-        // Full Cloud Identity Propagation
-        const { updateProfile } = await import('firebase/auth');
-        await Promise.all([
-          updateUserProfile(user.uid, { ...formData, photoURL: finalPhotoURL }),
-          updateProfile(user, { displayName: formData.name, photoURL: finalPhotoURL })
-        ]);
-
-        // Persistence Polish: Update local state with final cloud URLs
-        if (user?.uid) {
-           const cloudState = { ...formData, photoURL: finalPhotoURL };
-           localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(cloudState));
-        }
-        
-        console.log('[DEBUG] Background Cloud Sync Complete');
-      } catch (cloudErr) {
-        console.warn('[DEBUG] Cloud sync delayed but local state is preserved:', cloudErr);
       }
-    })();
+
+      // 2. Full Cloud Identity Sync (Awaited)
+      const { updateProfile } = await import('firebase/auth');
+      const syncResult = await updateUserProfile(user.uid, { ...formData, photoURL: finalPhotoURL });
+      
+      if (!syncResult.success) throw new Error(syncResult.error || "Firestore Sync Failed");
+
+      // Sync Firebase Auth object as well
+      await updateProfile(user, { displayName: formData.name, photoURL: finalPhotoURL });
+
+      // 3. PERSISTENCE: Save to global identity key for layout real-time sync
+      const finalState = { ...formData, photoURL: finalPhotoURL };
+      localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
+         role: (userData?.role || 'doctor'),
+         name: finalState.name,
+         photoURL: finalState.photoURL
+      }));
+      // Backup full payload
+      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(finalState));
+      
+      // Dispatch for immediate Header Sync
+      window.dispatchEvent(new Event('clinical-identity-update'));
+
+      toast.success("Identity Secured in Cloud!", { id: toastId });
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error("Cloud Sync Failure:", err);
+      toast.error(`Sync Failure: ${err.message || 'Check connection'}`, { id: toastId });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
