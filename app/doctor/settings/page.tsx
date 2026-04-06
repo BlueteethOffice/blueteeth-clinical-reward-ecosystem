@@ -196,22 +196,29 @@ export default function SettingsPage() {
 
     try {
       let finalPhotoURL = formData.photoURL;
+      const isBase64 = formData.photoURL && formData.photoURL.startsWith('data:image');
 
-      // 1. Mandatory Photo Upload Sync (if base64)
-      if (formData.photoURL && formData.photoURL.startsWith('data:image')) {
-        const uploadResult = await uploadProfileImage(user.uid, formData.photoURL);
-        if (uploadResult.success && uploadResult.url) {
-          finalPhotoURL = uploadResult.url;
-        }
+      // [TURBO SYNC] Parallelize Photo Upload and Firestore Document Update
+      let photoUpdatePromise = Promise.resolve<any>({ success: true, url: finalPhotoURL });
+      if (isBase64) {
+        photoUpdatePromise = uploadProfileImage(user.uid, formData.photoURL);
       }
 
-      // 2. Full Cloud Identity Sync (Awaited)
-      const { updateProfile } = await import('firebase/auth');
-      const syncResult = await updateUserProfile(user.uid, { ...formData, photoURL: finalPhotoURL });
-      
-      if (!syncResult.success) throw new Error(syncResult.error || "Firestore Sync Failed");
+      const textSyncPromise = updateUserProfile(user.uid, { ...formData });
 
-      // Sync Firebase Auth object (ONLY if it's a valid URL, never Base64)
+      // Run parallel fast-sync tasks
+      const [photoResult, textResult] = await Promise.all([photoUpdatePromise, textSyncPromise]);
+
+      if (!textResult.success) throw new Error(textResult.error || "Registry Sync Failed");
+
+      if (photoResult.success && photoResult.url) {
+        finalPhotoURL = photoResult.url;
+        // Background-style sync for the image URL in firestore if it just finished uploading
+        if (isBase64) updateUserProfile(user.uid, { photoURL: finalPhotoURL }).catch(() => {});
+      }
+
+      // 3. Auth Profile Sync (Final Polish)
+      const { updateProfile } = await import('firebase/auth');
       const isUrlValid = finalPhotoURL && !finalPhotoURL.startsWith('data:');
       await updateProfile(user, { 
         displayName: formData.name, 
