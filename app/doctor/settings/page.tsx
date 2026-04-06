@@ -40,11 +40,6 @@ export default function SettingsPage() {
   const { user, userData } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [isOtpVerified, setIsOtpVerified] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otpInput, setOtpInput] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('');
   
   // Crop System States
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
@@ -188,51 +183,14 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
-  const triggerSecuritySync = async () => {
-    if (!user?.email) {
-      toast.error("Security Node: Valid email not found in profile.");
-      return;
-    }
-
-    setLoading(true);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otp);
-    
-    try {
-      const { sendEmail } = await import('@/lib/email');
-      const result = await sendEmail({
-        to_email: user.email,
-        otp,
-        message: `Your Blueteeth Security OTP for Profile Update is: ${otp}. This code expires in 5 minutes.`,
-        subject: "SECURITY: Profile Identity Sync"
-      });
-
-      if (result.success) {
-        setIsOtpSent(true);
-        setShowOtpModal(true);
-        toast.success("Security OTP sent to your email!");
-      } else {
-        console.error("Email Dispatch Error:", result.error);
-        toast.error(`Delivery Failed: ${result.error || "Service Busy"}`);
-      }
-    } catch (err) {
-      console.error("Security Sync Exception:", err);
-      toast.error("Failed to sync security node.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUpdate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    if (!isOtpVerified) {
-       await triggerSecuritySync();
-       return;
-    }
+    setLoading(true);
 
     if (!user) {
       toast.error("Error: Login expired.");
+      setLoading(false);
       return;
     }
     
@@ -456,49 +414,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-  <AnimatePresence>
-        {showOtpModal && (
-          <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 backdrop-blur-lg bg-slate-900/60 transition-all duration-500">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white w-full max-w-md rounded-xl p-8 shadow-2xl relative overflow-hidden border border-slate-100">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600" />
-               <div className="text-center space-y-6">
-                  <div className="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-blue-600/20 text-white transition-transform hover:rotate-6">
-                    <ShieldCheck size={32} />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-2">Security Verification</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-relaxed">We sent a 6-digit sync code to your registered clinical email to verify this profile update.</p>
-                  </div>
-                  
-                  <input 
-                    type="text" maxLength={6} placeholder="· · · · · ·" 
-                    className="w-full h-16 bg-slate-50 border-2 border-slate-100 rounded-xl px-4 text-center text-3xl font-black tracking-[0.5em] outline-none focus:border-blue-600 focus:bg-white transition-all shadow-inner"
-                    value={otpInput} onChange={(e) => setOtpInput(e.target.value)}
-                  />
 
-                  <div className="flex flex-col gap-3">
-                    <Button 
-                      onClick={async () => {
-                        if (otpInput === generatedOtp) {
-                          setIsOtpVerified(true);
-                          setShowOtpModal(false);
-                          toast.success("Security Sync Success!");
-                          setTimeout(() => handleUpdate(), 100);
-                        } else {
-                          toast.error("Invalid Security OTP");
-                        }
-                      }}
-                      className="h-14 bg-slate-900 text-white rounded-lg font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800"
-                    >
-                      Verify & Save Changes
-                    </Button>
-                    <button onClick={() => setShowOtpModal(false)} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">Abort Update</button>
-                  </div>
-               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {isCropModalOpen && rawImage && (
