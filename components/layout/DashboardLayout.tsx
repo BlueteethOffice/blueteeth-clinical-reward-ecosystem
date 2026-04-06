@@ -81,7 +81,7 @@ export default function DashboardLayout({
           if (userData.name) setDisplayName(userData.name);
           if (userData.photoURL) setDisplayPhoto(userData.photoURL);
       } else {
-          const localProfile = localStorage.getItem(`clinical_profile_${user.uid}`);
+          const localProfile = localStorage.getItem(`clinical_identity_snapshot_${user.uid}`);
           if (localProfile) {
             try {
               const parsed = JSON.parse(localProfile);
@@ -97,7 +97,11 @@ export default function DashboardLayout({
     };
     updateProfile();
     window.addEventListener('clinical-identity-update', updateProfile);
-    return () => window.removeEventListener('clinical-identity-update', updateProfile);
+    window.addEventListener('focus', updateProfile);
+    return () => {
+      window.removeEventListener('clinical-identity-update', updateProfile);
+      window.removeEventListener('focus', updateProfile);
+    };
   }, [user, userData, isUserAdmin]);
 
   React.useEffect(() => {

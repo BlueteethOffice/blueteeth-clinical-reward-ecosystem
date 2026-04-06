@@ -35,9 +35,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const snapshot = localStorage.getItem(`clinical_identity_snapshot_${lastUid}`);
         if (snapshot) {
            const parsed = JSON.parse(snapshot);
-           setUserData({ name: parsed.name, role: parsed.role });
+           setUserData({ name: parsed.name, role: parsed.role, photoURL: parsed.photoURL });
            setIsAdmin(parsed.role === 'admin');
-           // We keep loading=true until Firebase confirms, but now the UI has a skeleton data
         }
       }
     } catch (e) {}
@@ -97,6 +96,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                name: data.name,
                photoURL: data.photoURL
             }));
+            // Cross-tab sync dispatch
+            window.dispatchEvent(new Event('clinical-identity-update'));
           } else {
             setUserData({ 
                name: isMaster ? 'Master Admin' : (authUser.displayName || 'Doctor'), 

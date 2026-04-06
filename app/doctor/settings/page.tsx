@@ -78,7 +78,7 @@ export default function SettingsPage() {
         photoURL: userData.photoURL || ''
       };
 
-      const localBackup = user?.uid ? localStorage.getItem(`clinical_profile_${user.uid}`) : null;
+      const localBackup = user?.uid ? localStorage.getItem(`clinical_identity_v2_payload_${user.uid}`) : null;
       if (localBackup) {
         try {
           const parsed = JSON.parse(localBackup);
@@ -95,10 +95,10 @@ export default function SettingsPage() {
       
       setFormData(syncedData);
       if (user?.uid) {
-        localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(syncedData));
+        localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(syncedData));
       }
     } else if (user?.uid) {
-      const localBackup = localStorage.getItem(`clinical_profile_${user.uid}`);
+      const localBackup = localStorage.getItem(`clinical_identity_v2_payload_${user.uid}`);
       if (localBackup) {
         try {
           const parsed = JSON.parse(localBackup);
@@ -174,7 +174,7 @@ export default function SettingsPage() {
       
       if (user?.uid) {
         const updated = { ...formData, photoURL: croppedBase64 };
-        localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(updated));
+        localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(updated));
         window.dispatchEvent(new Event('clinical-identity-update'));
       }
       
@@ -196,7 +196,7 @@ export default function SettingsPage() {
     
     // 1. OPTIMISTIC UPDATE: Instant response (Zero Latency)
     if (user?.uid) {
-      localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(formData));
+      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(formData));
       window.dispatchEvent(new Event('clinical-identity-update'));
     }
     
@@ -228,7 +228,7 @@ export default function SettingsPage() {
         // Persistence Polish: Update local state with final cloud URLs
         if (user?.uid) {
            const cloudState = { ...formData, photoURL: finalPhotoURL };
-           localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(cloudState));
+           localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(cloudState));
         }
         
         console.log('[DEBUG] Background Cloud Sync Complete');
