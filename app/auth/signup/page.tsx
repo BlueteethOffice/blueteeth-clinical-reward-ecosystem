@@ -199,6 +199,7 @@ export default function SignupPage() {
                    email: welcomeEmail, 
                    to_email: welcomeEmail,
                    user_email: welcomeEmail,
+                   subject: "Welcome to Blueteeth Professional Network 🩺",
                    to_name: formData.name, 
                    message: `Welcome Dr. ${formData.name}! Your account has been verified and fully activated. You can now access the ELITE Dental Hub.`,
                    passcode: "VERIFIED",
