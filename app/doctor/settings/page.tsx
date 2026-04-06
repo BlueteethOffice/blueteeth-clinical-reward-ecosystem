@@ -211,8 +211,12 @@ export default function SettingsPage() {
       
       if (!syncResult.success) throw new Error(syncResult.error || "Firestore Sync Failed");
 
-      // Sync Firebase Auth object as well
-      await updateProfile(user, { displayName: formData.name, photoURL: finalPhotoURL });
+      // Sync Firebase Auth object (ONLY if it's a valid URL, never Base64)
+      const isUrlValid = finalPhotoURL && !finalPhotoURL.startsWith('data:');
+      await updateProfile(user, { 
+        displayName: formData.name, 
+        photoURL: isUrlValid ? finalPhotoURL : (user.photoURL || '') 
+      });
 
       // 3. PERSISTENCE: Save to global identity key for layout real-time sync
       const finalState = { ...formData, photoURL: finalPhotoURL };
