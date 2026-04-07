@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { collection, query, onSnapshot, doc, updateDoc, increment, serverTimestamp, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { sendEmail } from '@/lib/email';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,10 @@ function PayoutManagementContent() {
   const [filter, setFilter] = useState('Pending');
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // PAGINATION CONTROL NODE
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   
   // Custom Confirmation Modal Identity
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -141,6 +146,19 @@ function PayoutManagementContent() {
         walletBalance: increment(-(req.amount || 0))
       });
 
+      // ✉️ NOTIFY DOCTOR: Payout Settlement Success Node
+      if (req.doctorEmail) {
+         try {
+            await sendEmail({
+              to_email: req.doctorEmail,
+              to_name: req.doctorName,
+              subject: `Success! Your Clinical Yield of ₹${req.amount.toLocaleString()} has been deposited 💸✅`,
+              message: `Congratulations Dr. ${req.doctorName}! Your requested payout of ₹${req.amount.toLocaleString()} has been successfully processed and deposited into your registered ${req.method.toUpperCase()} node.`,
+              passcode: "SETTLED"
+            });
+         } catch(e) { console.warn("Doctor Notification Deferred."); }
+      }
+
       toast.success(`Settlement dispatched for ${req.doctorName}. Transaction ID attached.`);
     } catch (e: any) {
       console.error("Critical Settlement Failure:", e);
@@ -169,6 +187,18 @@ function PayoutManagementContent() {
   
   const pendingAmount = redemptions.filter(r => r.status === 'Pending').reduce((a, b) => a + (b.amount || 0), 0);
   const distributedAmount = redemptions.filter(r => r.status === 'Paid').reduce((a, b) => a + (b.amount || 0), 0);
+
+  // PAGINATION SLICE LOGIC
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const paginatedRedemptions = filtered.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // RESET PAGE ON FILTER CHANGE
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchQuery]);
 
   return (
     <DashboardLayout isAdminRoute={true}>
@@ -245,8 +275,8 @@ function PayoutManagementContent() {
                 [...Array(3)].map((_, i) => (
                   <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-lg"></div>
                 ))
-             ) : filtered.length > 0 ? (
-               filtered.map((req, idx) => (
+             ) : paginatedRedemptions.length > 0 ? (
+               paginatedRedemptions.map((req, idx) => (
                    <motion.div
                      key={req.id}
                      initial={{ opacity: 0, x: -10 }}
@@ -350,6 +380,45 @@ function PayoutManagementContent() {
                </div>
              )}
             </div>
+
+            {/* HIGH-PERFORMANCE PAGINATION UI */}
+            {totalPages > 1 && (
+               <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-50 px-2 mt-4 pb-10">
+                  <div className="flex flex-col">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Navigation Interface</p>
+                     <p className="text-[11px] font-black text-slate-900 uppercase">Page {currentPage} of {totalPages} <span className="text-slate-300 mx-2">/</span> {filtered.length} Total Nodes</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                     <Button 
+                       variant="outline" 
+                       disabled={currentPage === 1}
+                       onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                       className="flex-1 sm:flex-none h-11 px-6 rounded-lg text-[10px] font-black uppercase tracking-widest border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-30"
+                     >
+                       Previous
+                     </Button>
+                     <div className="flex items-center gap-1.5 hidden sm:flex">
+                        {[...Array(totalPages)].map((_, i) => (
+                           <button 
+                             key={i}
+                             onClick={() => setCurrentPage(i + 1)}
+                             className={`h-9 w-9 rounded-lg text-[10px] font-black transition-all ${currentPage === i + 1 ? 'bg-slate-900 text-white shadow-xl' : 'bg-white border border-slate-100 text-slate-400 hover:border-slate-300'}`}
+                           >
+                             {i + 1}
+                           </button>
+                        ))}
+                     </div>
+                     <Button 
+                       variant="outline" 
+                       disabled={currentPage === totalPages}
+                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                       className="flex-1 sm:flex-none h-11 px-6 rounded-lg text-[10px] font-black uppercase tracking-widest border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-30"
+                     >
+                       Next Sequence
+                     </Button>
+                  </div>
+               </div>
+            )}
          </div>
 
          {/* ELITE AUTHORIZATION MODAL — Replaces Browser Component */}

@@ -44,7 +44,8 @@ import {
   Search, 
   Filter,
   Clock,
-  Lock
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
@@ -93,6 +94,7 @@ export default function EarningsPage() {
   const [redemptions, setRedemptions] = useState<any[]>([]);
   const [totalRedeemedAmount, setTotalRedeemedAmount] = useState(0);
   const [showThresholdWarning, setShowThresholdWarning] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [payoutMethod, setPayoutMethod] = useState<'upi' | 'bank'>('upi');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [redemptionPage, setRedemptionPage] = useState(1);
@@ -282,14 +284,11 @@ export default function EarningsPage() {
           <div className="flex gap-3 w-full md:w-auto order-2">
             <Button 
                 onClick={() => {
-                  if (Number(stats.totalPoints || 0) < 10) {
-                    setShowThresholdWarning(true);
-                  } else {
-                    setShowRedeemModal(true);
-                  }
+                  setModalError(null);
+                  setShowRedeemModal(true);
                 }}
-                disabled={stats.availableRevenue <= 0}
-                className="h-12 w-full md:w-auto px-8 rounded-lg md:rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 transition-all active:scale-95 text-[10px] font-black uppercase tracking-[0.2em]"
+                disabled={stats.availableRevenue < 500}
+                className="h-12 w-full md:w-auto px-8 rounded-lg md:rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 transition-all active:scale-95 text-[10px] font-black uppercase tracking-[0.2em] disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
             >
               Request Payout
             </Button>
@@ -673,9 +672,11 @@ export default function EarningsPage() {
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-2 sm:p-4">
              <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setShowRedeemModal(false)} />
              <motion.div 
-               initial={{ opacity: 0, scale: 0.95, y: 20 }}
-               animate={{ opacity: 1, scale: 1, y: 0 }}
-               className="relative bg-white w-full max-w-lg rounded-lg p-4 sm:p-5 space-y-4 shadow-2xl border border-slate-100 overflow-y-auto no-scrollbar max-h-[95vh]"
+                initial={{ opacity: 0, scale: 1, y: 0, x: 0 }}
+                animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+                exit={{ opacity: 0, scale: 1, y: 0, x: 0 }}
+                className="relative bg-white w-[95%] sm:w-full max-w-lg rounded-xl p-5 sm:p-8 space-y-5 shadow-2xl border border-slate-100 overflow-y-auto overflow-x-hidden no-scrollbar max-h-[92vh] will-change-transform mx-auto"
+                onClick={(e) => e.stopPropagation()}
              >
                 <button 
                   onClick={() => setShowRedeemModal(false)}
@@ -689,9 +690,20 @@ export default function EarningsPage() {
                    <div className="h-14 w-14 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2 shadow-xl shadow-blue-600/20 text-white leading-none">
                       <Wallet size={24} />
                    </div>
-                   <h2 className="text-xl font-black text-slate-900 tracking-tight leading-none uppercase">Clinical Payout Hub</h2>
-                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic leading-none">Financial Identity node active</p>
+                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Clinical Payout Hub</h2>
+                   <p className="text-[8px] sm:text-[9px] font-black text-slate-500 uppercase tracking-widest italic leading-none">Financial Identity node active</p>
                 </div>
+
+                {modalError && (
+                    <motion.div initial={{ opacity: 1 }} className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 shadow-md relative z-20">
+                       <ShieldAlert className="text-red-500 shrink-0 mt-0.5" size={14} />
+                       <div className="flex-1">
+                          <p className="text-[9px] font-black text-red-700 uppercase tracking-widest mb-1 leading-none">Security Alert: Action Blocked</p>
+                          <p className="text-[10px] font-bold text-red-600/90 leading-tight">{modalError}</p>
+                       </div>
+                       <button onClick={() => setModalError(null)} className="text-red-400 hover:text-red-700 transition-colors"><X size={12} /></button>
+                    </motion.div>
+                 )}
 
                 <div className="bg-slate-900 py-3.5 px-6 rounded-lg text-center shadow-inner relative overflow-hidden group text-white">
                    <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-2xl opacity-10 -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
@@ -703,8 +715,8 @@ export default function EarningsPage() {
 
                 <div className="space-y-4 relative z-10">
                   {/* Step 1: Selection */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-blue-600 pl-3">Step 1: Select Transfer Node</p>
+                   <div className="space-y-4 px-1 sm:px-2">
+                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-blue-600 pl-4">Step 1: Select Transfer Node</p>
                     <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
                       {['upi', 'bank'].map((method) => (
                         <button
@@ -719,10 +731,10 @@ export default function EarningsPage() {
                   </div>
 
                   {/* Step 2: Credentials */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-emerald-500 pl-3">
-                         Step 2: Financial Credentials {userData?.payoutNode && <span className="ml-2 px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[8px] rounded border border-emerald-100">IDENTITY VERIFIED</span>}
+                   <div className="space-y-4 px-1 sm:px-2">
+                     <div className="flex items-center justify-between">
+                       <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-emerald-500 pl-4">
+                         Step 2: Financial Credentials {userData?.payoutNode && !isPayoutEditing && <span className="ml-2 px-2 py-0.5 bg-indigo-600 text-white text-[8px] rounded font-black tracking-tighter">SYSTEM LOCKED</span>}
                       </p>
                       <button 
                         onClick={() => {
@@ -734,7 +746,7 @@ export default function EarningsPage() {
                          {isPayoutEditing ? '[ LOCK & SAVE VIEW ]' : '[ EDIT / UPDATE NODE ]'}
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {payoutMethod === 'bank' ? (
                         <>
                           <input id="payout_bank_acc" key={`acc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.accountNumber} placeholder="Account Number" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
@@ -743,15 +755,15 @@ export default function EarningsPage() {
                           <input id="payout_bank_holder" key={`hold_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.holderName} placeholder="Account Holder Name" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
                         </>
                       ) : (
-                        <input id="payout_upi_id" key={`upi_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.upiId} placeholder="Enter UPI ID (e.g. name@upi)" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all sm:col-span-2 disabled:opacity-60" disabled={!isPayoutEditing} />
+                        <input id="payout_upi_id" key={`upi_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.upiId} placeholder="Enter UPI ID (e.g. name@upi)" className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all md:col-span-2 disabled:opacity-60" disabled={!isPayoutEditing} />
                       )}
                     </div>
                   </div>
  
                   {/* Step 3: KYC */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-rose-500 pl-3">Step 3: Identity Verification (KYC)</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                   <div className="space-y-4 px-1 sm:px-2">
+                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-rose-500 pl-4">Step 3: Identity Verification (KYC)</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                        <input id="payout_kyc_pan" key={`pan_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.pan} disabled={!isPayoutEditing} placeholder="PAN Number (10 Digits)" maxLength={10} className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-600 transition-all uppercase disabled:opacity-60" />
                        <input id="payout_kyc_aadhar" key={`aad_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.aadhar} disabled={!isPayoutEditing} placeholder="Aadhaar Number (12 Digits)" maxLength={12} className="payout-input w-full h-11 bg-slate-50 border border-slate-200 rounded-lg px-4 text-[12px] font-bold outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-600 transition-all disabled:opacity-60" />
                     </div>
@@ -767,7 +779,10 @@ export default function EarningsPage() {
                             const fileName = e.target.files?.[0]?.name;
                             if (fileName) {
                                const label = document.getElementById('pan_label');
-                               if (label) label.innerText = `PAN: ${fileName}`;
+                                if (label) {
+                                   const truncated = fileName.length > 25 ? fileName.slice(0, 10) + '...' + fileName.slice(-10) : fileName;
+                                   label.innerText = `PAN: ${truncated}`;
+                                }
                             }
                          }}
                        />
@@ -779,8 +794,8 @@ export default function EarningsPage() {
                   </div>
 
                   {/* Step 4: Security Sync (OTP) */}
-                  <div className="space-y-3 pt-1">
-                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-indigo-600 pl-3">Step 4: Security Verification (OTP)</p>
+                   <div className="space-y-4 px-1 sm:px-2 pt-1">
+                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-l-4 border-indigo-600 pl-4">Step 4: Security Verification (OTP)</p>
                     {isOtpSent ? (
                       <div className="grid grid-cols-1 gap-2.5">
                          <input id="payout_otp" placeholder="Enter 6-Digit OTP from Email" maxLength={6} className="w-full h-11 bg-indigo-50 border border-indigo-200 rounded-lg px-4 text-[12px] font-black outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 text-center tracking-[0.5em] transition-all" />
@@ -796,8 +811,10 @@ export default function EarningsPage() {
                             await sendEmail({ 
                               to_email: user?.email, 
                               otp, 
-                              message: `Your Blueteeth Security OTP for Payout Verification is: ${otp}. Do not share this code.`,
-                              subject: "SECURITY: Payout Node Verification"
+                              passcode: otp, // Map specifically to passcode for the template box
+                              message: `Your Blueteeth Security OTP for Payout Verification is: ${otp}. This code is required to secure your financial identity node.`,
+                              subject: "SECURITY: Payout Node Verification 🛡️",
+                              to_name: userData?.name || "Doctor"
                             });
                             setIsOtpSent(true);
                             toast.success("Security OTP Dispatched!", { id: tid });
@@ -831,12 +848,12 @@ export default function EarningsPage() {
                         const panVal = (document.getElementById('payout_kyc_pan') as HTMLInputElement)?.value;
                         const aadharVal = (document.getElementById('payout_kyc_aadhar') as HTMLInputElement)?.value;
 
-                        if (!panVal || !aadharVal) throw new Error("KYC missing.");
-                        if (method === 'upi' && !upiVal) throw new Error("UPI Node blank.");
-                        if (method === 'bank' && (!accVal || !ifscVal)) throw new Error("Bank Node blank.");
+                        if (!panVal || !aadharVal) throw new Error("Clinical Verification Required: Please provide valid PAN and Aadhaar identifiers to proceed.");
+                        if (method === 'upi' && !upiVal) throw new Error("Input Required: UPI Identifier Node cannot be blank.");
+                        if (method === 'bank' && (!accVal || !ifscVal)) throw new Error("Input Required: Bank Account or IFSC Node cannot be blank.");
 
                         // 1. UNIQUE NODE VALIDATION
-                        const { getDocs, query, collection, where, doc, updateDoc } = await import('firebase/firestore');
+                        const { getDocs, query, collection, where, doc, setDoc, serverTimestamp, addDoc, writeBatch } = await import('firebase/firestore');
                         const nodeKey = method === 'upi' ? 'payoutNode.details.upiId' : 'payoutNode.details.accountNumber';
                         const nodeVal = method === 'upi' ? upiVal : accVal;
 
@@ -845,22 +862,24 @@ export default function EarningsPage() {
                         
                         const conflictDoc = conflictSnap.docs.find(d => d.id !== user?.uid);
                         if (conflictDoc) {
-                           throw new Error("Identity Breach: Payout node already assigned to another doctor.");
+                           throw new Error("Security Advisory: This payout identifier (UPI/Account) is already registered under another practitioner's identity. Please verify or contact clinical support.");
                         }
 
-                        // 2. SAVE/UPDATE PERMANENT NODE
+                        // 2. SAVE/UPDATE PERMANENT NODE (MERGE MODE FOR ULTIMATE SYNC)
                         const payoutNode = {
                            method,
                            details: method === 'upi' ? { upiId: upiVal } : { accountNumber: accVal, ifsc: ifscVal.toUpperCase(), bankName: bNameVal, holderName: hNameVal },
-                           kyc: { pan: panVal.toUpperCase(), aadhar: aadharVal }
+                           kyc: { pan: panVal.toUpperCase(), aadhar: aadharVal },
+                           lastPayoutSync: serverTimestamp()
                         };
                         
-                        await updateDoc(doc(db, 'users', user?.uid as string), { payoutNode });
+                        await setDoc(doc(db, 'users', user?.uid as string), { payoutNode }, { merge: true });
 
                         // 3. CREATE REDEMPTION
                         const payload: any = {
                           doctorUid: user?.uid,
                           doctorName: userData?.name || user?.displayName || 'Doctor',
+                          doctorEmail: user?.email, // Added for automated confirmation
                           amount: stats.availableRevenue,
                           points: stats.availableRevenue / 50,
                           method,
@@ -870,11 +889,52 @@ export default function EarningsPage() {
                           requestedAt: serverTimestamp()
                         };
 
-                        await (await import('firebase/firestore')).addDoc(collection(db, 'redemptions'), payload);
+                        const redemptionRef = await addDoc(collection(db, 'redemptions'), payload);
+                        const redemptionId = redemptionRef.id;
+
+                        // 🔒 ULTIMATE SYNC: LOCK ALL CONTRIBUTING CASES
+                        try {
+                           const casesQuery = query(
+                              collection(db, 'cases'), 
+                              where('doctorUid', '==', user?.uid),
+                              where('status', '==', 'Approved')
+                           );
+                           const casesSnap = await getDocs(casesQuery);
+                           const batch = writeBatch(db);
+                           let lockCount = 0;
+                           
+                           casesSnap.forEach((caseDoc) => {
+                              const cd = caseDoc.data();
+                              if (!cd.payout_locked) {
+                                 batch.update(caseDoc.ref, { 
+                                    payout_locked: true, 
+                                    redemption_id: redemptionId,
+                                    lockedAt: serverTimestamp()
+                                 });
+                                 lockCount++;
+                              }
+                           });
+                           
+                           if (lockCount > 0) await batch.commit();
+                        } catch (e) { console.warn("Case Locking Deferred:", e); }
+
+                        // ✉️ ALER'T ADMIN: New Payout Request Node Active
+                        try {
+                           await sendEmail({
+                             to_email: 'nitinchauhan378@gmail.com',
+                             to_name: 'Nitin Chauhan (Admin)',
+                             subject: `🚨 NEW PAYOUT REQUEST: ₹${stats.availableRevenue.toLocaleString()}`,
+                             message: `Dr. ${payload.doctorName} has just requested a clinical payout.\n\nAmount: ₹${stats.availableRevenue.toLocaleString()}\nMethod: ${method.toUpperCase()}\n\nPlease review the Admin Panel to process this request.`,
+                             passcode: 'NEW_PAYOUT_NODE'
+                           });
+                        } catch(e) { console.warn("Admin Notification Deferred."); }
+
+                        setIsPayoutEditing(false);
                         toast.success("Security Sync: Profile Updated & Request Sent.", { id: toastId });
                         setShowRedeemModal(false);
                      } catch (err: any) {
-                        toast.error(err.message || "Cloud Sync Failed.", { id: toastId });
+                        setModalError(err.message || "Cloud Sync Failed.");
+                        toast.dismiss(toastId);
                      }
                    }}
                    className="w-full h-14 bg-slate-900 hover:bg-black text-white rounded-lg font-black text-[12px] uppercase tracking-[0.3em] shadow-xl shadow-slate-300 active:scale-95 transition-all relative overflow-hidden group"

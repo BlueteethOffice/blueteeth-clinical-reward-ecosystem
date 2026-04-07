@@ -16,6 +16,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { fetchDoctors } from '@/lib/firestore';
 import { collection, query, where, onSnapshot, getDocs, doc, getDoc, orderBy, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { sendEmail } from '@/lib/email';
 import toast from 'react-hot-toast';
 
 import { Suspense } from 'react';
@@ -174,11 +175,46 @@ function DoctorListContent() {
             walletBalance: increment(-(redemption.amount || 0))
           });
 
+          // ✉️ NOTIFY DOCTOR: Payout Settlement Success Node
+          if (redemption.doctorEmail) {
+             try {
+                await sendEmail({
+                  to_email: redemption.doctorEmail,
+                  to_name: redemption.doctorName,
+                  subject: `Success! Your Clinical Settlement of ₹${redemption.amount.toLocaleString()} is Processed 💸✅`,
+                  message: `Dr. ${redemption.doctorName}! Your requested payout of ₹${redemption.amount.toLocaleString()} has been successfully processed and settled into your registered node.`,
+                  passcode: "SETTLED"
+                });
+             } catch(e) { console.warn("Doctor Notification Deferred."); }
+          }
+
           toast.success("Clinical Payout Dispatched Successfully!");
         } catch (err) {
           console.error("Payout Processing Failure:", err);
           toast.error("Banking Ledger Update Failed.");
         }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const preAdjustConfirmation = () => {
+    if (!selectedDoctor || adjustmentValue === 0) {
+      toast.error("Please enter a valid adjustment amount.");
+      return;
+    }
+
+    const absVal = Math.abs(adjustmentValue);
+    const mode = adjustmentValue > 0 ? "ADD" : "SUBTRACT";
+    const pointsImpact = (absVal / exchangeRate).toFixed(1);
+
+    setConfirmConfig({
+      title: "Authorize Wealth Adjustment",
+      message: `PROTOCOL CHECK: Are you sure you want to ${mode} ₹${absVal.toLocaleString()} (${pointsImpact} PTS) for Dr. ${selectedDoctor.name}? This action will be logged in the clinical audit trail.`,
+      type: adjustmentValue > 0 ? 'success' : 'danger',
+      confirmLabel: "CONFIRM ADJUSTMENT",
+      onAction: async () => {
+        await handleAdjustBalance();
       }
     });
     setShowConfirmModal(true);
@@ -217,7 +253,19 @@ function DoctorListContent() {
         bonusReason: adjustmentReason || "General Clinical Performance Reward"
       });
 
-      toast.success(`Wealth Synchronized: +${pointsChange.toFixed(1)} Points Logged`);
+      toast.success(`CLINICAL NODE SYNCED: ${adjustmentValue > 0 ? '+' : ''}₹${adjustmentValue} (${pointsChange.toFixed(1)} PTS) successfully settled.`, {
+        duration: 5000,
+        icon: '💎',
+        style: {
+          borderRadius: '10px',
+          background: '#0f172a',
+          color: '#fff',
+          fontWeight: 'black',
+          fontSize: '11px',
+          border: '1px solid rgba(255,255,255,0.1)'
+        }
+      });
+
       setAdjustmentValue(0);
       setAdjustmentReason('');
       setShowAdjustModal(false);
@@ -905,7 +953,7 @@ function DoctorListContent() {
                           <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
-                            className="bg-white w-full max-w-5xl h-full max-h-[85vh] rounded-lg shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] overflow-hidden flex flex-col border border-white/20"
+                            className="bg-white w-full max-w-5xl h-full max-h-[94vh] rounded-lg shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] overflow-hidden flex flex-col border border-white/20"
                           >
                             {/* Report Header - Enhanced for Mobile View */}
                             <div className="px-5 sm:px-8 py-4 sm:py-6 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative">
@@ -941,134 +989,134 @@ function DoctorListContent() {
                               </div>
                             </div>
 
-                            {/* Report Stats Summary - Enforced 2-Line Labels for Better Visual Weight */}
-                            <div className="grid grid-cols-4 border-b border-slate-50">
-                              <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">All Points</p>
-                                <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{Number(selectedDoctor?.totalPoints || 0).toFixed(1)} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">PTS</span></p>
-                              </div>
-                              <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Total Cash</p>
-                                <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">₹{(selectedDoctor?.walletBalance || 0).toLocaleString()}</p>
-                              </div>
-                              <div className="p-4 sm:p-6 border-r border-slate-50 text-center">
-                                <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Case Count</p>
-                                <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{doctorCases.length} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">NODES</span></p>
-                              </div>
-                              <div className="p-4 sm:p-6 text-center bg-blue-50/30">
-                                <p className="text-[7px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 leading-none">Market Rate</p>
-                                <p className="text-sm sm:text-xl font-black text-blue-600 leading-none">₹{exchangeRate} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-blue-400 uppercase font-bold">/ PT</span></p>
-                              </div>
-                            </div>
-
-                            {/* Professional Table View */}
-                            <div className="flex-1 flex flex-col">
-                                                             <div className="px-4 sm:px-8 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-5 gap-1 sm:gap-4 items-center">
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none sm:leading-tight">Case <br className="sm:hidden" /> Summary</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Points</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Cash</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Status</span>
-                                                                 <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-right leading-none sm:leading-tight">Actions</span>
-                              </div>
-
-                              <div className="divide-y divide-slate-100">
-                                {loadingCases ? (
-                                  <div className="h-full flex flex-col items-center justify-center space-y-4 py-20">
-                                    <div className="animate-spin h-8 w-8 border-[3px] border-blue-600 border-t-transparent rounded-full" />
-                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Decrypting Clinical Vault...</p>
-                                  </div>
-                                ) : doctorCases.length === 0 ? (
-                                  <div className="h-full flex flex-col items-center justify-center py-20 grayscale opacity-20">
-                                    <History className="h-20 w-20 mb-4" />
-                                    <p className="text-sm font-black uppercase tracking-widest">No records found</p>
-                                  </div>
-                                ) : (
-                                  doctorCases
-                                    .slice((auditPage - 1) * 8, auditPage * 8)
-                                    .map((c, i) => (
-                                      <div
-                                        key={i}
-                                        onClick={() => setSelectedAuditCase(c)}
-                                        className="px-4 sm:px-8 py-3 grid grid-cols-5 gap-1 sm:gap-4 items-center hover:bg-slate-50/80 transition-all cursor-pointer group border-b border-slate-50"
-                                      >
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
-                                          <p className="text-[10px] sm:text-[12px] font-black text-slate-900 uppercase group-hover:text-blue-600 transition-colors truncate">{c.patientName}</p>
-                                          <div className="hidden sm:block h-4 w-px bg-slate-200" />
-                                          <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase truncate pr-1">{c.treatment}</p>
-                                        </div>
-
-                                        <div className="text-center">
-                                          <p className="text-[10px] sm:text-[12px] font-black text-blue-600">
-                                            {c.points >= 0 ? '+' : ''}{Number(c.points).toFixed(1)}
-                                            {c.bonusPoints > 0 && <span className="text-emerald-500 font-black ml-1"> (+{Number(c.bonusPoints).toFixed(1)})</span>}
-                                            <span className="text-[7px] sm:text-[8px] ml-1 text-blue-300">PTS</span>
-                                          </p>
-                                        </div>
-
-                                        <div className="text-center">
-                                          <p className="text-[10px] sm:text-[12px] font-black text-slate-900 truncate">₹{Math.round((Number(c.points) + Number(c.bonusPoints || 0)) * exchangeRate).toLocaleString()}</p>
-                                        </div>
-
-                                        <div className="flex justify-center">
-                                          <span className="px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-lg bg-emerald-50 text-[6px] sm:text-[8px] font-black text-emerald-600 border border-emerald-100 uppercase tracking-tight sm:tracking-widest truncate">
-                                            {c.status?.toUpperCase() || 'VERIFIED'}
-                                          </span>
-                                        </div>
-
-                                        <div className="flex justify-end items-center gap-1 sm:gap-2">
-                                          <button className="hidden sm:flex px-3 py-1.5 rounded-lg border border-slate-100 text-[8px] font-black uppercase text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all items-center gap-1.5 bg-white">
-                                            <Share2 size={10} /> Proof
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeleteTransaction(c.id, c.points, c.bonusPoints, c.submittedAt);
-                                            }}
-                                            className="h-7 w-7 rounded-lg border border-rose-50 text-rose-300 hover:text-white hover:bg-rose-500 hover:border-rose-500 transition-all flex items-center justify-center bg-white"
-                                          >
-                                            <Trash2 size={12} />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Report Pagination Footer */}
-                            {!loadingCases && doctorCases.length > 0 && (
-                                                            <div className="px-6 py-4 bg-slate-900 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                                <div className="flex items-center gap-6">
-                                  <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Report Pagination</p>
-                                                                        <p className="text-[10px] font-bold text-white uppercase leading-none">Page {auditPage} of {Math.ceil(doctorCases.length / 8)}</p>
-                                  </div>
-                                  <div className="h-8 w-px bg-white/10" />
-                                  <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Index Count</p>
-                                                                        <p className="text-[10px] font-bold text-white uppercase leading-none">{doctorCases.length} Nodes Synced</p>
-                                  </div>
+                              {/* Report Stats Summary */}
+                              <div className="grid grid-cols-4 border-b border-slate-50 shrink-0">
+                                <div className="p-3 sm:p-4 border-r border-slate-50 text-center">
+                                  <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">All Points</p>
+                                  <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{Number(selectedDoctor?.totalPoints || 0).toFixed(1)} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">PTS</span></p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <Button
-                                    onClick={() => setAuditPage(p => Math.max(1, p - 1))}
-                                    disabled={auditPage === 1}
-                                                                        className="h-9 px-4 bg-white/5 border border-white/10 rounded-md text-[9px] font-black uppercase text-white hover:bg-white/10 disabled:opacity-20 transition-all"
-                                  >PREVIOUS PROTOCOL</Button>
-
-                                                                    <div className="h-9 w-9 bg-blue-600 rounded-md flex items-center justify-center text-[12px] font-black text-white shadow-xl shadow-blue-600/30">
-                                    {auditPage}
-                                  </div>
-
-                                  <Button
-                                    onClick={() => setAuditPage(p => Math.min(Math.ceil(doctorCases.length / 8), p + 1))}
-                                    disabled={auditPage >= Math.ceil(doctorCases.length / 8)}
-                                                                        className="h-9 px-4 bg-white/5 border border-white/10 rounded-md text-[9px] font-black uppercase text-white hover:bg-white/10 disabled:opacity-20 transition-all"
-                                  >NEXT PROTOCOL</Button>
+                                <div className="p-3 sm:p-4 border-r border-slate-50 text-center">
+                                  <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Total Cash</p>
+                                  <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">₹{(selectedDoctor?.walletBalance || 0).toLocaleString()}</p>
+                                </div>
+                                <div className="p-3 sm:p-4 border-r border-slate-50 text-center">
+                                  <p className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Case Count</p>
+                                  <p className="text-sm sm:text-xl font-black text-slate-900 leading-none">{doctorCases.length} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-bold">NODES</span></p>
+                                </div>
+                                <div className="p-3 sm:p-4 text-center bg-blue-50/30">
+                                  <p className="text-[7px] sm:text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1 leading-none">Market Rate</p>
+                                  <p className="text-sm sm:text-xl font-black text-blue-600 leading-none">₹{exchangeRate} <br className="sm:hidden" /><span className="text-[8px] sm:text-[10px] text-blue-400 uppercase font-bold">/ PT</span></p>
                                 </div>
                               </div>
-                            )}
-                          </motion.div>
+
+                              {/* Professional Table View */}
+                              <div className="flex-1 flex flex-col min-h-0">
+                                <div className="px-4 sm:px-8 py-3 bg-slate-50 border-b border-slate-100 grid grid-cols-5 gap-1 sm:gap-4 items-center shrink-0">
+                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none sm:leading-tight">Case <br className="sm:hidden" /> Summary</span>
+                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Points</span>
+                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Cash</span>
+                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-none sm:leading-tight">Status</span>
+                                  <span className="text-[7px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest text-right leading-none sm:leading-tight">Actions</span>
+                                </div>
+
+                                <div className="divide-y divide-slate-100 overflow-y-auto flex-1 pb-10">
+                                  {loadingCases ? (
+                                    <div className="h-full flex flex-col items-center justify-center space-y-4 py-20">
+                                      <div className="animate-spin h-8 w-8 border-[3px] border-blue-600 border-t-transparent rounded-full" />
+                                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Decrypting Clinical Vault...</p>
+                                    </div>
+                                  ) : doctorCases.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center py-20 grayscale opacity-20">
+                                      <History className="h-20 w-20 mb-4" />
+                                      <p className="text-sm font-black uppercase tracking-widest">No records found</p>
+                                    </div>
+                                  ) : (
+                                    doctorCases
+                                      .slice((auditPage - 1) * 5, auditPage * 5)
+                                      .map((c, i) => (
+                                        <div
+                                          key={i}
+                                          onClick={() => setSelectedAuditCase(c)}
+                                          className="px-4 sm:px-8 py-3 grid grid-cols-5 gap-1 sm:gap-4 items-center hover:bg-slate-50/80 transition-all cursor-pointer group border-b border-slate-50"
+                                        >
+                                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 min-w-0">
+                                            <p className="text-[10px] sm:text-[12px] font-black text-slate-900 uppercase group-hover:text-blue-600 transition-colors truncate">{c.patientName}</p>
+                                            <div className="hidden sm:block h-4 w-px bg-slate-200" />
+                                            <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase truncate pr-1">{c.treatment}</p>
+                                          </div>
+
+                                          <div className="text-center">
+                                            <p className="text-[10px] sm:text-[12px] font-black text-blue-600">
+                                              {c.points >= 0 ? '+' : ''}{Number(c.points).toFixed(1)}
+                                              {c.bonusPoints > 0 && <span className="text-emerald-500 font-black ml-1"> (+{Number(c.bonusPoints).toFixed(1)})</span>}
+                                              <span className="text-[7px] sm:text-[8px] ml-1 text-blue-300">PTS</span>
+                                            </p>
+                                          </div>
+
+                                          <div className="text-center">
+                                            <p className="text-[10px] sm:text-[12px] font-black text-slate-900 truncate">₹{Math.round((Number(c.points) + Number(c.bonusPoints || 0)) * exchangeRate).toLocaleString()}</p>
+                                          </div>
+
+                                          <div className="flex justify-center">
+                                            <span className="px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-lg bg-emerald-50 text-[6px] sm:text-[8px] font-black text-emerald-600 border border-emerald-100 uppercase tracking-tight sm:tracking-widest truncate">
+                                              {c.status?.toUpperCase() || 'VERIFIED'}
+                                            </span>
+                                          </div>
+
+                                          <div className="flex justify-end items-center gap-1 sm:gap-2">
+                                            <button className="hidden sm:flex px-3 py-1.5 rounded-lg border border-slate-100 text-[8px] font-black uppercase text-slate-400 hover:text-blue-600 hover:border-blue-100 transition-all items-center gap-1.5 bg-white">
+                                              <Share2 size={10} /> Proof
+                                            </button>
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteTransaction(c.id, c.points, c.bonusPoints, c.submittedAt);
+                                              }}
+                                              className="h-7 w-7 rounded-lg border border-rose-50 text-rose-300 hover:text-white hover:bg-rose-500 hover:border-rose-500 transition-all flex items-center justify-center bg-white"
+                                            >
+                                              <Trash2 size={12} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ))
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Report Pagination Footer */}
+                              {!loadingCases && doctorCases.length > 0 && (
+                                <div className="px-6 py-4 sm:py-5 bg-slate-900 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
+                                  <div className="flex items-center gap-6">
+                                    <div>
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Report Pagination</p>
+                                      <p className="text-[10px] font-bold text-white uppercase leading-none">Page {auditPage} of {Math.ceil(doctorCases.length / 5)}</p>
+                                    </div>
+                                    <div className="h-8 w-px bg-white/10" />
+                                    <div>
+                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Index Count</p>
+                                      <p className="text-[10px] font-bold text-white uppercase leading-none">{doctorCases.length} Nodes Synced</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <Button
+                                      onClick={() => setAuditPage(p => Math.max(1, p - 1))}
+                                      disabled={auditPage === 1}
+                                      className="h-9 px-4 bg-white/5 border border-white/10 rounded-md text-[9px] font-black uppercase text-white hover:bg-white/10 disabled:opacity-20 transition-all"
+                                    >PREVIOUS PROTOCOL</Button>
+
+                                    <div className="h-9 w-9 bg-blue-600 rounded-md flex items-center justify-center text-[12px] font-black text-white shadow-xl shadow-blue-600/30">
+                                      {auditPage}
+                                    </div>
+
+                                    <Button
+                                      onClick={() => setAuditPage(p => Math.min(Math.ceil(doctorCases.length / 5), p + 1))}
+                                      disabled={auditPage >= Math.ceil(doctorCases.length / 5)}
+                                      className="h-9 px-4 bg-white/5 border border-white/10 rounded-md text-[9px] font-black uppercase text-white hover:bg-white/10 disabled:opacity-20 transition-all"
+                                    >NEXT PROTOCOL</Button>
+                                  </div>
+                                </div>
+                              )}
+                            </motion.div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -1111,30 +1159,21 @@ function DoctorListContent() {
                                   const url = selectedAuditCase.evidenceUrl;
                                   if (!url) return;
                                   
-                                  if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
-                                    const toastId = toast.loading("Opening clinical PDF...");
-                                    try {
-                                      if (url.startsWith('data:application/pdf')) {
-                                        const base64Data = url.split(',')[1];
-                                        const byteCharacters = atob(base64Data);
-                                        const byteNumbers = new Array(byteCharacters.length);
-                                        for (let i = 0; i < byteCharacters.length; i++) {
-                                          byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                        }
-                                        const byteArray = new Uint8Array(byteNumbers);
-                                        const blob = new Blob([byteArray], { type: 'application/pdf' });
-                                        const blobUrl = URL.createObjectURL(blob);
-                                        window.open(blobUrl, '_blank');
-                                      } else {
-                                        window.open(url, '_blank');
-                                      }
-                                      toast.success("Document opened.", { id: toastId });
-                                    } catch (e) {
-                                      toast.error("Format error. Try again.", { id: toastId });
-                                      window.open(url, '_blank');
-                                    }
-                                  } else {
-                                    window.open(url, '_blank');
+                                  // Direct Open Protocol: Ensures image loads in new tab immediately
+                                  const imgWindow = window.open('', '_blank');
+                                  if (imgWindow) {
+                                    imgWindow.document.write(`
+                                      <html>
+                                        <head><title>Clinical Evidence - Blueteeth</title></head>
+                                        <body style="margin:0; display:flex; justify-content:center; align-items:center; background:#0f172a; height:100vh; font-family:sans-serif;">
+                                          ${(url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) 
+                                            ? `<embed src="${url}" type="application/pdf" width="100%" height="100%">`
+                                            : `<img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border-radius:8px;">`
+                                          }
+                                        </body>
+                                      </html>
+                                    `);
+                                    imgWindow.document.close();
                                   }
                                 }}
                                 className="relative h-24 group overflow-hidden bg-slate-100 rounded-2xl border border-slate-200 shadow-inner cursor-pointer"
@@ -1324,7 +1363,7 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
                   >Cancel</Button>
                   <Button
                     disabled={adding}
-                    onClick={handleAdjustBalance}
+                    onClick={preAdjustConfirmation}
                     className="flex-1 h-10 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20"
                   >
                     {adding ? 'Syncing...' : 'Update Wealth'}
@@ -1407,32 +1446,33 @@ INTERNAL REGISTRY AUDIT SUCCESSFUL
           <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowConfirmModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white rounded-lg shadow-3xl w-full max-w-[340px] overflow-hidden border border-slate-100 mx-auto">
-              <div className={`p-5 ${confirmConfig.type === 'danger' ? 'bg-red-50' : 'bg-blue-50'} border-b border-slate-100 flex items-center gap-4`}>
-                <div className={`h-10 w-10 ${confirmConfig.type === 'danger' ? 'bg-red-600' : 'bg-blue-600'} text-white rounded-lg flex items-center justify-center shadow-lg`}>
+              <div className={`p-5 ${confirmConfig?.type === 'danger' ? 'bg-red-50' : (confirmConfig?.type === 'success' ? 'bg-emerald-50' : 'bg-blue-50')} border-b border-slate-100 flex items-center gap-4`}>
+                <div className={`h-10 w-10 ${confirmConfig?.type === 'danger' ? 'bg-red-600' : (confirmConfig?.type === 'success' ? 'bg-emerald-500' : 'bg-blue-600')} text-white rounded-lg flex items-center justify-center shadow-lg`}>
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{confirmConfig.title}</h3>
+                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">{confirmConfig?.title}</h3>
                   <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Access Authority Verification</p>
                 </div>
               </div>
               <div className="p-6 space-y-5 text-center sm:text-left">
-                <p className="text-[12px] font-bold text-slate-600 leading-relaxed px-1">{confirmConfig.message}</p>
+                <p className="text-[12px] font-bold text-slate-600 leading-relaxed px-1">{confirmConfig?.message}</p>
                 <div className="flex flex-row gap-2 pt-2">
-                  {!confirmConfig.hideCancel && (
+                  {!confirmConfig?.hideCancel && (
                     <Button variant="ghost" onClick={() => setShowConfirmModal(false)} className="flex-1 rounded-lg border border-slate-200 font-black text-[9px] uppercase tracking-widest h-11">Decline</Button>
                   )}
                   <Button
                     onClick={async () => {
+                      if (!confirmConfig) return;
                       setConfirming(true);
                       await confirmConfig.onAction();
                       setConfirming(false);
                       setShowConfirmModal(false);
                     }}
                     isLoading={confirming}
-                    className={`flex-1 rounded-lg ${confirmConfig.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white font-black text-[9px] uppercase tracking-widest h-11 shadow-md`}
+                    className={`flex-1 rounded-lg ${confirmConfig?.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : (confirmConfig?.type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-600 hover:bg-blue-700')} text-white font-black text-[9px] uppercase tracking-widest h-11 shadow-md`}
                   >
-                    {confirmConfig.confirmLabel || 'Authorize Action'}
+                    {confirmConfig?.confirmLabel || 'Authorize Action'}
                   </Button>
                 </div>
               </div>

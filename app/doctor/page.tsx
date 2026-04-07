@@ -237,9 +237,12 @@ export default function DoctorDashboard() {
               </motion.div>
               <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight max-w-full break-words">
                 Welcome, <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
-                  {userData?.name || user?.displayName ? 
-                    (String(userData?.name || user?.displayName).startsWith('Dr.') ? (userData?.name || user?.displayName) : `Dr. ${userData?.name || user?.displayName}`) 
-                    : 'Doctor'
+                  {(userData?.role === 'admin') ? 
+                    (userData?.name === 'Master Admin Niteen02' ? 'Master Admin' : (userData?.name || 'Admin')) : 
+                    (userData?.name || user?.displayName ? 
+                      (String(userData?.name || user?.displayName).startsWith('Dr.') ? (userData?.name || user?.displayName) : `Dr. ${userData?.name || user?.displayName}`) 
+                      : 'Doctor'
+                    )
                   }
                 </span>
               </h1>
@@ -572,11 +575,22 @@ export default function DoctorDashboard() {
                               window.open(url, '_blank');
                             }
                           } else {
-                            // If it's an image, just open in new tab
-                            window.open(url, '_blank');
+                            // 🧬 OPTIMIZED: ONE-TIME IMAGE LOAD IN NEW TAB
+                            const newTab = window.open();
+                            if (newTab) {
+                              newTab.document.write(`
+                                <html>
+                                  <head><title>Clinical Proof - Identity Verified</title></head>
+                                  <body style="margin:0; background:#0b0e14; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+                                    <img src="${url}" style="max-width:100%; max-height:100vh; object-fit:contain; shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                                  </body>
+                                </html>
+                              `);
+                              newTab.document.close();
+                            }
                           }
                         }}
-                        className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all active:scale-[0.99]"
+                        className="relative group bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-2 sm:p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all active:scale-[0.99]"
                       >
                          {(String(selectedCase.evidenceUrl).toLowerCase().includes('.pdf') || 
                            String(selectedCase.evidenceUrl).toLowerCase().includes('application/pdf')) ? (

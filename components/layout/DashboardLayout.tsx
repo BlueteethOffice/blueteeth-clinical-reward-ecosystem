@@ -71,10 +71,31 @@ export default function DashboardLayout({
     }
   }, [sidebarOpen]);
 
-  // Identity is now derived safely with hydration-aware guard
-  const displayName = mounted ? (userData?.name || user?.displayName || 'Doctor') : 'Doctor';
-  const displayPhoto = mounted ? (userData?.photoURL || user?.photoURL || '') : '';
+  // Identity is now derived safely with hydration-aware guard + Admin Persistent Fallback
+  const [localProfile, setLocalProfile] = useState<any>(null);
+
+  React.useEffect(() => {
+    if (mounted) {
+       const uid = user?.uid || 'admin';
+       const cached = localStorage.getItem(`clinical_profile_${uid}`);
+       if (cached) setLocalProfile(JSON.parse(cached));
+    }
+  }, [mounted, user?.uid]);
+
+  const displayName = mounted ? (userData?.name || user?.displayName || localProfile?.name || 'Doctor') : 'Doctor';
+  const displayPhoto = mounted ? (userData?.photoURL || localProfile?.photoURL || user?.photoURL || '') : '';
   const displaySpec = mounted ? ((userData?.role === 'admin' || isUserAdmin) ? 'Master Admin' : 'Clinical Practitioner') : 'Practitioner';
+
+  // Listen for internal identity updates
+  React.useEffect(() => {
+    const handleUpdate = () => {
+       const uid = user?.uid || 'admin';
+       const cached = localStorage.getItem(`clinical_profile_${uid}`);
+       if (cached) setLocalProfile(JSON.parse(cached));
+    };
+    window.addEventListener('clinical-identity-update', handleUpdate);
+    return () => window.removeEventListener('clinical-identity-update', handleUpdate);
+  }, [user?.uid]);
 
   React.useEffect(() => {
     if (!user || !db) return;
@@ -111,16 +132,27 @@ export default function DashboardLayout({
         return;
       }
       if (isAdminRoute) {
-         if (!userData) return; 
-          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'support@blueteeth.in'];
+          // Double-Layer Master Registry Verification
+          const masterEmails = [
+            'admin@blueteeth.in', 
+            'nitinchauhan378@gmail.com', 
+            'niteen02@gmail.com', 
+            'niteen02', 
+            'support@blueteeth.in', 
+            'master_core_01@blueteeth.in', 
+            'backup_core_02@blueteeth.in'
+          ];
           const userEmailRaw = user.email?.toLowerCase();
           const isRootEmail = userEmailRaw && masterEmails.map(e => e.toLowerCase()).includes(userEmailRaw);
+          
+          // Role Verification via Database/Context
           const hasAdminRole = userData?.role === 'admin' || isUserAdmin;
-         if (!isRootEmail && !hasAdminRole) {
-            toast.error("SECURITY LOCK: Administrative privileges required.");
+          
+          if (!isRootEmail && !hasAdminRole) {
+            toast.error("SECURITY PROTOCOL: Administrative access denied.");
             router.replace('/doctor');
             return;
-         }
+          }
       }
       setLoading(false);
     }
@@ -155,7 +187,7 @@ export default function DashboardLayout({
 
       {/* Desktop Sidebar - Final Balanced Full-Height Version */}
       <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:top-4 lg:left-4 lg:bottom-4 lg:z-50">
-        <div className="flex flex-col h-full bg-blue-900 border border-white/10 rounded-xl p-6 shadow-2xl overflow-hidden space-y-6">
+        <div className="flex flex-col h-full bg-blue-900 border border-white/10 rounded-xl p-6 pb-12 shadow-2xl overflow-y-auto no-scrollbar space-y-6 overflow-x-hidden">
           
           {/* Top Group: Logo + Navigation */}
           <div className="flex flex-col">
@@ -226,10 +258,10 @@ export default function DashboardLayout({
                 </div>
                 <div className="flex flex-col min-w-0">
                   <p className="text-[11px] font-black text-white truncate leading-none">
-                    {displayName ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : 'Doctor'}
+                    {(isAdminRoute || isUserAdmin) ? (displayName === 'Master Admin Niteen02' ? 'Master Admin' : displayName.replace('Dr. ', '')) : (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`)}
                   </p>
                   <p className="text-[9px] font-bold text-blue-200/80 uppercase tracking-tight mt-1 truncate">
-                    {isAdminRoute ? 'Admin' : 'Practice Doctor'}
+                    {(isAdminRoute || isUserAdmin) ? 'Master Admin' : 'Practice Doctor'}
                   </p>
                 </div>
               </div>
@@ -244,7 +276,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 pb-10 px-4 sm:px-8">
+      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 pb-4 px-4 sm:px-8">
         <header className="py-4 sm:py-5">
           <div className="flex items-center justify-between bg-white border border-slate-300 rounded-lg px-4 py-3 shadow-xl shadow-slate-200/20">
             <button className="lg:hidden p-2.5 text-slate-700 bg-slate-50 border border-slate-200 rounded-lg" onClick={() => setSidebarOpen(true)}>
@@ -257,7 +289,7 @@ export default function DashboardLayout({
             </div>
              <div className="flex items-center gap-x-5 ml-auto relative">
                <Suspense fallback={<div className="w-40 h-10 bg-slate-100 rounded-xl animate-pulse" />}>
-                 <HeaderActions isAdminRoute={isAdminRoute} user={user} displayName={displayName} displaySpec={displaySpec} displayPhoto={displayPhoto} notifications={notifications} showNotifications={showNotifications} setShowNotifications={setShowNotifications} mounted={mounted} />
+                 <HeaderActions isAdminRoute={isAdminRoute} isUserAdmin={isUserAdmin} user={user} displayName={displayName} displaySpec={displaySpec} displayPhoto={displayPhoto} notifications={notifications} showNotifications={showNotifications} setShowNotifications={setShowNotifications} mounted={mounted} />
                </Suspense>
             </div>
           </div>
@@ -300,10 +332,10 @@ export default function DashboardLayout({
                   </div>
                   <div className="flex flex-col min-w-0">
                     <p className="text-[11px] font-black text-slate-900 truncate leading-none">
-                      {displayName ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : 'Doctor'}
+                      {(isAdminRoute || isUserAdmin) ? (displayName === 'Master Admin Niteen02' ? 'Master Admin' : displayName.replace('Dr. ', '')) : (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`)}
                     </p>
                     <p className="text-[8px] font-bold text-slate-400 border border-slate-100 bg-white px-1.5 py-0.5 rounded-md w-fit uppercase tracking-tighter mt-1 truncate">
-                      {isAdminRoute ? 'Admin' : 'Practice Doctor'}
+                      {(isAdminRoute || isUserAdmin) ? 'Master Admin' : 'Practice Doctor'}
                     </p>
                   </div>
                 </div>
@@ -338,13 +370,13 @@ export default function DashboardLayout({
                 )}
               </div>
 
-              <div className="p-3 border-t border-slate-100 mt-auto shrink-0 bg-slate-50 space-y-4">
+              <div className="p-3 border-t border-slate-100 mt-auto shrink-0 bg-slate-50 space-y-1">
                  <Button variant="ghost" onClick={handleLogout} className="w-full h-11 rounded-md text-red-600 bg-white border border-red-100 hover:bg-red-500 hover:text-white justify-start font-black text-[10px] uppercase tracking-widest transition-all shadow-sm">
                     <LogOut className="mr-3 h-4 w-4" /> Sign Out Portal
                  </Button>
-                 <div className="pb-2 text-center">
-                    <p className="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] leading-loose">Identity Protected by <br/> Blueteeth Clinical Encryption</p>
-                 </div>
+                  <div className="pb-1 text-center">
+                    {/* Identity Disclaimer Removed - Minimized padding to shift button down */}
+                  </div>
               </div>
             </motion.div>
           </div>
@@ -377,7 +409,7 @@ function SearchInput() {
   );
 }
 
-function HeaderActions({ isAdminRoute, user, displayName, displaySpec, displayPhoto, notifications, showNotifications, setShowNotifications, mounted }: any) {
+function HeaderActions({ isAdminRoute, isUserAdmin, user, displayName, displaySpec, displayPhoto, notifications, showNotifications, setShowNotifications, mounted }: any) {
   const handleAdminPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && isAdminRoute) {
@@ -458,7 +490,7 @@ function HeaderActions({ isAdminRoute, user, displayName, displaySpec, displayPh
         <Link href="/doctor/settings">
           <div className="flex items-center gap-3 cursor-pointer group">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-black text-slate-900 leading-none group-hover:text-blue-600 transition-colors uppercase tracking-tight">{displayName ? (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`) : 'Doctor'}</p>
+              <p className="text-sm font-black text-slate-900 leading-none group-hover:text-blue-600 transition-colors uppercase tracking-tight">{(isAdminRoute || isUserAdmin) ? (displayName === 'Master Admin Niteen02' ? 'Master Admin' : displayName.replace('Dr. ', '')) : (displayName.startsWith('Dr.') ? displayName : `Dr. ${displayName}`)}</p>
               <p className="text-[8px] text-slate-500 uppercase mt-1 font-black tracking-widest">{displaySpec}</p>
             </div>
             <div className="h-10 w-10 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-105 transition-all">

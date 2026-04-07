@@ -12,15 +12,19 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@tailwindcss/postcss": "^4.2.2",
+    "@types/nodemailer": "^8.0.0",
     "clsx": "latest",
     "firebase": "^10.8.0",
     "framer-motion": "latest",
+    "jspdf": "^4.2.1",
     "lucide-react": "latest",
     "next": "latest",
+    "nodemailer": "^8.0.4",
     "razorpay": "^2.9.6",
     "react": "latest",
     "react-dom": "latest",
     "react-hot-toast": "^2.6.0",
+    "resend": "^6.10.0",
     "tailwind-merge": "latest"
   },
   "devDependencies": {

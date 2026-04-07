@@ -80,19 +80,37 @@ export default function AdminSettings() {
 
   const handleAdminSave = async () => {
     if (!user) return;
-    setLoading(true);
-    let photoURL = adminProfile.photoURL;
-    if (photoURL && photoURL.startsWith('data:image')) {
-      const uploadResult = await uploadProfileImage(user.uid, photoURL);
-      if (uploadResult && uploadResult.success && uploadResult.url) {
-         photoURL = uploadResult.url;
-      }
-    }
-    await updateUserProfile(user.uid, { name: adminProfile.name, photoURL });
-    localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify({ name: adminProfile.name, photoURL }));
+    
+    // [TURBO OPTIMIZATION] Step 1: Instant Local Hydration
+    const instantProfile = { ...adminProfile };
+    localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify(instantProfile));
     window.dispatchEvent(new Event('clinical-identity-update'));
-    toast.success('Master Identity Synced to Global Edge.');
-    setLoading(false);
+    
+    const toastId = toast.loading('Syncing Identity to Global Edge...');
+    setLoading(true);
+
+    try {
+      let photoURL = instantProfile.photoURL;
+      if (photoURL && photoURL.startsWith('data:image')) {
+        const uploadResult = await uploadProfileImage(user.uid, photoURL);
+        if (uploadResult && uploadResult.success && uploadResult.url) {
+           photoURL = uploadResult.url;
+        }
+      }
+
+      // Step 2: Background Sync
+      await updateUserProfile(user.uid, { name: instantProfile.name, photoURL });
+      
+      // Final Hydration with public URL
+      localStorage.setItem(`clinical_profile_${user.uid}`, JSON.stringify({ name: instantProfile.name, photoURL }));
+      window.dispatchEvent(new Event('clinical-identity-update'));
+      
+      toast.success('Master Identity Secured.', { id: toastId });
+    } catch (e) {
+      toast.error('Cloud Sync Latency: Local changes kept.', { id: toastId });
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

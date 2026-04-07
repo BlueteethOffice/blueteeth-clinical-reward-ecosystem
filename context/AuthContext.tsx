@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // OPTIMISTIC INITIALIZATION: Load clinical snapshot from local storage to eliminate white-flicker
+  // OPTIMISTIC INITIALIZATION: Load Name/Photo only (NEVER TRUST ROLE FROM STORAGE)
   useEffect(() => {
     try {
       const lastUid = localStorage.getItem('last_clinical_uid');
@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const snapshot = localStorage.getItem(`clinical_identity_snapshot_${lastUid}`);
         if (snapshot) {
            const parsed = JSON.parse(snapshot);
-           setUserData({ name: parsed.name, role: parsed.role, photoURL: parsed.photoURL });
-           setIsAdmin(parsed.role === 'admin');
+           // We ONLY load UI aesthetic data, never the role/privilege
+           setUserData({ name: parsed.name, photoURL: parsed.photoURL, role: 'doctor' }); 
         }
       }
     } catch (e) {}
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (authUser) {
         localStorage.setItem('last_clinical_uid', authUser.uid);
         // [OPTIMIZATION 1] FAST-PATH ADMIN DETECTION: Determine role via email prefix to bypass DB latency
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
+        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'master_core_01@blueteeth.in', 'backup_core_02@blueteeth.in'];
         const lowerEmail = authUser.email?.toLowerCase() || '';
         const isMaster = masterEmails.includes(lowerEmail);
         

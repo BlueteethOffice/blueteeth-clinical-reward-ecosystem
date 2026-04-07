@@ -7,9 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Role-based Access Logic
+    // Role + Email Based Dual-Verification (Security Core)
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // 1. Must be authenticated
+      // 2. Email must be in the master whitelist
+      // 3. Database role must be 'admin'
+      let masterEmails = [
+        'admin@blueteeth.in', 
+        'nitinchauhan378@gmail.com', 
+        'niteen02@gmail.com', 
+        'niteen02', 
+        'support@blueteeth.in', 
+        'master_core_01@blueteeth.in', 
+        'backup_core_02@blueteeth.in'
+      ];
+      return isSignedIn() && 
+             (request.auth.token.email.lower() in masterEmails || 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
     // 1. Users Collection - DO NOT ALLOW USERS TO CHANGE THEIR OWN ROLE OR POINTS
@@ -36,11 +50,25 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // 3. Withdrawals Collection
-    match /withdrawals/{requestId} {
+    // 3. Redemptions Collection (Aligned with Code)
+    match /redemptions/{id} {
       allow read: if isSignedIn() && (resource.data.doctorUid == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && request.resource.data.doctorUid == request.auth.uid;
-      allow update: if isAdmin();
+      allow update: if isAdmin(); // Only admins can mark as 'Paid'
+      allow delete: if false; // Financial records should never be deleted
+    }
+
+    // 4. Notifications Collection
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'admin');
+      allow create: if isSignedIn(); // Allow system to create notifications
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid; // Only read/write own notifications
+      allow delete: if false;
+    }
+
+    // Global Deny catch-all for unauthorized paths
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }

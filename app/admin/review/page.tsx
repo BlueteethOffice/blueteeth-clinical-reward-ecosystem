@@ -126,16 +126,16 @@ function CaseReviewContent() {
             <h1 className="text-2xl font-black text-blue-900 tracking-tight">Case Review Queue</h1>
             <p className="text-slate-500 mt-1 font-medium text-sm">Review and approve submitted patient cases to credit points.</p>
           </div>
-          <div className="flex bg-slate-100/80 p-0.5 rounded-md border border-slate-200/50 gap-0.5">
+          <div className="flex bg-slate-100/80 p-0.5 rounded-md border border-slate-200/50 gap-0.5 sm:gap-1">
             <button 
               onClick={() => setFilterStatus('Pending')}
-              className={`px-4 py-1.5 rounded-sm text-xs font-bold transition-all ${filterStatus === 'Pending' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`px-2.5 sm:px-4 py-1.5 rounded-sm text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${filterStatus === 'Pending' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}
             >
               Pending ({filterStatus === 'Pending' ? cases.length : '...'})
             </button>
             <button 
               onClick={() => setFilterStatus('Approved')}
-              className={`px-4 py-1.5 rounded-sm text-xs font-bold transition-all ${filterStatus === 'Approved' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}
+              className={`px-2.5 sm:px-4 py-1.5 rounded-sm text-[10px] sm:text-xs font-bold transition-all whitespace-nowrap ${filterStatus === 'Approved' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}
             >
               Approved
             </button>
@@ -405,17 +405,25 @@ function CaseReviewContent() {
                     <div className="pt-1">
                       {selectedCase.status === 'Approved' ? (
                         <div className="space-y-3">
-                          <div className="w-full h-10 rounded-sm bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-[10px] uppercase tracking-widest shadow-sm">
-                             <CheckCircle className="h-4 w-4" /> Points Dispatched & Verified
+                          <div className={`w-full h-10 rounded-sm flex items-center justify-center gap-2 font-bold text-[10px] uppercase tracking-widest shadow-sm border ${
+                            selectedCase.payout_locked ? 'bg-indigo-600 border-indigo-700 text-white shadow-indigo-100' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          }`}>
+                             {selectedCase.payout_locked ? (
+                                <><ShieldCheck className="h-4 w-4" /> Payout Settled - Transaction Locked</>
+                             ) : (
+                                <><CheckCircle className="h-4 w-4" /> Points Dispatched & Verified</>
+                             )}
                           </div>
-                          <Button
-                            onClick={() => handleAction(selectedCase.id, 'revoke')}
-                                                        isLoading={loading === `${selectedCase.id}-revoke`}
-                            variant="outline"
-                            className="w-full h-8 rounded-sm text-slate-500 border-slate-200 hover:bg-slate-50 text-[9px] font-black uppercase tracking-widest"
-                          >
-                            Undo Approval (Revert to Pending)
-                          </Button>
+                          {!selectedCase.payout_locked && (
+                            <Button
+                              onClick={() => handleAction(selectedCase.id, 'revoke')}
+                              isLoading={loading === `${selectedCase.id}-revoke`}
+                              variant="outline"
+                              className="w-full h-8 rounded-sm text-slate-500 border-slate-200 hover:bg-slate-50 text-[9px] font-black uppercase tracking-widest"
+                            >
+                              Undo Approval (Revert to Pending)
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">

@@ -1,68 +1,60 @@
-import emailjs from '@emailjs/browser';
-
 /**
- * 🩺 ELITE CLINICAL DISPATCHER (PRODUCTION GRADE)
- * This module ensures 100% reliable OTP delivery for the Blueteeth Ecosystem.
- * It includes ultra-resilient sanitation for environment variables to prevent Vercel 404s.
+ * 🩺 ELITE CLINICAL DISPATCHER (V2: RESEND ENGINE)
+ * This module uses our internal API route (/api/send-email) to dispatch
+ * professional clinical notifications via the Resend API.
+ * 3,000 Emails/Month Free Tier Capacity.
  */
-
-// Helper to scrub hidden whitespace/characters from Vercel dash
-const scrub = (val: string | undefined): string => (val || "").toString().trim().replace(/['"]+/g, '');
-
-const EMAILJS_CONFIG = {
-  SERVICE_ID: scrub(process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_thvu0l4"),
-  TEMPLATE_ID: scrub(process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_7nj9q8f"),
-  PUBLIC_KEY: scrub(process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "pQVg9Ozfwc_qC1UaC"),
-};
 
 export const sendEmail = async (params: Record<string, any>) => {
   try {
-    // 🩺 IDENTITY & RECIPIENT VALIDATION (Anti-Crash Node)
-    if (!EMAILJS_CONFIG.PUBLIC_KEY || !EMAILJS_CONFIG.SERVICE_ID) {
-      throw new Error("Security Node: Credentials Not Initialized");
-    }
-
     const recipient = params.to_email || params.email;
     if (!recipient || (typeof recipient === 'string' && !recipient.includes('@'))) {
-      console.warn(">>> [ELITE DISPATCH] ABORT: Invalid or Empty Recipient Address.");
+      console.warn(">>> [RESEND DISPATCH] ABORT: Invalid or Empty Recipient Address.");
       return { 
         success: false, 
-        error: "Recipient address is missing or invalid. Clinical notification deferred.",
+        error: "Recipient address is missing or invalid.",
         status: 422
       };
     }
 
-    const templateParams = {
-      ...params,
-      to_email: recipient,
-      user_email: recipient,
-      email: recipient,
+    const payload = {
       to: recipient,
-      reply_to: recipient,
-      logo_url: "https://blueteeth.in/wp-content/uploads/2021/04/Blueteeth-Logo-Small.png",
-      from_name: "Blueteeth Professional",
-      company: "Blueteeth Pvt. Ltd.",
+      to_name: params.to_name || 'Dr.',
+      subject: params.subject || 'Blueteeth Clinical Notification',
+      message: params.message || 'Verification needed for your Blueteeth profile.',
+      passcode: params.passcode || params.otp || null,
     };
 
-    console.log(">>> [ELITE DISPATCH] HANDSHAKE:", EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID);
+    console.log(">>> [RESEND DISPATCH] HITTING INTERNAL API NODE...");
     
-    const response = await emailjs.send(
-      EMAILJS_CONFIG.SERVICE_ID,
-      EMAILJS_CONFIG.TEMPLATE_ID,
-      templateParams,
-      EMAILJS_CONFIG.PUBLIC_KEY
-    );
+    // Using a relative path for the internal API route
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-    console.log(">>> [ELITE DISPATCH] SUCCESS:", response.status, response.text);
-    return { success: true, response };
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      console.log(">>> [RESEND DISPATCH] SUCCESS: ID:", result.id);
+      return { success: true, id: result.id };
+    } else {
+      console.error(">>> [RESEND DISPATCH] FAILURE NODE:", result.error);
+      return { 
+        success: false, 
+        error: result.error?.message || result.error || "Service Error",
+        status: response.status 
+      };
+    }
   } catch (error: any) {
-    const errorMsg = error?.text || error?.message || "Service Unreachable";
-    console.error(">>> [ELITE DISPATCH] FAILURE NODE:", error?.status, errorMsg);
+    const errorMsg = error?.message || "Service Unreachable";
+    console.error(">>> [RESEND DISPATCH] EXCEPTION:", errorMsg);
     
     return { 
       success: false, 
       error: errorMsg,
-      status: error?.status 
+      status: 500 
     };
   }
 };

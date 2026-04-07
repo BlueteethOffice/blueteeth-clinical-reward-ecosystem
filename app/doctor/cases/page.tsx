@@ -23,6 +23,7 @@ export default function CaseHistory() {
   const [selectedCase, setSelectedCase] = useState<any | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isMounted, setIsMounted] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
@@ -564,6 +565,21 @@ export default function CaseHistory() {
                     Close Details
                   </button>
                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── HIGH-FIDELITY ZOOM LIGHTBOX ── */}
+        <AnimatePresence>
+          {zoomedImage && (
+            <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setZoomedImage(null)} className="absolute inset-0 bg-black/95 backdrop-blur-xl" />
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="relative z-[510] max-w-full max-h-full">
+                <img src={zoomedImage} alt="Zoomed Evidence" className="max-w-screen max-h-[90vh] object-contain shadow-2xl rounded-lg border-2 border-white/10" />
+                <button onClick={() => setZoomedImage(null)} className="absolute -top-12 right-0 bg-white/10 hover:bg-white/20 p-3 rounded-full text-white transition-all">
+                  <X size={24} />
+                </button>
               </motion.div>
             </div>
           )}

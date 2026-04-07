@@ -191,58 +191,59 @@ export default function SettingsPage() {
       return;
     }
 
-    setLoading(true);
-    const toastId = toast.loading("Syncing with Cloud Identity...");
+    // [TURBO OPTIMIZATION] Step 1: Instant Persistence (No Waiting)
+    const instantState = { ...formData };
+    
+    // Immediate Local Hydration for zero-latency feel
+    localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
+       role: (userData?.role || 'doctor'),
+       name: instantState.name,
+       photoURL: instantState.photoURL
+    }));
+    localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(instantState));
+    window.dispatchEvent(new Event('clinical-identity-update'));
+    
+    setIsEditing(false);
+    const toastId = toast.loading("Securing Identity in Cloud...");
 
+    // [TURBO OPTIMIZATION] Step 2: Background Sync (Parallel Processing)
     try {
-      let finalPhotoURL = formData.photoURL;
-      const isBase64 = formData.photoURL && formData.photoURL.startsWith('data:image');
+      const isBase64 = instantState.photoURL && instantState.photoURL.startsWith('data:image');
 
-      // [TURBO SYNC] Parallelize Photo Upload and Firestore Document Update
-      let photoUpdatePromise = Promise.resolve<any>({ success: true, url: finalPhotoURL });
+      // Task 1: Upload Photo if changed
+      let finalPhotoURL = instantState.photoURL;
       if (isBase64) {
-        photoUpdatePromise = uploadProfileImage(user.uid, formData.photoURL);
+        const photoResult = await uploadProfileImage(user.uid, instantState.photoURL);
+        if (photoResult.success && photoResult.url) {
+          finalPhotoURL = photoResult.url;
+        }
       }
 
-      const textSyncPromise = updateUserProfile(user.uid, { ...formData });
+      // Task 2: Sync Firestore Document
+      await updateUserProfile(user.uid, { ...instantState, photoURL: finalPhotoURL });
 
-      // Run parallel fast-sync tasks
-      const [photoResult, textResult] = await Promise.all([photoUpdatePromise, textSyncPromise]);
-
-      if (!textResult.success) throw new Error(textResult.error || "Registry Sync Failed");
-
-      if (photoResult.success && photoResult.url) {
-        finalPhotoURL = photoResult.url;
-        // Background-style sync for the image URL in firestore if it just finished uploading
-        if (isBase64) updateUserProfile(user.uid, { photoURL: finalPhotoURL }).catch(() => {});
-      }
-
-      // 3. Auth Profile Sync (Final Polish)
+      // Task 3: Auth Profile Polish
       const { updateProfile } = await import('firebase/auth');
       const isUrlValid = finalPhotoURL && !finalPhotoURL.startsWith('data:');
       await updateProfile(user, { 
-        displayName: formData.name, 
+        displayName: instantState.name, 
         photoURL: isUrlValid ? finalPhotoURL : (user.photoURL || '') 
       });
 
-      // 3. PERSISTENCE: Save to global identity key for layout real-time sync
-      const finalState = { ...formData, photoURL: finalPhotoURL };
+      // Final Hydration with potentially new public URL
+      const finalState = { ...instantState, photoURL: finalPhotoURL };
+      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(finalState));
       localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
          role: (userData?.role || 'doctor'),
          name: finalState.name,
          photoURL: finalState.photoURL
       }));
-      // Backup full payload
-      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(finalState));
-      
-      // Dispatch for immediate Header Sync
       window.dispatchEvent(new Event('clinical-identity-update'));
 
-      toast.success("Identity Secured in Cloud!", { id: toastId });
-      setIsEditing(false);
+      toast.success("Profile Synchronized!", { id: toastId });
     } catch (err: any) {
       console.error("Cloud Sync Failure:", err);
-      toast.error(`Sync Failure: ${err.message || 'Check connection'}`, { id: toastId });
+      toast.error(`Sync Fault Logged: Changes kept locally.`, { id: toastId });
     } finally {
       setLoading(false);
     }
