@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { sendEmail } from '@/lib/email';
@@ -18,9 +18,31 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isAdminFlow, setIsAdminFlow] = useState(false);
   const router = useRouter();
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error('Email daalo pehle, phir "Forgot Password" click karo.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      toast.success('Password reset link sent! Apna email check karo. 📧');
+    } catch (err: any) {
+      const msg = err.code === 'auth/user-not-found'
+        ? 'Yeh email registered nahi hai.'
+        : err.code === 'auth/invalid-email'
+        ? 'Invalid email format.'
+        : 'Reset email send nahi hua. Try again.';
+      toast.error(msg);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -152,7 +174,16 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-8 text-center">
+              <div className="mt-6 flex flex-col items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-[10px] text-blue-500 font-bold hover:text-blue-700 transition-colors uppercase tracking-widest disabled:opacity-50"
+                >
+                  {resetLoading ? 'Sending...' : '🔑 Forgot Password? Reset karo'}
+                </button>
+                <div className="h-px w-full bg-slate-100" />
                 <Link href="/auth/signup" className="text-[10px] text-slate-400 font-bold hover:text-blue-600 transition-colors uppercase tracking-widest">
                   New Professional? <span className="text-blue-600">Register Now</span>
                 </Link>

@@ -96,7 +96,18 @@ export default function SignupPage() {
           return;
         }
       } else {
-        toast.error('Setup failed.');
+        console.error('>>> [FIREBASE AUTH ERROR]:', authError.code, authError.message);
+        // Show descriptive error based on Firebase error code
+        const firebaseErrors: Record<string, string> = {
+          'auth/weak-password': 'Password too weak! Use at least 6 characters.',
+          'auth/invalid-email': 'Invalid email address format.',
+          'auth/network-request-failed': 'Network error. Check your internet connection.',
+          'auth/too-many-requests': 'Too many attempts. Please wait a few minutes.',
+          'auth/operation-not-allowed': 'Email signup is not enabled. Contact admin.',
+          'auth/user-disabled': 'This account has been disabled.',
+        };
+        const msg = firebaseErrors[authError.code] || `Error: ${authError.message || authError.code}`;
+        toast.error(msg);
         setLoading(false);
         return;
       }
@@ -119,6 +130,9 @@ export default function SignupPage() {
         message: `Your OTP is: ${newOtp}`,
         time: "10 minutes" 
       });
+
+      // 🛠️ DEV: Always log OTP in console for debugging delivery issues
+      console.log(`%c🔑 [DEV] OTP for ${formData.email}: ${newOtp}`, 'background:#1e3a5f;color:#60a5fa;font-size:16px;padding:8px 16px;border-radius:6px;font-weight:bold;');
 
       if (!emailResult.success) {
         throw new Error(emailResult.error || "Failed to deliver OTP email.");
