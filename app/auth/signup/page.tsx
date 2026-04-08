@@ -109,7 +109,7 @@ export default function SignupPage() {
     setUserId(userRecord.uid);
 
     try {
-      await sendEmail({ 
+      const emailResult = await sendEmail({ 
         email: formData.email, 
         to_email: formData.email,
         subject: "Blueteeth: OTP Verification",
@@ -119,25 +119,32 @@ export default function SignupPage() {
         message: `Your OTP is: ${newOtp}`,
         time: "10 minutes" 
       });
-    } catch (e) {
+
+      if (!emailResult.success) {
+        throw new Error(emailResult.error || "Failed to deliver OTP email.");
+      }
+
+      await setDoc(doc(db, 'users', userRecord.uid), {
+        name: formData.name,
+        clinicName: formData.clinicName,
+        email: formData.email,
+        role: 'doctor',
+        createdAt: new Date().toISOString(),
+        points: 0,
+        emailVerified: false,
+        pending: true,
+        otp: newOtp
+      }, { merge: true });
+
+      setStep('OTP');
+      setLoading(false);
+      toast.success('Check your email for OTP');
+
+    } catch (e: any) {
       console.log("OTP in console for dev:", newOtp);
+      toast.error(`Email Error: ${e.message || "Please check your credentials"}`);
+      setLoading(false);
     }
-
-    await setDoc(doc(db, 'users', userRecord.uid), {
-      name: formData.name,
-      clinicName: formData.clinicName,
-      email: formData.email,
-      role: 'doctor',
-      createdAt: new Date().toISOString(),
-      points: 0,
-      emailVerified: false,
-      pending: true,
-      otp: newOtp
-    }, { merge: true });
-
-    setStep('OTP');
-    setLoading(false);
-    toast.success('Check your email for OTP');
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {

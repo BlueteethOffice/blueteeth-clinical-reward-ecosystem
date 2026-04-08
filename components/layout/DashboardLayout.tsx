@@ -165,6 +165,11 @@ export default function DashboardLayout({
     } catch (error) { console.error("Logout failed:", error); }
   };
 
+  const copySupportEmail = () => {
+    navigator.clipboard.writeText('support@blueteeth.in');
+    toast.success('Support email copied!');
+  };
+
   const isActive = (path: string) => pathname === path;
   const avatarName = displayName.startsWith('Dr. ') ? displayName.slice(4) : displayName;
   const initials = avatarName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'D';
@@ -237,17 +242,24 @@ export default function DashboardLayout({
               <div className="p-5 rounded-xl bg-gradient-to-br from-white/10 to-transparent border border-white/10 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                 <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1.5">Clinical Support</p>
-                <p className="text-[11px] text-white font-bold leading-relaxed mb-2">Our clinical experts are here for you 24/7.</p>
-                <a href="mailto:support@blueteeth.in" 
-                   className="flex items-center gap-2 text-[10px] text-blue-300 hover:text-blue-100 font-black transition-colors block mb-4 underline underline-offset-4 group/mail">
-                  <Mail className="h-3.5 w-3.5 text-blue-400 group-hover/mail:text-white transition-colors" />
-                  support@blueteeth.in
-                </a>
-                <Link href="https://wa.me/919311997440" target="_blank">
-                  <button className="w-full py-2 bg-white/20 hover:bg-white/30 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border border-white/20">
-                    Connect on WhatsApp
-                  </button>
-                </Link>
+                <p className="text-[11px] text-white font-bold leading-relaxed mb-3">Our clinical experts are here for you 24/7.</p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <a href="mailto:support@blueteeth.in" 
+                       className="flex items-center gap-2 text-[10px] text-blue-300 hover:text-blue-100 font-black transition-colors underline underline-offset-4 group/mail truncate">
+                      <Mail className="h-3.5 w-3.5 text-blue-400 group-hover/mail:text-white transition-colors shrink-0" />
+                      support@blueteeth.in
+                    </a>
+                    <button onClick={copySupportEmail} className="p-1 hover:bg-white/10 rounded transition-colors shrink-0" title="Copy Email">
+                       <svg className="h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                    </button>
+                  </div>
+                  <Link href="https://wa.me/919311997440" target="_blank">
+                    <button className="w-full py-2 bg-white/20 hover:bg-white/30 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border border-white/20">
+                      Connect on WhatsApp
+                    </button>
+                  </Link>
+                </div>
               </div>
             )}
 
@@ -361,11 +373,19 @@ export default function DashboardLayout({
                     <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-full blur-2xl" />
                     <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 leading-none">Clinical Support</p>
                     <p className="text-[10px] text-slate-700 font-bold leading-relaxed mb-4">Experts are live 24/7 for you.</p>
-                    <Link href="https://wa.me/919311997440" target="_blank" className="block">
-                      <button className="w-full py-2.5 bg-white hover:bg-slate-50 text-slate-900 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all border border-slate-200 shadow-sm">
-                        WhatsApp Sync
-                      </button>
-                    </Link>
+                    <div className="flex flex-col gap-2">
+                       <div className="flex items-center gap-2 justify-between bg-white p-2 rounded-lg border border-slate-100">
+                         <a href="mailto:support@blueteeth.in" className="text-[9px] text-blue-600 font-black truncate underline">support@blueteeth.in</a>
+                         <button onClick={copySupportEmail} className="p-1.5 bg-slate-50 border border-slate-200 rounded">
+                           <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                         </button>
+                       </div>
+                       <Link href="https://wa.me/919311997440" target="_blank" className="block">
+                        <button className="w-full py-2.5 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-blue-500/20">
+                          WhatsApp Sync
+                        </button>
+                       </Link>
+                    </div>
                   </div>
                 )}
               </div>
