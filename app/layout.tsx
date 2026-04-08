@@ -8,7 +8,7 @@ import JsonLd, { OrganizationSchema, WebsiteSchema } from '@/components/seo/Json
 
 const inter = Inter({ subsets: ['latin'] });
 
-const BASE_URL = 'https://blueteeth.vercel.app';
+const BASE_URL = 'https://blueteeth-clinical-reward-ecosystem.vercel.app';
 
 export const viewport = {
   width: 'device-width',

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Doctor Dashboard | Blueteeth Clinical Portal',
     description: 'Track your B-Points, cases, and earnings on Blueteeth.',
-    url: 'https://blueteeth.vercel.app/doctor',
+    url: 'https://blueteeth-clinical-reward-ecosystem.vercel.app/doctor',
   },
 };
 

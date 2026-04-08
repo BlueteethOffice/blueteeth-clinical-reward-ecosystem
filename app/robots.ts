@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://blueteeth.vercel.app';
+const BASE_URL = 'https://blueteeth-clinical-reward-ecosystem.vercel.app';
 
 export default function robots(): MetadataRoute.Robots {
   return {
