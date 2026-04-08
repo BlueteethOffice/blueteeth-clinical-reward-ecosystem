@@ -627,30 +627,35 @@ function CaseReviewContent() {
                           const url = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0];
                           if (!url) return;
                           
-                          if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
-                            const toastId = toast.loading("Opening clinical PDF...");
+                          // ✅ FIX: base64 URLs blocked by Chrome — convert to Blob URL first
+                          if (url.startsWith('data:')) {
                             try {
-                              if (url.startsWith('data:application/pdf')) {
-                                const base64Data = url.split(',')[1];
-                                const byteCharacters = atob(base64Data);
-                                const byteNumbers = new Array(byteCharacters.length);
-                                for (let i = 0; i < byteCharacters.length; i++) {
-                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
-                                }
-                                const byteArray = new Uint8Array(byteNumbers);
-                                const blob = new Blob([byteArray], { type: 'application/pdf' });
-                                const blobUrl = URL.createObjectURL(blob);
-                                window.open(blobUrl, '_blank');
-                              } else {
-                                window.open(url, '_blank');
+                              const [meta, base64Data] = url.split(',');
+                              const mimeMatch = meta.match(/:(.*?);/);
+                              const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                              const byteCharacters = atob(base64Data);
+                              const byteNumbers = new Uint8Array(byteCharacters.length);
+                              for (let i = 0; i < byteCharacters.length; i++) {
+                                byteNumbers[i] = byteCharacters.charCodeAt(i);
                               }
-                              toast.success("Document opened.", { id: toastId });
+                              const blob = new Blob([byteNumbers], { type: mime });
+                              const blobUrl = URL.createObjectURL(blob);
+                              const newTab = window.open(blobUrl, '_blank');
+                              if (!newTab) {
+                                toast.error("Popup blocked! Please allow popups for this site.");
+                              }
+                              setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
                             } catch (e) {
-                              toast.error("Format error. Try again.", { id: toastId });
-                              window.open(url, '_blank');
+                              toast.error("Could not open image. Try downloading instead.");
                             }
-                          } else {
+                          } else if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
                             window.open(url, '_blank');
+                          } else {
+                            // Normal Firebase Storage URL — open directly
+                            const newTab = window.open(url, '_blank');
+                            if (!newTab) {
+                              toast.error("Popup blocked! Please allow popups for this site.");
+                            }
                           }
                         }}
                         variant="outline" 
