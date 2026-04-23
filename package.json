@@ -27,7 +27,11 @@
     "resend": "^6.10.0",
     "tailwind-merge": "latest"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "devDependencies": {
+
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
