@@ -1,0 +1,27 @@
+{
+  "name": "Blueteeth Clinical Portal",
+  "short_name": "Blueteeth",
+  "description": "India's premier clinical reward portal for doctors. Earn B-Points for every patient case and redeem as real cash.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health", "business"],
+  "lang": "en-IN",
+  "scope": "/"
+}

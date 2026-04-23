@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+}
+
+html {
+  scroll-behavior: smooth !important;
+  overscroll-behavior-y: none !important;
+}
+
+html, body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden !important;
+  overflow-y: scroll; /* Force scroller to prevent layout jumping, but allow override */
+  width: 100% !important;
+  min-height: 100vh !important;
+  position: relative !important;
+}
+
+/* Global Overflow Purge: Everything that isn't body should not scroll unless explicitly allowed */
+* {
+  scrollbar-width: none !important;
+}
+::-webkit-scrollbar {
+  display: none !important;
+}
+
+body::-webkit-scrollbar {
+  display: block !important;
+  width: 10px !important;
+}
+body::-webkit-scrollbar-track {
+  background: #f8fafc !important;
+}
+body::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 10px !important;
+  border: 2px solid #f8fafc !important;
+}
+body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-20px) scale(1.05); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(1.1); }
+}
+
+.animate-float {
+  animation: float 15s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 18s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 10s ease-in-out infinite;
+}
+
+.animate-pulse-soft-delayed {
+  animation: pulse-soft 12s ease-in-out infinite;
+  animation-delay: 3s;
+}
+
+.premium-grid {
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+/* Premium Thin Dashboard Scrollbar */
+.dashboard-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.dashboard-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.02);
+}
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.1);
+  border-radius: 20px;
+}
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.2);
+}
+
+/* Targeted Internal Scrollbar Suppression */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Hide native eye/clear icons in Edge, Chrome, IE */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-reveal,
+input::-webkit-password-toggle,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+.glass-morphism { 
+  background: rgba(255, 255, 255, 0.7); 
+  backdrop-filter: blur(12px); 
+  border: 1px solid rgba(255, 255, 255, 0.3); 
+}
+.glass-morphism-dark { 
+  background: rgba(15, 23, 42, 0.85); 
+  backdrop-filter: blur(16px); 
+  border: 1px solid rgba(255, 255, 255, 0.1); 
+}
+.premium-shadow { 
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.05); 
+}
