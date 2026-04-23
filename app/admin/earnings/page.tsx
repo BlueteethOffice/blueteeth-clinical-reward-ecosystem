@@ -292,7 +292,7 @@ function PayoutManagementContent() {
               ) : associatePayouts.length > 0 ? (
                 <>
                   {paginatedAssociate.map((req, idx) => (
-                    <PayoutRow key={req.id} req={req} idx={idx} onProcess={handleProcess} onSelect={(r) => { setSelectedPayout(r); setShowDetailModal(true); }} onConfirm={(r) => { setPayoutToConfirm(r); setShowConfirmModal(true); }} processingId={processingId} exchangeRate={50} />
+                    <PayoutRow key={req.id} req={req} idx={idx} onProcess={handleProcess} onSelect={(r: any) => { setSelectedPayout(r); setShowDetailModal(true); }} onConfirm={(r: any) => { setPayoutToConfirm(r); setShowConfirmModal(true); }} processingId={processingId} exchangeRate={50} />
                   ))}
                   
                   {associateTotalPages > 1 && (
@@ -348,7 +348,7 @@ function PayoutManagementContent() {
               ) : clinicianPayouts.length > 0 ? (
                 <>
                   {paginatedClinician.map((req, idx) => (
-                    <PayoutRow key={req.id} req={req} idx={idx} isClinician={true} onProcess={handleProcess} onSelect={(r) => { setSelectedPayout(r); setShowDetailModal(true); }} onConfirm={(r) => { setPayoutToConfirm(r); setShowConfirmModal(true); }} processingId={processingId} exchangeRate={50} />
+                    <PayoutRow key={req.id} req={req} idx={idx} isClinician={true} onProcess={handleProcess} onSelect={(r: any) => { setSelectedPayout(r); setShowDetailModal(true); }} onConfirm={(r: any) => { setPayoutToConfirm(r); setShowConfirmModal(true); }} processingId={processingId} exchangeRate={50} />
                   ))}
 
                   {clinicianTotalPages > 1 && (
