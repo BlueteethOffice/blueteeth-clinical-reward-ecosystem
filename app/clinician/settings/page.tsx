@@ -59,6 +59,7 @@ export default function ClinicianSettingsPage() {
     regNo: '',
     qualification: '',
     experience: '',
+    bio: '',
     photoURL: ''
   });
 

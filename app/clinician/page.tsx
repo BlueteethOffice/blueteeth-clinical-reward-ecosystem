@@ -272,7 +272,7 @@ export default function ClinicianDashboard() {
               <div className="hidden sm:flex items-center gap-2 bg-white border border-slate-100 p-1 rounded-[4px] shadow-sm">
                 <Button 
                   variant="ghost" 
-                  size="icon" 
+                  size="sm" 
                   className="h-7 w-7 rounded-[4px] text-slate-400 disabled:opacity-20"
                   onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                   disabled={currentPage === 0}
@@ -284,7 +284,7 @@ export default function ClinicianDashboard() {
                 </span>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
+                  size="sm" 
                   className="h-7 w-7 rounded-[4px] text-slate-400 disabled:opacity-20"
                   onClick={() => setCurrentPage(prev => Math.min(Math.ceil(selfSubmittedCases.length / itemsPerPage) - 1, prev + 1))}
                   disabled={currentPage >= Math.ceil(selfSubmittedCases.length / itemsPerPage) - 1}

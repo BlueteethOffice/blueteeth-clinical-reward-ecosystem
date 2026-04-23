@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { 
   CheckCircle, XCircle, Eye, User, Users, Phone, MapPin, 
   Calendar, ClipboardList, Coins, Search, Filter, ExternalLink,
@@ -147,6 +147,18 @@ function CaseReviewContent() {
   const [clinicianPage, setClinicianPage] = useState(1);
   const [associatePage, setAssociatePage] = useState(1);
   const [effectivePageSize, setEffectivePageSize] = useState(8);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleSearch = (val: string) => {
+    const params = new URLSearchParams(window.location.search);
+    if (val) {
+      params.set('q', val);
+    } else {
+      params.delete('q');
+    }
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     if (window.innerWidth < 640) {
@@ -321,7 +333,7 @@ function CaseReviewContent() {
                <Input 
                 placeholder="SEARCH NODES..." 
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pl-9 h-11 sm:h-10 w-full sm:w-[280px] bg-white border-slate-200 rounded-[4px] text-[10px] font-black uppercase tracking-widest focus:ring-4 focus:ring-blue-100 transition-all shadow-sm"
                />
             </div>
@@ -582,12 +594,12 @@ function CaseReviewContent() {
                           <p className="text-lg font-black text-slate-900 tracking-tighter leading-none">
                              ₹{(selectedCase.clinicianFee || 
                                 // Fallback mapping for associate cases if fee is 0
-                                {
+                                (({
                                   'Dental Implant': 1500, 'Root Canal (RCT)': 800, 'Prophylaxis': 400,
                                   'Crown & Bridge': 600, 'Orthodontics': 1200, 'Complete Denture': 1000,
                                   'Scaling & Polishing': 300, 'Tooth Extraction': 500, 'Teeth Whitening': 700,
                                   'Composite Filling': 400
-                                }[selectedCase.treatmentName || selectedCase.treatment] || 0
+                                } as any)[selectedCase.treatmentName || selectedCase.treatment] || 0)
                              ).toLocaleString()}
                           </p>
                        </div>
@@ -788,7 +800,7 @@ function CaseReviewContent() {
                                       placeholder="150"
                                       className="w-full h-11 bg-white border border-slate-200 rounded-[4px] pl-8 px-4 text-xs font-bold focus:ring-4 focus:ring-blue-100 outline-none"
                                       value={clinicianFee}
-                                      onChange={(e) => setClinicianFee(e.target.value)}
+                                      onChange={(e) => setClinicianFee(Number(e.target.value))}
                                     />
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-blue-600 text-xs">₹</span>
                                  </div>
@@ -797,7 +809,7 @@ function CaseReviewContent() {
                                  onClick={() => setAssignmentModal({ open: true, caseId: selectedCase.id })}
                                  className="w-full h-12 bg-slate-900 hover:bg-blue-600 text-white rounded-[4px] font-black text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all"
                                >
-                                  {assignmentModal?.clinicianId ? 'Specialist Linked' : 'Select Specialist'}
+                                  {selectedClinician ? 'Specialist Linked' : 'Select Specialist'}
                                </Button>
                              </div>
                            ) : (

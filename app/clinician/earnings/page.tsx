@@ -176,7 +176,7 @@ export default function ClinicianEarningsPage() {
     const currentBalance = (
       (userData as any)?.walletBalance && !isNaN(Number((userData as any).walletBalance)) 
       ? Number((userData as any).walletBalance) 
-      : (stats.totalEarned - stats.withdrawn)
+      : (stats.totalEarned - (stats.totalPaid + stats.totalPending))
     );
     if (Number(amount) > currentBalance) {
       toast.error('Insufficient balance');
@@ -663,7 +663,7 @@ export default function ClinicianEarningsPage() {
                     <div>
                       <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Request Settlement</h2>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                        Available: ₹{(stats.totalEarned - stats.withdrawn).toLocaleString()}
+                        Available: ₹{(stats.totalEarned - (stats.totalPaid + stats.totalPending)).toLocaleString()}
                       </p>
                     </div>
                     <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">

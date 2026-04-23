@@ -26,7 +26,7 @@ const withTimeout = async <T>(promiseFn: () => Promise<T>, timeoutMs: number = 3
       ]);
 
       if (result.success) return result as any;
-      lastError = result.error || 'Unknown network error';
+      lastError = (result as any).error || 'Unknown network error';
       console.warn(`[RETRY ${i+1}/${retries}] Clinical node re-syncing...`);
       // Wait a bit before retry (exponential backoff)
       await new Promise(r => setTimeout(r, 1000 * (i + 1)));
@@ -293,12 +293,13 @@ export const revokeCase = async (caseId: string, doctorUid: string, points: numb
 
     // Revert case status to Pending
     const caseSnap = await getDoc(caseRef);
-    if (caseSnap.exists()) {
-      await updateDoc(caseRef, {
-        status: 'Pending',
-        revokedAt: serverTimestamp(),
-      });
-    }
+    if (!caseSnap.exists()) return { success: false, error: 'Case not found' };
+    
+    const caseData = caseSnap.data();
+    await updateDoc(caseRef, {
+      status: 'Pending',
+      revokedAt: serverTimestamp(),
+    });
 
     // USE POINTS FROM DATABASE (NOT CLIENT) TO PREVENT TAMPERING
     const finalPoints = Number(caseData.points || 0);
@@ -664,7 +665,7 @@ export const createPractitioner = async (doctorData: any) => {
 
     // DUPLICATE IDENTITY CHECK
     const q = query(collection(db, 'users'), where('email', '==', doctorData.email));
-    const checkResult = await withTimeout(getDocs(q), 5000);
+    const checkResult = await withTimeout(() => getDocs(q), 5000);
     
     if (checkResult.success && !checkResult.data?.empty) {
       throw new Error('Identity Conflict: A practitioner with this email already exists.');
