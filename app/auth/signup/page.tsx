@@ -52,6 +52,25 @@ export default function SignupPage() {
       return;
     }
 
+    // 🕵️ GENUINE DATA VALIDATION (Strict Name & Reg No)
+    const nameTrimmed = formData.name.trim();
+    const nameRegex = /^[a-zA-Z]{2,}\s+[a-zA-Z\s]{2,}$/; // Matches "First Last" format
+    const hasVowel = /[aeiouAEIOU]/.test(nameTrimmed);
+
+    if (!nameRegex.test(nameTrimmed) || !hasVowel) {
+      toast.error('Enter a valid Full Name (e.g., Rahul Sharma). No random letters allowed.');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.role === 'clinician') {
+      if (!formData.regNo || formData.regNo.length < 5) {
+        toast.error('Invalid Registration Number. Provide genuine Medical ID.');
+        setLoading(false);
+        return;
+      }
+    }
+
     const toastId = toast.loading("Initializing Clinical Node...");
     setLoading(true);
     let userRecord = null;
@@ -75,37 +94,18 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       userRecord = userCredential.user;
-      // Auto-apply Dr. prefix for clinicians in Firebase Auth displayName
+      
       const displayName = formData.role === 'clinician'
         ? (formData.name.toLowerCase().startsWith('dr.') ? formData.name : `Dr. ${formData.name}`)
         : formData.name;
       await updateProfile(userRecord, { displayName });
     } catch (authError: any) {
       if (authError.code === 'auth/email-already-in-use') {
-        try {
-          const repairAuth = await signInWithEmailAndPassword(auth, formData.email, formData.password);
-          userRecord = repairAuth.user;
-        } catch (error: any) {
-          // ADMIN FAILED ATTEMPT ALERT
-          const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02'];
-          if (masterEmails.includes(formData.email.toLowerCase())) {
-              sendEmail({
-                  to_email: 'nitinchauhan378@gmail.com',
-                  user_email: formData.email,
-                  subject: '🛑 CRITICAL: Failed Admin Access Alert',
-                  message: `SECURITY ALERT: An unauthorized login attempt was made using restricted admin credentials: ${formData.email}. The attempt was blocked due to incorrect authorization.`,
-                  passcode: 'ALERT_FAILED_LOGIN',
-                  to_name: "Master Admin"
-              }).catch(() => {});
-          }
-          
-          toast.error('Login failed. Check your credentials.');
-          setLoading(false);
-          return;
-        }
+        toast.error('An account already exists with this email. Please Login instead.', { id: toastId });
+        setLoading(false);
+        return;
       } else {
         console.error('>>> [FIREBASE AUTH ERROR]:', authError.code, authError.message);
-        // Show descriptive error based on Firebase error code
         const firebaseErrors: Record<string, string> = {
           'auth/weak-password': 'Password too weak! Use at least 6 characters.',
           'auth/invalid-email': 'Invalid email address format.',
@@ -115,7 +115,7 @@ export default function SignupPage() {
           'auth/user-disabled': 'This account has been disabled.',
         };
         const msg = firebaseErrors[authError.code] || `Error: ${authError.message || authError.code}`;
-        toast.error(msg);
+        toast.error(msg, { id: toastId });
         setLoading(false);
         return;
       }
@@ -304,6 +304,8 @@ export default function SignupPage() {
                               required 
                               value={formData.name} 
                               onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                              minLength={3}
+                              maxLength={50}
                               className="w-full pl-11 pr-4 py-3 rounded-lg border border-slate-100 bg-slate-50/50 focus:bg-white focus:border-blue-600 outline-none text-sm font-medium transition-all" 
                             />
                           </div>
@@ -335,6 +337,8 @@ export default function SignupPage() {
                                 required
                                 value={formData.regNo}
                                 onChange={(e) => setFormData({...formData, regNo: e.target.value.toUpperCase()})}
+                                minLength={5}
+                                maxLength={15}
                                 className="w-full pl-11 pr-4 py-3.5 rounded-lg border-2 border-indigo-100 bg-indigo-50/40 focus:bg-white focus:border-indigo-500 outline-none text-sm font-bold text-indigo-700 tracking-wider transition-all placeholder:font-normal placeholder:text-slate-400 placeholder:tracking-normal"
                               />
                             </div>
