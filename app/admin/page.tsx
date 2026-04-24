@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { fetchAdminStats, fetchWithdrawals } from '@/lib/firestore';
 
 export default function AdminDashboard() {
   const [stats, setStats] = React.useState({ totalDoctors: 0, totalClinicians: 0, pendingReviews: 0, totalRewarded: 0, totalPoints: 0, approvedCases: 0 });
@@ -22,7 +23,6 @@ export default function AdminDashboard() {
     setIsMounted(true);
     const loadStats = async () => {
       try {
-        const { fetchAdminStats } = await import('@/lib/firestore');
         const data = await fetchAdminStats();
         if (data) setStats(data);
       } catch (e) { 
@@ -34,14 +34,14 @@ export default function AdminDashboard() {
 
     const loadWithdrawals = async () => {
       try {
-        const { fetchWithdrawals } = await import('@/lib/firestore');
         const data = await fetchWithdrawals();
         if (data && Array.isArray(data)) setPendingWithdrawals(data.slice(0, 3));
       } catch (e) {}
     };
 
-    loadStats();
-    loadWithdrawals();
+    // Fire both in parallel for faster initial load
+    Promise.all([loadStats(), loadWithdrawals()]);
+
     const interval = setInterval(() => {
       loadStats();
       loadWithdrawals();

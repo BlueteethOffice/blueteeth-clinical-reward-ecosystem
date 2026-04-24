@@ -198,7 +198,7 @@ export default function ClinicianDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto space-y-3 pb-2" suppressHydrationWarning>
+      <div className="max-w-[1600px] mx-auto space-y-3 pt-4 pb-2" suppressHydrationWarning>
         
         {/* Elite Header Node */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 px-2 sm:px-0">

@@ -104,7 +104,7 @@ export default function EarningsPage() {
 
   useEffect(() => {
     const handleResize = () => {
-      const val = window.innerWidth < 768 ? 2 : 3;
+      const val = 2;
       setItemsPerPage(val);
       setRedemptionsPerPage(val);
     };
@@ -336,7 +336,7 @@ export default function EarningsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 w-full max-w-[1600px] mx-auto px-2 sm:px-6 lg:px-8 pb-2 space-y-4 overflow-x-hidden">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto px-2 sm:px-6 lg:px-8 pb-2 flex flex-col gap-4 overflow-x-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pt-0">
           <div className="order-1">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight uppercase">Your Earnings Summary</h1>
@@ -417,7 +417,7 @@ export default function EarningsPage() {
 
 
         {/* Ledger Section - Scroll Liquidated */}
-        <Card className="border-none rounded-[4px] sm:rounded-[4px] shadow-lg shadow-slate-200/40 bg-white overflow-visible">
+        <Card className="border-none rounded-[4px] sm:rounded-[4px] shadow-lg shadow-slate-200/40 bg-white overflow-visible order-2 lg:order-1 lg:mt-12">
           <div className="p-4 sm:p-6 bg-gradient-to-r from-blue-600 to-blue-900 border-b border-blue-800 flex items-center justify-between relative overflow-hidden rounded-t-[4px] sm:rounded-t-lg shadow-inner">
              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16" />
              <div className="flex items-center gap-4 relative z-10">
@@ -589,19 +589,30 @@ export default function EarningsPage() {
                     Prev
                   </Button>
                   <div className="flex gap-1.5 sm:gap-2">
-                      {[...Array(totalPages)].map((_, i) => (
-                        <button
-                          key={i}
-                          onClick={() => setCurrentPage(i + 1)}
-                          className={`h-12 w-10 rounded-[4px] sm:rounded-[4px] font-black text-[11px] sm:text-[10px] transition-all ${
-                            currentPage === i + 1 
-                            ? 'bg-blue-600 text-white shadow-md shadow-sm translate-y-[-2px]' 
-                            : 'bg-white text-slate-600 border border-slate-100 hover:border-slate-300'
-                          }`}
-                        >
-                           {i + 1}
-                        </button>
-                      ))}
+                      {(() => {
+                        const visiblePages = 2;
+                        let startPage = Math.max(1, currentPage);
+                        if (startPage + visiblePages - 1 > totalPages) {
+                          startPage = Math.max(1, totalPages - visiblePages + 1);
+                        }
+                        
+                        return [...Array(Math.min(visiblePages, totalPages))].map((_, i) => {
+                          const pageNum = startPage + i;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`h-12 w-10 rounded-[4px] sm:rounded-[4px] font-black text-[11px] sm:text-[10px] transition-all ${
+                                currentPage === pageNum 
+                                ? 'bg-blue-600 text-white shadow-md shadow-sm translate-y-[-2px]' 
+                                : 'bg-white text-slate-600 border border-slate-100 hover:border-slate-300'
+                              }`}
+                            >
+                               {pageNum}
+                            </button>
+                          );
+                        });
+                      })()}
                   </div>
                   <Button 
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
@@ -1089,7 +1100,7 @@ export default function EarningsPage() {
         )}
 
         {/* Secure Withdrawal History - Auditor View */}
-        <div className="space-y-6 pt-10">
+        <div className="space-y-6 pt-6 lg:pt-10 order-1 lg:order-2">
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-2">
              <h2 className="text-[11px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-3">
                <Wallet className="h-4 w-4 text-blue-600" /> Redemption & Withdrawal History

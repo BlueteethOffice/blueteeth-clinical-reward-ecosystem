@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { fetchDoctors } from '@/lib/firestore';
-import { collection, query, where, onSnapshot, getDocs, doc, getDoc, orderBy, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { fetchDoctors, fetchGlobalSettings } from '@/lib/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc, getDoc, orderBy, updateDoc, serverTimestamp, increment, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { sendEmail } from '@/lib/email';
 import toast from 'react-hot-toast';
@@ -85,7 +85,6 @@ function DoctorListContent() {
   useEffect(() => {
     setHasMounted(true);
     const fetchRate = async () => {
-      const { fetchGlobalSettings } = await import('@/lib/firestore');
       const settings = await fetchGlobalSettings();
       if (settings?.exchangeRate) setExchangeRate(settings.exchangeRate);
     };
@@ -98,36 +97,7 @@ function DoctorListContent() {
 
     setLoading(true);
 
-    const fetchAllIdentities = async () => {
-      try {
-        const qUsers = query(collection(db, 'users'), where('role', 'in', ['doctor', 'associate']));
-        const usersSnap = await getDocs(qUsers);
-        const usersData = usersSnap.docs.map(d => {
-          const data = d.data();
-          // IDENTITY PRIORITIZATION: name > legalName > displayName > email handle
-          const loginName = data.name || data.legalName || data.displayName || data.email?.split('@')[0] || 'Practitioner';
-          return { id: d.id, ...data, name: loginName };
-        });
-
-        const doctorsSnap = await getDocs(collection(db, 'doctors'));
-        const legacyData = doctorsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        const identityMap = new Map();
-        [...legacyData, ...usersData].forEach(doc => {
-          identityMap.set(doc.id, doc);
-        });
-
-        const mergedList = Array.from(identityMap.values());
-        setDoctors(mergedList);
-        setLoading(false);
-      } catch (error) {
-        console.error("Clinical Sync Error:", error);
-        setLoading(false);
-      }
-    };
-
-    fetchAllIdentities();
-
+    // 1a. Listen to Live Users (Doctors/Associates)
     const qLive = query(collection(db, 'users'), where('role', 'in', ['doctor', 'associate']));
     const unsubUsers = onSnapshot(qLive, (snapshot) => {
       const liveData = snapshot.docs.map(doc => {
@@ -141,6 +111,18 @@ function DoctorListContent() {
         liveData.forEach(l => identityMap.set(l.id, l));
         return Array.from(identityMap.values());
       });
+      setLoading(false); // Turn off loading immediately when cache hits
+    });
+
+    // 1b. Listen to Legacy Doctors (If any)
+    const unsubLegacy = onSnapshot(collection(db, 'doctors'), (snapshot) => {
+       const legacyData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+       setDoctors(prev => {
+        const identityMap = new Map();
+        prev.forEach(p => identityMap.set(p.id, p));
+        legacyData.forEach(l => identityMap.set(l.id, l));
+        return Array.from(identityMap.values());
+       });
     });
 
     // 2. Listen to Global Redemption Requests
@@ -153,6 +135,7 @@ function DoctorListContent() {
 
     return () => {
       unsubUsers();
+      unsubLegacy();
       unsubRedeem();
     };
   }, [db, hasMounted]);
@@ -164,7 +147,7 @@ function DoctorListContent() {
       type: 'info',
       onAction: async () => {
         try {
-          const { doc, updateDoc, increment, serverTimestamp } = await import('firebase/firestore');
+
           // 1. Mark redemption as paid
           await updateDoc(doc(db as any, 'redemptions', redemption.id), { status: 'Paid', processedAt: serverTimestamp() });
 
@@ -224,8 +207,7 @@ function DoctorListContent() {
     if (!selectedDoctor) return;
     setAdding(true);
     try {
-      const { updateDoc, addDoc, getDoc, doc, collection, serverTimestamp } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+
 
       // Fetch dynamic exchange rate from settings
       const settingsSnap = await getDoc(doc(db as any, 'settings', 'global'));
@@ -315,8 +297,7 @@ function DoctorListContent() {
     if (!selectedDoctor || !editableName.trim()) return;
     setAdding(true);
     try {
-      const { doc, updateDoc, getDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+
       
       const drRef = doc(db as any, 'users', selectedDoctor.id);
       
@@ -349,8 +330,7 @@ function DoctorListContent() {
     if (!selectedDoctor || !bonus) return;
     setAdding(true);
     try {
-      const { doc, updateDoc, getDoc } = await import('firebase/firestore');
-      const { db } = await import('@/lib/firebase');
+
 
       // 1. Fetch live rate
       const settingsSnap = await getDoc(doc(db as any, 'settings', 'global'));
@@ -427,7 +407,7 @@ function DoctorListContent() {
        type: 'danger',
        onAction: async () => {
         try {
-          const { doc, deleteDoc, updateDoc } = await import('firebase/firestore');
+
 
           // 1. Delete the record
           await deleteDoc(doc(db as any, 'cases', caseId));

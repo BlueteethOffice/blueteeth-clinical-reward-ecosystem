@@ -150,6 +150,12 @@ export default function DashboardLayout({
       });
       const sortedNotifs = notifs.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
       setNotifications(sortedNotifs);
+    }, (error) => {
+      if (error.code === 'permission-denied') {
+        console.warn("Notifications sync paused (logged out)");
+      } else {
+        console.error("Notifications sync error:", error);
+      }
     });
     return () => unsubscribe();
   }, [user, isAdminRoute]);
@@ -221,13 +227,14 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row relative" suppressHydrationWarning>
       {/* Background Decor - Optimized for Performance */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none" suppressHydrationWarning>
-        <div className="absolute top-[-5%] left-[5%] w-[40rem] h-[40rem] bg-indigo-100/30 rounded-[4px] blur-[80px]" />
-        <div className="absolute bottom-[-5%] right-[5%] w-[30rem] h-[30rem] bg-blue-100/30 rounded-[4px] blur-[80px]" />
+        <div className="absolute top-[-5%] left-[5%] w-[45rem] h-[45rem] bg-indigo-400/20 rounded-[4px] blur-[90px]" />
+        <div className="absolute bottom-[-5%] right-[5%] w-[35rem] h-[35rem] bg-blue-500/20 rounded-[4px] blur-[90px]" />
+        <div className="absolute top-[40%] left-[40%] w-[25rem] h-[25rem] bg-violet-300/10 rounded-[4px] blur-[80px]" />
       </div>
 
       {/* Desktop Sidebar - Final Balanced Full-Height Version */}
       <div className="hidden lg:flex lg:flex-col lg:w-72 lg:fixed lg:top-4 lg:left-4 lg:bottom-4 lg:z-50" suppressHydrationWarning>
-        <div className="flex flex-col h-full bg-blue-900 border border-white/10 rounded-[4px] p-5 pb-10 shadow-2xl overflow-y-auto no-scrollbar space-y-5 overflow-x-hidden" suppressHydrationWarning>
+        <div className="flex flex-col h-full bg-blue-900 border border-white/10 rounded-[4px] p-5 pb-4 shadow-2xl overflow-y-auto no-scrollbar space-y-3 overflow-x-hidden" suppressHydrationWarning>
           
           {/* Top Group: Logo + Navigation */}
           <div className="flex flex-col">
@@ -241,12 +248,12 @@ export default function DashboardLayout({
             <nav className="space-y-2">
               {navigation.map((item) => (
                 <Link key={item.name} href={item.href}>
-                  <div className={`flex items-center px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-[4px] transition-all duration-300 ${
+                  <div className={`flex items-center px-4 py-3 text-[12px] font-bold uppercase tracking-widest rounded-[4px] transition-all duration-300 ${
                     isActive(item.href) 
                       ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 ring-1 ring-white/10' 
-                      : 'text-blue-100/60 hover:bg-white/5 hover:text-white'
+                      : 'text-white/80 hover:bg-white/10 hover:text-white'
                   }`}>
-                    <item.icon className="mr-3 h-4.5 w-4.5" />
+                    <item.icon className="mr-4 h-5 w-5" />
                     {item.name}
                   </div>
                 </Link>
@@ -255,7 +262,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Bottom Group: Support + Profile + Sign Out */}
-          <div className="mt-auto flex flex-col gap-6">
+          <div className="mt-auto flex flex-col gap-4">
             {isAdminRoute ? (
               <div className="p-5 rounded-[4px] bg-gradient-to-br from-indigo-500/20 to-transparent border border-white/10 relative overflow-hidden group">
                 <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2 flex items-center gap-2">
@@ -274,23 +281,24 @@ export default function DashboardLayout({
                 </div>
               </div>
             ) : (
-              <div className="p-5 rounded-[4px] bg-gradient-to-br from-white/10 to-transparent border border-white/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-400/10 rounded-[4px] blur-2xl group-hover:scale-150 transition-transform duration-700" />
-                <p className="text-[10px] font-black text-blue-200 uppercase tracking-widest mb-1.5">Help & Support</p>
-                <p className="text-[11px] text-white font-bold leading-relaxed mb-3">Questions? Our support team is here 24/7 to help you.</p>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <a href="mailto:support@blueteeth.in" 
-                       className="flex items-center gap-2 text-[10px] text-blue-300 hover:text-blue-100 font-black transition-colors underline underline-offset-4 group/mail truncate">
-                      <Mail className="h-3.5 w-3.5 text-blue-400 group-hover/mail:text-white transition-colors shrink-0" />
+              <div className="p-4 rounded-[4px] bg-slate-900 border border-white/10 relative overflow-hidden group shadow-xl">
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-blue-500/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                <div className="absolute -bottom-4 -left-4 w-14 h-14 bg-indigo-500/20 rounded-full blur-xl" />
+                <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-1.5 relative z-10">Help & Support</p>
+                <p className="text-[11px] text-white font-bold leading-relaxed mb-3 relative z-10">Questions? Our support team is here 24/7 to help you.</p>
+                <div className="flex flex-col gap-2 relative z-10">
+                  <div className="flex items-center justify-between gap-2 bg-white/10 px-2.5 py-2 rounded-[4px] border border-white/10">
+                    <a href="mailto:support@blueteeth.in"
+                       className="flex items-center gap-2 text-[10px] text-sky-400 hover:text-white font-black transition-colors underline underline-offset-2 group/mail truncate">
+                      <Mail className="h-3.5 w-3.5 text-sky-400 shrink-0" />
                       support@blueteeth.in
                     </a>
                     <button onClick={copySupportEmail} className="p-1 hover:bg-white/10 rounded transition-colors shrink-0" title="Copy Email">
-                       <svg className="h-3 w-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                       <svg className="h-3 w-3 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                     </button>
                   </div>
                   <Link href="https://wa.me/919311997440" target="_blank">
-                    <button className="w-full py-2 bg-white/20 hover:bg-white/30 text-white text-[9px] font-black uppercase tracking-widest rounded-[4px] transition-all border border-white/20">
+                    <button className="w-full py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-[4px] transition-all shadow-lg shadow-green-500/30">
                       Connect on WhatsApp
                     </button>
                   </Link>
@@ -299,21 +307,22 @@ export default function DashboardLayout({
             )}
 
             <div className="flex flex-col gap-4">
-              <div className="p-4 rounded-[4px] bg-blue-600/50 border border-white/10 flex items-center gap-4 transition-all">
-                <div className="h-10 w-10 bg-white rounded-[4px] flex items-center justify-center shrink-0 shadow-lg p-0.5 overflow-hidden">
-                  {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-blue-900 font-black text-xs">{initials}</span>}
+              <div className="p-4 rounded-[4px] bg-gradient-to-br from-indigo-600/60 via-blue-600/40 to-blue-700/50 border border-indigo-400/20 flex items-center gap-4 transition-all relative overflow-hidden group">
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-indigo-400/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
+                <div className="h-10 w-10 bg-white/90 rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30 p-0.5 overflow-hidden relative z-10">
+                  {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-900 font-black text-xs">{initials}</span>}
                 </div>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 relative z-10">
                   <p className="text-[11px] font-black text-white truncate leading-none">
                     {displayName}
                   </p>
-                  <p className="text-[9px] font-bold text-blue-200/80 uppercase tracking-tight mt-1 truncate">
+                  <p className="text-[9px] font-bold text-indigo-200 uppercase tracking-tight mt-1 truncate">
                     {displaySpec}
                   </p>
                 </div>
               </div>
 
-              <Button variant="ghost" onClick={handleLogout} className="w-full h-12 px-6 justify-start text-red-100 font-black bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:text-white rounded-[4px] transition-all">
+              <Button variant="ghost" onClick={handleLogout} className="w-full h-10 px-6 justify-start text-red-100 font-black bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:text-white rounded-[4px] transition-all">
                   <LogOut className="h-4 w-4 mr-4" />
                   <span className="tracking-widest uppercase text-[10px]">Sign Out Portal</span>
               </Button>
@@ -323,7 +332,7 @@ export default function DashboardLayout({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 pb-1 sm:pb-4 px-2 sm:px-6 lg:px-8">
+      <div className="flex flex-col flex-1 lg:ml-80 min-w-0 pb-0 lg:pb-0 px-2 sm:px-6 lg:px-8">
         <header className="pt-3 pb-3">
           <div className="flex items-center justify-between bg-white border border-slate-200 rounded-[4px] px-3 sm:px-4 py-2.5 shadow-lg shadow-slate-200/10">
             <button className="lg:hidden p-2 text-slate-700 bg-slate-50 border border-slate-200 rounded-[4px]" onClick={() => setSidebarOpen(true)}>
@@ -341,24 +350,35 @@ export default function DashboardLayout({
             </div>
           </div>
         </header>
-        <main className="mt-2 sm:mt-4">{children}</main>
+        <AnimatePresence>
+          <motion.main
+            key={pathname}
+            className="mt-2 sm:mt-4"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            {children}
+          </motion.main>
+        </AnimatePresence>
       </div>
 
       {/* Mobile Drawer */}
       <AnimatePresence>
         {sidebarOpen && (
           <div className="fixed inset-0 z-[150] lg:hidden">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
             <motion.div 
               initial={{ x: '-100%' }} 
               animate={{ x: 0 }} 
               exit={{ x: '-100%' }} 
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              transition={{ type: 'tween', duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
               className="fixed inset-y-0 left-0 z-[160] w-[280px] bg-white flex flex-col shadow-2xl overflow-hidden will-change-transform"
             >
-              <div className="p-6 border-b border-slate-100 shrink-0 flex items-center justify-between bg-white relative overflow-hidden">
+              <div className="p-4 border-b border-slate-100 shrink-0 flex items-center justify-between bg-white relative overflow-hidden">
                 <div className="flex items-center gap-4">
-                  <div className="h-11 w-11 bg-white rounded-[4px] flex items-center justify-center border border-slate-100 shadow-xl shadow-blue-500/10 overflow-hidden p-2 transition-transform hover:scale-105 active:scale-95 cursor-pointer ring-2 ring-slate-50">
+                  <div className="h-11 w-11 rounded-[4px] flex items-center justify-center overflow-hidden p-1.5 transition-transform hover:scale-105 active:scale-95 cursor-pointer shadow-lg shadow-blue-500/20 bg-gradient-to-br from-blue-600 to-indigo-700 ring-2 ring-blue-400/30">
                      <img src="/logo.png" className="h-full w-full object-contain" alt="Logo" />
                   </div>
                   <div className="flex flex-col">
@@ -366,57 +386,60 @@ export default function DashboardLayout({
                     <span className="text-[7.5px] font-black text-blue-600 uppercase tracking-widest mt-1">{isClinician ? 'Clinician Panel' : 'Associate Portal'}</span>
                   </div>
                 </div>
-                <button onClick={() => setSidebarOpen(false)} className="h-10 w-10 flex items-center justify-center bg-slate-50 rounded-[4px] text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-200/50">
+                <button onClick={() => setSidebarOpen(false)} className="h-10 w-10 flex items-center justify-center bg-red-50 rounded-[4px] text-red-500 hover:bg-red-500 hover:text-white transition-all border border-red-200 shadow-md shadow-red-100">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               
               <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-6 space-y-6 flex flex-col no-scrollbar">
-                {/* Profile Overview (Mobile Light Mode) */}
-                <div className="p-4 rounded-[4px] bg-slate-50 border border-slate-200 flex items-center gap-4 transition-all shrink-0">
-                  <div className="h-10 w-10 bg-white rounded-[4px] flex items-center justify-center shrink-0 shadow-sm p-0.5 overflow-hidden border border-slate-100">
-                    {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-blue-900 font-black text-xs">{initials}</span>}
+                {/* Profile Overview (Mobile - Vibrant) */}
+                <div className="p-4 rounded-[4px] bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 border border-indigo-400/30 flex items-center gap-4 transition-all shrink-0 relative overflow-hidden shadow-xl shadow-indigo-500/20">
+                  <div className="absolute -top-3 -right-3 w-16 h-16 bg-white/10 rounded-full blur-xl" />
+                  <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-violet-400/20 rounded-full blur-lg" />
+                  <div className="h-11 w-11 bg-white rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-700/40 p-0.5 overflow-hidden border-2 border-white/80 relative z-10">
+                    {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-700 font-black text-sm">{initials}</span>}
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <p className="text-[11px] font-black text-slate-900 truncate leading-none">
+                  <div className="flex flex-col min-w-0 relative z-10">
+                    <p className="text-[13px] font-black text-white truncate leading-none drop-shadow-sm">
                       {displayName}
                     </p>
-                    <p className="text-[8px] font-bold text-slate-400 border border-slate-100 bg-white px-1.5 py-0.5 rounded-[4px] w-fit uppercase tracking-tighter mt-1 truncate">
+                    <span className="mt-1.5 inline-flex w-fit items-center px-2 py-0.5 rounded-[4px] bg-white/20 border border-white/30 text-[8px] font-black text-white/90 uppercase tracking-widest backdrop-blur-sm">
                       {displaySpec}
-                    </p>
+                    </span>
                   </div>
                 </div>
  
                 <nav className="space-y-1.5">
                   {navigation.map((item) => (
                     <Link key={item.name} href={item.href} onClick={() => setSidebarOpen(false)}>
-                      <div className={`flex items-center px-4 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] rounded-[4px] transition-all ${
+                      <div className={`flex items-center px-4 py-3.5 text-[12px] font-bold uppercase tracking-[0.15em] rounded-[4px] transition-all ${
                         isActive(item.href) 
                           ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                          : 'text-slate-900 hover:bg-slate-50 hover:text-blue-600'
                       }`}>
-                        <item.icon className="mr-4 h-5 w-5" />
+                        <item.icon className="mr-4 h-5.5 w-5.5" />
                         <span>{item.name}</span>
                       </div>
                     </Link>
                   ))}
                 </nav>
 
-                {/* Mobile Specific Clinical Support Node (Light) */}
+                {/* Mobile Specific Clinical Support Node (Dark High-Contrast) */}
                 {!isAdminRoute && (
-                  <div className="mt-2 p-5 rounded-[4px] bg-gradient-to-br from-blue-50 to-white border border-blue-100 relative overflow-hidden group shrink-0 shadow-sm">
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-[4px] blur-2xl" />
-                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-1.5 leading-none">Help & Support</p>
-                    <p className="text-[10px] text-slate-700 font-bold leading-relaxed mb-4">Experts are live 24/7 to help you with any issues.</p>
-                    <div className="flex flex-col gap-2">
-                       <div className="flex items-center gap-2 justify-between bg-white p-2 rounded-[4px] border border-slate-100">
-                         <a href="mailto:support@blueteeth.in" className="text-[9px] text-blue-600 font-black truncate underline">support@blueteeth.in</a>
-                         <button onClick={copySupportEmail} className="p-1.5 bg-slate-50 border border-slate-200 rounded">
-                           <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                  <div className="mt-2 p-5 rounded-[4px] bg-slate-900 border border-white/10 relative overflow-hidden group shrink-0 shadow-xl">
+                    <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/20 rounded-full blur-2xl" />
+                    <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-indigo-500/20 rounded-full blur-xl" />
+                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2 relative z-10">Help & Support</p>
+                    <p className="text-[11px] text-white font-bold leading-relaxed mb-4 relative z-10">Questions? Our support team is here 24/7 to help you.</p>
+                    <div className="flex flex-col gap-2 relative z-10">
+                       <div className="flex items-center gap-2 justify-between bg-white/10 p-2.5 rounded-[4px] border border-white/10">
+                         <a href="mailto:support@blueteeth.in" className="text-[9px] text-sky-400 hover:text-white font-black truncate underline underline-offset-2">support@blueteeth.in</a>
+                         <button onClick={copySupportEmail} className="p-1.5 bg-white/10 border border-white/20 rounded hover:bg-white/20 transition-all">
+                           <svg className="h-3 w-3 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                          </button>
                        </div>
                        <Link href="https://wa.me/919311997440" target="_blank" className="block">
-                        <button className="w-full py-2.5 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-[4px] transition-all shadow-lg shadow-blue-500/20">
+                        <button className="w-full py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded-[4px] transition-all shadow-lg shadow-green-500/30">
                           WhatsApp Sync
                         </button>
                        </Link>

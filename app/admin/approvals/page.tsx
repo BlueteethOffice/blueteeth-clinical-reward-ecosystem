@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Suspense } from 'react';
 
-import { fetchAdminCases, approveCase } from '@/lib/firestore';
+import { listenAdminCases, approveCase, rejectCase } from '@/lib/firestore';
 import { sendEmail } from '@/lib/email';
 
 function FinalApprovalsContent() {
@@ -44,25 +44,15 @@ function FinalApprovalsContent() {
 
   useEffect(() => {
     setHasMounted(true);
-    loadSubmittedCases();
   }, []);
 
-  const loadSubmittedCases = async (targetTab?: 'pending' | 'authorized') => {
-    try {
-      const activeTab = targetTab || viewTab;
-      setDataLoading(true);
-      const data = await fetchAdminCases(activeTab === 'pending' ? 'Submitted' : 'Approved');
-      setCases(data || []);
-    } catch (e) {
-      console.error("Failed to load approval queue");
-      toast.error("Failed to sync approval queue.");
-    } finally {
-      setDataLoading(false);
-    }
-  };
-
   useEffect(() => {
-    loadSubmittedCases();
+    setDataLoading(true);
+    const unsub = listenAdminCases(viewTab === 'pending' ? 'Submitted' : 'Approved', (data) => {
+      setCases(data || []);
+      setDataLoading(false);
+    });
+    return () => unsub();
   }, [viewTab]);
 
   const handleFinalApproval = async (caseId: string) => {
@@ -97,7 +87,6 @@ Blueteeth Clinical Network Team`
         }
 
         setSelectedCase(null);
-        loadSubmittedCases();
       } else {
         toast.error(`Authorization Failed: ${result.error}`, { id: tid });
       }
@@ -162,8 +151,7 @@ Blueteeth Clinical Network`
       }
 
       toast.success(`BATCH SUCCESS: ${successCount} assets authorized and settled.`, { id: tid });
-      setSelectedIds([]);
-      loadSubmittedCases();
+        setSelectedIds([]);
     } catch (error) {
       toast.error("Batch Protocol Error identifying clinical nodes.", { id: tid });
     } finally {
@@ -309,7 +297,7 @@ Blueteeth Clinical Network`
         <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-[6px] w-fit border border-slate-200 mt-6 shadow-inner mx-2 sm:mx-0 overflow-x-auto no-scrollbar max-w-[calc(100vw-32px)]">
            <button 
              onClick={() => setViewTab('pending')}
-             className={`px-4 sm:px-6 py-2.5 rounded-[4px] text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${viewTab === 'pending' ? 'bg-white text-blue-600 shadow-sm border border-slate-200 ring-2 ring-blue-500/5' : 'text-slate-400 hover:text-slate-600'}`}
+             className={`px-4 sm:px-6 py-2.5 rounded-[4px] text-[10px] font-black uppercase tracking-widest transition-all duration-200 ease-out active:scale-95 flex items-center gap-2 whitespace-nowrap ${viewTab === 'pending' ? 'bg-white text-blue-600 shadow-sm border border-slate-200 ring-2 ring-blue-500/5' : 'text-slate-400 hover:text-slate-600'}`}
            >
               <Activity size={12} /> Pending Auth
            </button>

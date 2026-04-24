@@ -167,6 +167,11 @@ export default function AssociateDashboard() {
 
       setLoading(false);
     }, (err: any) => {
+      if (err.code === 'permission-denied') {
+        console.warn("Dashboard sync paused (logged out)");
+        setLoading(false);
+        return;
+      }
       console.warn("Dashboard Sync Error:", err.message);
       setConnectionStatus('Disconnected');
       setErrorMsg(err.code === 'permission-denied' ? "Security Error: Missing cloud permissions." : "Network Error: System is offline.");

@@ -63,10 +63,10 @@ const ClinicianSubmissions = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-[1600px] mx-auto space-y-2 pb-2">
+      <div className="max-w-[1600px] mx-auto space-y-3 pt-4 pb-0">
         
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 pb-5 px-1 sm:px-0">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 pb-4 lg:pb-3 px-1 sm:px-0">
           <div className="space-y-1.5">
             <div className="flex items-center gap-3">
                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight uppercase leading-none">Submissions</h1>
@@ -162,47 +162,58 @@ const ClinicianSubmissions = () => {
                        </div>
                 </motion.div>
               ))}
-            </div>              {/* Compact Pagination Controls */}
+            </div>
+
+              {/* Premium Pagination Bar */}
               {totalPages > 1 && (
-                <div className="flex flex-col items-center gap-2 sm:gap-4 pt-3 pb-1 border-t border-slate-100">
-                   <div className="flex items-center gap-3">
-                      <button 
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-all shadow-xl active:scale-95"
+                <div className="flex flex-col items-center gap-3 pt-8 pb-2">
+                  <div className="inline-flex items-center gap-1 bg-slate-900 rounded-[4px] p-1.5 shadow-2xl shadow-slate-900/20 border border-slate-800">
+                    {/* Prev Button */}
+                    <button
+                      onClick={prevPage}
+                      disabled={currentPage === 1}
+                      className="h-9 w-9 rounded-[4px] flex items-center justify-center text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-20 transition-all active:scale-95"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+
+                    {/* Divider */}
+                    <div className="h-5 w-px bg-white/10 mx-0.5" />
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`h-9 min-w-[36px] px-2 rounded-[4px] text-[11px] font-black tracking-wide transition-all active:scale-95 ${
+                          currentPage === i + 1
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                            : 'text-slate-400 hover:bg-white/10 hover:text-white'
+                        }`}
                       >
-                         <ChevronLeft size={20} />
+                        {i + 1}
                       </button>
-                      
-                      <div className="flex items-center gap-2 px-4 h-10 sm:h-12 bg-slate-50 border border-slate-200 rounded-[4px] shadow-inner overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
-                         {Array.from({ length: totalPages }).map((_, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setCurrentPage(i + 1)}
-                              className={`h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-lg text-[9px] sm:text-[10px] font-black transition-all ${
-                                 currentPage === i + 1 
-                                 ? 'bg-slate-900 text-white shadow-2xl' 
-                                 : 'text-slate-400 hover:text-slate-900'
-                              }`}
-                            >
-                               {i + 1}
-                            </button>
-                         ))}
-                      </div>
-   
-                      <button 
-                        onClick={nextPage}
-                        disabled={currentPage === totalPages}
-                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-all shadow-xl active:scale-95"
-                      >
-                         <ChevronRight size={20} />
-                      </button>
-                   </div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">
-                     Manifest Page {currentPage} of {totalPages}
+                    ))}
+
+                    {/* Divider */}
+                    <div className="h-5 w-px bg-white/10 mx-0.5" />
+
+                    {/* Next Button */}
+                    <button
+                      onClick={nextPage}
+                      disabled={currentPage === totalPages}
+                      className="h-9 w-9 rounded-[4px] flex items-center justify-center text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-20 transition-all active:scale-95"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+
+                  {/* Label */}
+                  <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                    Manifest Page {currentPage} of {totalPages}
                   </p>
-               </div>
-            )}
+                </div>
+              )}
           </div>
         )}
       </div>

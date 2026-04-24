@@ -1,6 +1,6 @@
 import { 
   collection, addDoc, query, where, getDocs, getDoc,
-  setDoc, updateDoc, doc, increment, serverTimestamp, writeBatch 
+  setDoc, updateDoc, doc, increment, serverTimestamp, writeBatch, onSnapshot 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebase';
@@ -571,33 +571,35 @@ export const updateUserProfile = async (uid: string, profileData: any) => {
 export const fetchAdminCases = async (status: 'Pending' | 'Approved' | 'Assigned' | 'In Progress' | 'Submitted' | 'Rejected' = 'Pending') => {
   console.log(`[DEBUG] Opening Case Review Stream: ${status}...`);
   try {
-    // 1. Fetch All Doctors/Associates for Identity Mapping (Batch Retrieval)
+    // Build both queries upfront — fire in parallel with Promise.all to eliminate sequential latency
     const drQuery = query(collection(db as any, 'users'), where('role', 'in', ['doctor', 'associate', 'clinician']));
-    const drSnap = await getDocs(drQuery);
-    const drCache: Record<string, any> = {};
-    drSnap.forEach(d => {
-      drCache[d.id] = { 
-        name: d.data().name || 'Unknown Practitioner', 
-        phone: d.data().phone || d.data().mobile || 'N/A',
-        email: d.data().email || '', // CRITICAL: Added email to cache
-        role: d.data().role || 'doctor' 
-      };
-    });
 
-    // 2. Fetch Cases with SCALABILITY LIMIT (Prevents browser crash on high traffic)
-    let q;
+    let casesQuery;
     if (status === 'Assigned') {
-      q = query(
-        collection(db as any, 'cases'), 
+      casesQuery = query(
+        collection(db as any, 'cases'),
         where('status', 'in', ['Assigned', 'In Progress', 'Submitted'])
       );
     } else {
-      q = query(
-        collection(db as any, 'cases'), 
+      casesQuery = query(
+        collection(db as any, 'cases'),
         where('status', '==', status)
       );
     }
-    const querySnapshot = await getDocs(q);
+
+    // 🚀 PARALLEL FETCH — both queries hit Firestore simultaneously (2x faster)
+    const [drSnap, querySnapshot] = await Promise.all([getDocs(drQuery), getDocs(casesQuery)]);
+
+    // Build identity cache from user results
+    const drCache: Record<string, any> = {};
+    drSnap.forEach(d => {
+      drCache[d.id] = {
+        name: d.data().name || 'Unknown Practitioner',
+        phone: d.data().phone || d.data().mobile || 'N/A',
+        email: d.data().email || '',
+        role: d.data().role || 'doctor'
+      };
+    });
     
     const cases = querySnapshot.docs.map((docSnap) => {
       const data = docSnap.data();
@@ -622,7 +624,60 @@ export const fetchAdminCases = async (status: 'Pending' | 'Approved' | 'Assigned
     return [];
   }
 };
-;
+
+export const listenAdminCases = (
+  status: 'Pending' | 'Approved' | 'Assigned' | 'In Progress' | 'Submitted' | 'Rejected' | 'All',
+  callback: (cases: any[]) => void
+) => {
+  if (!db) return () => {};
+
+  const drQuery = query(collection(db, 'users'), where('role', 'in', ['doctor', 'associate', 'clinician']));
+  
+  let casesQuery;
+  if (status === 'Assigned') {
+    casesQuery = query(collection(db, 'cases'), where('status', 'in', ['Assigned', 'In Progress', 'Submitted']));
+  } else if (status === 'All') {
+    casesQuery = collection(db, 'cases');
+  } else {
+    casesQuery = query(collection(db, 'cases'), where('status', '==', status));
+  }
+
+  let drCache: Record<string, any> = {};
+  let casesData: any[] = [];
+  
+  const mapData = () => {
+    if (Object.keys(drCache).length === 0 && casesData.length > 0) return; // Wait for at least initial identity load
+    const mapped = casesData.map(data => {
+      const dr = drCache[data.doctorUid] || { name: 'Unknown Practitioner', phone: 'N/A', email: '', role: 'doctor' };
+      const cl = drCache[data.clinicianId] || { name: 'Not Assigned' };
+      return { 
+        ...data, 
+        doctorName: dr.name, doctorPhone: dr.phone || dr.mobile || 'N/A', doctorEmail: dr.email, doctorRole: dr.role,
+        clinicianName: data.solvedByName || data.clinicianName || cl.name,
+        clinicianRegNo: data.solvedByRegNo || data.clinicianRegNo || cl.regNo || ''
+      };
+    });
+    callback(mapped.sort((a: any, b: any) => (b.submittedAt?.seconds || 0) - (a.submittedAt?.seconds || 0)));
+  };
+
+  const unsubUsers = onSnapshot(drQuery, (snap: any) => {
+    snap.docs.forEach((d: any) => {
+      const data = d.data();
+      drCache[d.id] = { name: data.name, phone: data.phone || data.mobile, email: data.email, role: data.role };
+    });
+    mapData();
+  });
+
+  const unsubCases = onSnapshot(casesQuery, (snap: any) => {
+    casesData = snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    mapData();
+  });
+
+  return () => {
+    unsubUsers();
+    unsubCases();
+  };
+};
 
 // 8a. Admin: Fetch All Doctors - Enhanced with Fail-Safe Global Registry
 export const fetchDoctors = async () => {

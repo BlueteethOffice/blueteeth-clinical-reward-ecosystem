@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // 🛡️ VERIFIED HARDCODED CONFIG (IDENTITY HARDENING)
@@ -30,8 +30,27 @@ try {
 
   if (app) {
     auth = getAuth(app);
-    db = getFirestore(app);
     storage = getStorage(app);
+
+    // [PERFORMANCE] Use modern persistentLocalCache for instant offline/refresh loading
+    // This replaces deprecated enableMultiTabIndexedDbPersistence which silently fails
+    if (typeof window !== 'undefined') {
+      try {
+        db = initializeFirestore(app, {
+          localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+          })
+        });
+        console.log('>>> [CLINICAL CORE]: Persistent cache enabled (multi-tab).');
+      } catch (e) {
+        // Already initialized (e.g. HMR in dev) - fall back to default
+        db = getFirestore(app);
+        console.warn('>>> [CLINICAL CORE]: Using default Firestore (cache already set).');
+      }
+    } else {
+      // SSR: no cache
+      db = getFirestore(app);
+    }
   }
 } catch (error) {
   console.error(">>> [CLINICAL CORE FAILURE]:", error);

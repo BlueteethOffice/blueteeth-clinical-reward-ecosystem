@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
-import { fetchAdminCases, approveCase, rejectCase, revokeCase, fetchClinicians, assignClinician } from '@/lib/firestore';
+import { listenAdminCases, approveCase, rejectCase, revokeCase, fetchClinicians, assignClinician } from '@/lib/firestore';
 import { Suspense } from 'react';
 
 // Responsive Dual-Style Case Card Component
@@ -203,24 +203,13 @@ function CaseReviewContent() {
 
   React.useEffect(() => {
     setSelectedCase(null);
-    loadData();
+    setDataLoading(true);
+    const unsub = listenAdminCases(filterStatus, (data) => {
+      setCases(data || []);
+      setDataLoading(false);
+    });
+    return () => unsub();
   }, [filterStatus]);
-
-  const loadData = async () => {
-    try {
-       setDataLoading(true);
-       const data = await fetchAdminCases(filterStatus);
-       if (data) {
-          setCases(data);
-       } else {
-          setCases([]);
-       }
-    } catch (e) {
-       console.error("Failed to load cases stream");
-    } finally {
-       setDataLoading(false);
-    }
-  };
 
   React.useEffect(() => {
     const loadClinicians = async () => {
@@ -261,7 +250,6 @@ function CaseReviewContent() {
       toast.success("Case assigned to Specialist!");
       setAssignmentModal(null);
       setSelectedCase(null); // Close main review modal to reflect changes
-      loadData();
     } else {
       toast.error(res.error || "Assignment failed");
     }
@@ -280,8 +268,6 @@ function CaseReviewContent() {
         clinicianData?.name,
         clinicianData?.registrationNumber
       );
-      const updated = await fetchAdminCases(filterStatus);
-      setCases(updated);
       setSelectedCase(null);
       toast.success("Case assigned successfully");
     } catch (err) {
@@ -309,7 +295,6 @@ function CaseReviewContent() {
       if (result.success) {
         toast.success(`Case ${action}ed successfully.`, { id: toastId });
         setSelectedCase(null);
-        loadData();
       } else {
         toast.error(`Failed to ${action} case.`, { id: toastId });
       }
