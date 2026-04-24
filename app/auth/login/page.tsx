@@ -59,63 +59,45 @@ export default function LoginPage() {
       const sanitizedEmail = email.trim();
       const sanitizedPassword = password.trim();
 
-      // ADMIN REDIRECTION LOGIC
-      let authIdentity = sanitizedEmail;
-      const lowerEmail = sanitizedEmail.toLowerCase();
-      const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'master_core_01@blueteeth.in', 'backup_core_02@blueteeth.in'];
-      const isMasterAttempt = masterEmails.includes(lowerEmail);
-
-      if (isAdminFlow && !isMasterAttempt) {
-         toast.error('Admin only access.');
-         setLoading(false);
-         return;
-      }
-      
-      if (lowerEmail === 'niteen02') {
-         authIdentity = 'master_core_01@blueteeth.in';
-      } else if (lowerEmail === 'admin@blueteeth.in') {
-         authIdentity = 'backup_core_02@blueteeth.in';
-      }
-
-      const userCredential = await signInWithEmailAndPassword(auth, authIdentity, sanitizedPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, sanitizedEmail, sanitizedPassword);
       const user = userCredential.user;
 
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
       
-      const targetRole = isMasterAttempt ? 'admin' : 'doctor';
+      if (!userSnap.exists()) {
+        throw new Error('User profile not found in clinical registry.');
+      }
+
+      const userData = userSnap.data();
+      const role = userData?.role || 'doctor';
       
-      const dest = targetRole === 'admin' ? '/admin' : (userSnap.data()?.role === 'clinician' ? '/clinician' : '/doctor');
+      let dest = '/doctor';
+      if (role === 'admin') dest = '/admin';
+      else if (role === 'clinician') dest = '/clinician';
       
-      // Navigate FIRST — email is background-only, never blocks login
       router.push(dest);
       toast.success('Welcome Back!', { id: toastId });
 
       // 🛡️ SECURITY ALERT (silent background task)
       try {
         sendEmail({
-            to_email: lowerEmail,
-            to_name: userSnap.data()?.name || 'Practitioner',
+            to_email: sanitizedEmail,
+            to_name: userData?.name || 'Practitioner',
             subject: 'Login Alert: Successful Access ✅',
             message: `A successful login was recorded for your account. Time: ${new Date().toLocaleString()}`,
             passcode: 'SECURE_LOGIN_NODE'
-        }).catch(() => {}); // Completely silent
+        }).catch(() => {});
       } catch (_) {}
 
     } catch (error: any) {
-        // 🚨 CRITICAL ADMIN SECURITY ALERT
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'master_core_01@blueteeth.in', 'backup_core_02@blueteeth.in'];
-        if (masterEmails.includes(email.toLowerCase())) {
-            sendEmail({
-                to_email: 'nitinchauhan378@gmail.com',
-                user_email: email,
-                subject: '🛑 CRITICAL: Failed Admin Access Alert',
-                message: `SECURITY ALERT: An unauthorized login attempt was made using restricted admin credentials: ${email}. The attempt was blocked and logged for review.`,
-                passcode: 'ALERT_FAILED_LOGIN',
-                to_name: "Master Admin"
-            }).catch(() => {});
-        }
-        toast.error('Login failed. Check your credentials.', { id: toastId });
+        let errorMsg = 'Login failed. Check your credentials.';
+        if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password. Please try again.';
+        else if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
+        else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
+        else if (error.message) errorMsg = error.message;
+
+        toast.error(errorMsg, { id: toastId });
     } finally {
        setLoading(false);
     }

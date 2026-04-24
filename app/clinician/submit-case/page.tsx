@@ -61,6 +61,8 @@ export default function ClinicianSubmitCase() {
   }, []);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [processedEvidence, setProcessedEvidence] = useState<string>('');
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const selectedTreatment = TREATMENTS.find(t => t.id === formData.treatment);
 
   const processFile = (file: File): Promise<string> => {
@@ -96,18 +98,57 @@ export default function ClinicianSubmitCase() {
       return;
     }
     
-    if (!formData.treatment) {
-      toast.error("Please select a treatment");
+    // --- STRICT VALIDATION ---
+    if (!formData.patientName.trim()) {
+      toast.error("Patient Name is required");
       return;
     }
+    if (formData.patientName.trim().length < 3) {
+      toast.error("Please enter a valid Full Name (min 3 letters)");
+      return;
+    }
+    if (!formData.patientMobile) {
+      toast.error("Mobile number is required");
+      return;
+    }
+    if (formData.patientMobile.length !== 10) {
+      toast.error("Mobile number must be exactly 10 digits");
+      return;
+    }
+    if (!formData.treatment) {
+      toast.error("Please select a Clinical Procedure");
+      return;
+    }
+    if (!formData.caseDate) {
+      toast.error("Please select an Observation Date");
+      return;
+    }
+    if (!formData.location.trim()) {
+      toast.error("Clinical Location is required");
+      return;
+    }
+    if (!selectedFile) {
+      toast.error("Please attach Diagnostic Evidence (X-Ray/Proof)");
+      return;
+    }
+    if (!formData.notes.trim()) {
+      toast.error("Please add some Clinical Remarks/Notes");
+      return;
+    }
+    // --- END VALIDATION ---
 
-    const toastId = toast.success("Clinical Node Initialized", { duration: 800 });
-    // Process in background for micro-second feel
+    // --- END VALIDATION ---
+
+    // 🚀 MICRO-SECOND OPTIMISTIC UI
+    const toastId = toast.loading("SYNCING CLINICAL NODE...", {
+      style: { background: '#0f172a', color: '#fff', borderLeft: '4px solid #3b82f6' }
+    });
     setLoading(true);
 
     try {
-      let evidenceUrl = '';
-      if (selectedFile) {
+      // ⚡ Use pre-processed evidence if available, otherwise process now (fallback)
+      let evidenceUrl = processedEvidence;
+      if (!evidenceUrl && selectedFile) {
         evidenceUrl = await processFile(selectedFile);
       }
 
@@ -122,27 +163,33 @@ export default function ClinicianSubmitCase() {
         status: 'Pending',
         submittedBy: 'clinician',
         clinicianSubmitted: true,
-        clinicianId: null, // Admin will assign this back to the clinician or someone else
+        clinicianId: null, 
         location: formData.location || userData?.clinicName || 'Clinician Hub',
         submittedAt: serverTimestamp()
       };
 
+      // ⚡ Instant form clear for "Micro-second" feel
+      const resetForm = () => {
+        setFormData({
+            patientName: '',
+            patientMobile: '',
+            treatment: '',
+            caseDate: new Date().toISOString().split('T')[0],
+            notes: '',
+            evidenceName: '',
+            location: ''
+        });
+        setSelectedFile(null);
+        setProcessedEvidence('');
+      };
+
+      // Execute submission
       const res = await submitNewCase(user.uid, caseData);
       
       if (!res.success) throw new Error(res.error || "Sync Failed");
       
-      toast.success("Case Registered in Master Ledger", { id: toastId });
-      
-      setFormData({
-        patientName: '',
-        patientMobile: '',
-        treatment: '',
-        caseDate: new Date().toISOString().split('T')[0],
-        notes: '',
-        evidenceName: '',
-        location: ''
-      });
-      setSelectedFile(null);
+      toast.success("CASE ARCHIVED SUCCESSFULLY", { id: toastId });
+      resetForm();
       
     } catch (err: any) {
       toast.error(err.message || "Process aborted", { id: toastId });
@@ -279,11 +326,21 @@ export default function ClinicianSubmitCase() {
                                type="file" 
                                accept="image/*,application/pdf"
                                className="absolute inset-0 opacity-0 cursor-pointer"
-                               onChange={(e) => {
+                               onChange={async (e) => {
                                  const file = e.target.files?.[0];
                                  if (file) {
                                     setSelectedFile(file);
                                     setFormData({...formData, evidenceName: file.name});
+                                    // ⚡ Pre-process immediately for micro-second submission later
+                                    setIsProcessingFile(true);
+                                    try {
+                                        const processed = await processFile(file);
+                                        setProcessedEvidence(processed);
+                                    } catch (err) {
+                                        console.error("Pre-process error", err);
+                                    } finally {
+                                        setIsProcessingFile(false);
+                                    }
                                  }
                                }}
                              />

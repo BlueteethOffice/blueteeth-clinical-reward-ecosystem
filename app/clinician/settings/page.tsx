@@ -191,17 +191,28 @@ export default function ClinicianSettingsPage() {
                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700" />
                <div className="relative z-10 space-y-4">
                   <div 
-                    className="w-20 h-20 bg-white/5 rounded-lg flex items-center justify-center mx-auto border border-white/10 shadow-2xl relative overflow-hidden group/avatar cursor-pointer"
+                    className={`w-20 h-20 bg-white/5 rounded-lg flex items-center justify-center mx-auto border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-500 ring-2 group/avatar-main ${isEditing ? 'cursor-pointer ring-blue-500/50' : 'cursor-not-allowed ring-white/5'}`}
                     onClick={() => isEditing && document.getElementById('photoInput')?.click()}
                   >
                      {formData.photoURL ? (
-                       <img src={formData.photoURL} alt="Dr." className="w-full h-full object-cover" />
+                       <img src={formData.photoURL} alt="Dr." className={`w-full h-full object-cover transition-transform duration-700 ${isEditing ? 'group-hover/avatar-main:scale-110' : ''}`} />
                      ) : (
                        <UserCircle size={40} className="text-white/20 sm:size-[48px]" />
                      )}
+                     
+                     {/* 🔒 LOCKED OVERLAY */}
+                     {!isEditing && (
+                       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center opacity-0 group-hover/avatar-main:opacity-100 transition-all duration-300">
+                          <Lock size={16} className="text-white/80 mb-1" />
+                          <span className="text-[5px] font-black text-white/80 tracking-widest uppercase">Locked</span>
+                       </div>
+                     )}
+
+                     {/* ⚡ UNLOCKED OVERLAY */}
                      {isEditing && (
-                       <div className="absolute inset-0 bg-blue-600/60 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                          <Camera size={20} className="text-white" />
+                       <div className="absolute inset-0 bg-blue-600/70 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover/avatar-main:opacity-100 transition-all duration-300">
+                          <Camera size={20} className="text-white mb-1" />
+                          <span className="text-[6px] font-black text-white tracking-widest uppercase">Change Photo</span>
                        </div>
                      )}
                   </div>
@@ -295,7 +306,10 @@ export default function ClinicianSettingsPage() {
 
                   <div className="sm:col-span-2 pt-4 flex flex-col sm:flex-row gap-4">
                     {!isEditing ? (
-                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 h-14 sm:h-12 rounded-md font-black text-white text-[10px] uppercase tracking-widest shadow-lg transition-all active:scale-95"><Edit2 size={16} className="mr-3" /> Edit Profile</Button>
+                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 h-14 sm:h-12 rounded-md font-black text-white text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-600 hover:shadow-blue-500/30 transition-all duration-300 active:scale-95 group/editbtn">
+                        <Edit2 size={16} className="mr-3 group-hover/editbtn:rotate-12 transition-transform" /> 
+                        Edit Profile
+                      </Button>
                     ) : (
                       <>
                         <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="w-full sm:w-1/3 h-14 sm:h-12 rounded-md text-slate-400 border-slate-200 bg-white hover:bg-slate-50 font-black uppercase text-[10px] tracking-widest">Cancel</Button>

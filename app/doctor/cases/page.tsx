@@ -416,8 +416,8 @@ export default function CaseHistory() {
                   <tr>
                     <td colSpan={5} className="px-6 py-32 text-center">
                       <div className="flex flex-col items-center">
-                         <div className="h-16 w-16 bg-slate-50 rounded-[4px] flex items-center justify-center mb-6 border border-slate-100 shadow-inner text-slate-300">
-                           <ListTodo size={32} />
+                         <div className="h-20 w-20 bg-blue-50 rounded-[4px] flex items-center justify-center mb-6 border border-blue-100 shadow-xl shadow-blue-500/5 text-blue-600">
+                           <ListTodo size={36} />
                          </div>
                          <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">No Cases Found in Registry</p>
                       </div>

@@ -307,20 +307,22 @@ export default function DashboardLayout({
             )}
 
             <div className="flex flex-col gap-4">
-              <div className="p-4 rounded-[4px] bg-gradient-to-br from-indigo-600/60 via-blue-600/40 to-blue-700/50 border border-indigo-400/20 flex items-center gap-4 transition-all relative overflow-hidden group">
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-indigo-400/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
-                <div className="h-10 w-10 bg-white/90 rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30 p-0.5 overflow-hidden relative z-10">
-                  {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-900 font-black text-xs">{initials}</span>}
+              <Link href={isAdminRoute ? "/admin/settings" : (isClinician ? "/clinician/settings" : "/doctor/settings")}>
+                <div className="p-4 rounded-[4px] bg-gradient-to-br from-indigo-600/60 via-blue-600/40 to-blue-700/50 border border-indigo-400/20 flex items-center gap-4 transition-all relative overflow-hidden group cursor-pointer hover:shadow-2xl hover:shadow-indigo-500/20 active:scale-[0.98]">
+                  <div className="absolute -top-4 -right-4 w-20 h-20 bg-indigo-400/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
+                  <div className="h-10 w-10 bg-white/90 rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/30 p-0.5 overflow-hidden relative z-10">
+                    {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-900 font-black text-xs">{initials}</span>}
+                  </div>
+                  <div className="flex flex-col min-w-0 relative z-10">
+                    <p className="text-[11px] font-black text-white truncate leading-none">
+                      {displayName}
+                    </p>
+                    <p className="text-[9px] font-bold text-indigo-200 uppercase tracking-tight mt-1 truncate">
+                      {displaySpec}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col min-w-0 relative z-10">
-                  <p className="text-[11px] font-black text-white truncate leading-none">
-                    {displayName}
-                  </p>
-                  <p className="text-[9px] font-bold text-indigo-200 uppercase tracking-tight mt-1 truncate">
-                    {displaySpec}
-                  </p>
-                </div>
-              </div>
+              </Link>
 
               <Button variant="ghost" onClick={handleLogout} className="w-full h-10 px-6 justify-start text-red-100 font-black bg-red-500/10 border border-red-500/20 hover:bg-red-600 hover:text-white rounded-[4px] transition-all">
                   <LogOut className="h-4 w-4 mr-4" />
@@ -393,21 +395,23 @@ export default function DashboardLayout({
               
               <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-6 space-y-6 flex flex-col no-scrollbar">
                 {/* Profile Overview (Mobile - Vibrant) */}
-                <div className="p-4 rounded-[4px] bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 border border-indigo-400/30 flex items-center gap-4 transition-all shrink-0 relative overflow-hidden shadow-xl shadow-indigo-500/20">
-                  <div className="absolute -top-3 -right-3 w-16 h-16 bg-white/10 rounded-full blur-xl" />
-                  <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-violet-400/20 rounded-full blur-lg" />
-                  <div className="h-11 w-11 bg-white rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-700/40 p-0.5 overflow-hidden border-2 border-white/80 relative z-10">
-                    {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-700 font-black text-sm">{initials}</span>}
+                <Link href={isAdminRoute ? "/admin/settings" : (isClinician ? "/clinician/settings" : "/doctor/settings")} onClick={() => setSidebarOpen(false)}>
+                  <div className="p-4 rounded-[4px] bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 border border-indigo-400/30 flex items-center gap-4 transition-all shrink-0 relative overflow-hidden shadow-xl shadow-indigo-500/20 cursor-pointer active:scale-95">
+                    <div className="absolute -top-3 -right-3 w-16 h-16 bg-white/10 rounded-full blur-xl" />
+                    <div className="absolute -bottom-3 -left-3 w-12 h-12 bg-violet-400/20 rounded-full blur-lg" />
+                    <div className="h-11 w-11 bg-white rounded-[4px] flex items-center justify-center shrink-0 shadow-lg shadow-indigo-700/40 p-0.5 overflow-hidden border-2 border-white/80 relative z-10">
+                      {displayPhoto ? <img src={displayPhoto} alt="P" className="h-full w-full object-cover rounded-sm" /> : <span className="text-indigo-700 font-black text-sm">{initials}</span>}
+                    </div>
+                    <div className="flex flex-col min-w-0 relative z-10">
+                      <p className="text-[13px] font-black text-white truncate leading-none drop-shadow-sm">
+                        {displayName}
+                      </p>
+                      <span className="mt-1.5 inline-flex w-fit items-center px-2 py-0.5 rounded-[4px] bg-white/20 border border-white/30 text-[8px] font-black text-white/90 uppercase tracking-widest backdrop-blur-sm">
+                        {displaySpec}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex flex-col min-w-0 relative z-10">
-                    <p className="text-[13px] font-black text-white truncate leading-none drop-shadow-sm">
-                      {displayName}
-                    </p>
-                    <span className="mt-1.5 inline-flex w-fit items-center px-2 py-0.5 rounded-[4px] bg-white/20 border border-white/30 text-[8px] font-black text-white/90 uppercase tracking-widest backdrop-blur-sm">
-                      {displaySpec}
-                    </span>
-                  </div>
-                </div>
+                </Link>
  
                 <nav className="space-y-1.5">
                   {navigation.map((item) => (
@@ -597,16 +601,18 @@ function HeaderActions({ isAdminRoute, isUserAdmin, user, displayName, displaySp
       </div>
       <div className="h-8 w-px bg-slate-200" />
       {isAdminRoute ? (
-        <div className="relative flex items-center gap-2 sm:gap-3 cursor-pointer group">
-          <div className="text-right hidden md:block">
-            <p className="text-[13px] font-black text-blue-600 leading-none group-hover:text-blue-700 transition-colors uppercase tracking-tight">{displayName || 'Admin'}</p>
-            <p className="text-[8px] text-slate-400 uppercase mt-1 font-black tracking-widest">Administrator</p>
+        <Link href="/admin/settings">
+          <div className="relative flex items-center gap-2 sm:gap-3 cursor-pointer group">
+            <div className="text-right hidden md:block">
+              <p className="text-[13px] font-black text-blue-600 leading-none group-hover:text-blue-700 transition-colors uppercase tracking-tight">{displayName || 'Admin'}</p>
+              <p className="text-[8px] text-slate-400 uppercase mt-1 font-black tracking-widest">Administrator</p>
+            </div>
+            <div className="h-9 w-9 sm:h-10 sm:w-10 bg-slate-50 rounded-[4px] border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-105 transition-all">
+              {displayPhoto ? <img src={displayPhoto} className="h-full w-full object-cover" /> : <UserCircle className="h-full w-full text-slate-300" />}
+            </div>
+            <input type="file" accept="image/*" onChange={handleAdminPhotoChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
           </div>
-          <div className="h-9 w-9 sm:h-10 sm:w-10 bg-slate-50 rounded-[4px] border border-slate-200 overflow-hidden flex items-center justify-center shadow-sm group-hover:scale-105 transition-all">
-            {displayPhoto ? <img src={displayPhoto} className="h-full w-full object-cover" /> : <UserCircle className="h-full w-full text-slate-300" />}
-          </div>
-          <input type="file" accept="image/*" onChange={handleAdminPhotoChange} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
-        </div>
+        </Link>
       ) : (
         <Link href={isClinician ? "/clinician/settings" : "/doctor/settings"}>
           <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group">

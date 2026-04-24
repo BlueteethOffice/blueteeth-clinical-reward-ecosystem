@@ -92,9 +92,10 @@ const ClinicianSubmissions = () => {
         ) : cases.length === 0 ? (
           <div className="py-40 text-center">
              <div className="flex flex-col items-center gap-6">
-                <div className="h-24 w-24 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-200 border border-slate-100 shadow-inner">
-                   <FilePlus size={48} />
-                </div>
+                 <div className="h-28 w-28 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 border border-blue-100 shadow-xl shadow-blue-500/5 relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-blue-200/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <FilePlus size={48} className="relative z-10" />
+                 </div>
                 <div className="space-y-2">
                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">No Submissions Found</h3>
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest max-w-xs mx-auto">Your patient referral registry is empty. Begin by submitting your first clinical node.</p>

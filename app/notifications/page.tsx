@@ -83,7 +83,7 @@ export default function NotificationsPage() {
 
   return (
     <DashboardLayout isAdminRoute={userData?.role === 'admin' || isAdmin}>
-      <div className="max-w-3xl mx-auto space-y-4 pb-20 px-2">
+      <div className="max-w-[1400px] mx-auto space-y-6 pb-20 px-4 sm:px-8">
         {/* Header Section - Clean & Balanced */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 py-2">
           <div className="space-y-1">
@@ -93,7 +93,7 @@ export default function NotificationsPage() {
              >
                 <ArrowLeft size={10} className="group-hover:-translate-x-1 transition-transform" /> Clinical Dashboard
              </button>
-             <h1 className="text-2xl font-bold text-slate-900 tracking-tighter uppercase">Notification Hub</h1>
+             <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Notification Hub</h1>
           </div>
           
           {notifications.some(n => !n.read) && (
@@ -116,15 +116,15 @@ export default function NotificationsPage() {
                     <Bell size={14} />
                  </div>
                  <div>
-                    <p className="text-[10px] font-black text-white uppercase tracking-[0.2em] leading-none">Activity Stream</p>
-                    <div className="text-[7px] font-bold text-blue-300 uppercase tracking-widest mt-1 flex items-center gap-1.5">
-                       <div className="w-1 h-1 rounded-full bg-emerald-500" />
-                       {notifications.length} Logs Sequenced
-                    </div>
+                     <p className="text-[14px] font-black text-white uppercase tracking-[0.2em] leading-none">Activity Stream</p>
+                     <div className="text-[10px] font-black text-blue-300 uppercase tracking-widest mt-2 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {notifications.length} Logs Sequenced
+                     </div>
                  </div>
               </div>
               <div className="hidden sm:block">
-                 <span className="px-2 py-0.5 bg-white/5 text-white/40 text-[6px] font-black uppercase rounded-[2px] tracking-[0.2em] border border-white/5">Secured Node</span>
+                  <span className="px-3 py-1 bg-white/10 text-white/80 text-[10px] font-black uppercase rounded-[3px] tracking-[0.2em] border border-white/10 shadow-inner">Secured Node</span>
               </div>
            </div>
 
@@ -170,20 +170,20 @@ export default function NotificationsPage() {
                             'bg-blue-600'
                          }`} />
 
-                         <div className={`p-5 sm:p-6 flex items-start gap-5 transition-colors ${!notif.read ? 'bg-blue-50/20' : 'hover:bg-slate-50/50'}`}>
+                         <div className={`p-6 sm:p-10 flex items-start gap-8 transition-colors ${!notif.read ? 'bg-blue-50/20' : 'hover:bg-slate-50/50'}`}>
                             {/* Icon Node */}
-                            <div className={`h-11 w-11 rounded-[4px] flex items-center justify-center shrink-0 border transition-all group-hover:scale-110 ${
+                            <div className={`h-14 w-14 rounded-[4px] flex items-center justify-center shrink-0 border transition-all group-hover:scale-110 ${
                                notif.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-600 shadow-sm' :
                                notif.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-sm' :
                                'bg-blue-50 border-blue-200 text-blue-600 shadow-sm'
                             }`}>
-                               {notif.type === 'success' ? <ShieldCheck size={18} /> : notif.type === 'error' ? <Mail size={18} /> : <Bell size={18} />}
+                               {notif.type === 'success' ? <ShieldCheck size={32} /> : notif.type === 'error' ? <Mail size={32} /> : <Bell size={32} />}
                             </div>
 
                             {/* Content Node */}
                             <div className="flex-1 min-w-0">
                                <div className="flex items-center justify-between gap-4 mb-1.5">
-                                  <h3 className={`text-[13px] font-black uppercase tracking-tight transition-colors ${
+                                  <h3 className={`text-[16px] font-black uppercase tracking-tight transition-colors ${
                                      !notif.read ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'
                                   }`}>
                                      {notif.title}
@@ -192,7 +192,7 @@ export default function NotificationsPage() {
                                      <Clock size={8} /> {notif.time}
                                   </span>
                                </div>
-                               <p className={`text-[12px] leading-relaxed font-bold tracking-tight mb-4 ${
+                               <p className={`text-[14px] leading-relaxed font-bold tracking-tight mb-6 ${
                                   !notif.read ? 'text-slate-700' : 'text-slate-500'
                                }`}>
                                   {notif.msg}
@@ -239,10 +239,10 @@ export default function NotificationsPage() {
               <ShieldCheck size={14} />
            </div>
            <div>
-              <p className="text-[8px] font-black text-white uppercase tracking-[0.3em] mb-0.5">Secure Encryption Node</p>
-              <p className="text-[9px] font-bold text-blue-100/60 uppercase tracking-tight leading-none">
-                 Audit logs are end-to-end encrypted and purged automatically after clinical lifecycle.
-              </p>
+               <p className="text-[12px] font-black text-white uppercase tracking-[0.3em] mb-1">Secure Encryption Node</p>
+               <p className="text-[11px] font-bold text-blue-200 uppercase tracking-tight leading-none">
+                  Audit logs are end-to-end encrypted and purged automatically after clinical lifecycle.
+               </p>
            </div>
         </div>
       </div>

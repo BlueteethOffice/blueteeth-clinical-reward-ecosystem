@@ -270,22 +270,33 @@ export default function SettingsPage() {
           <div className="md:col-span-1 flex flex-col gap-4">
             <Card className="py-8 px-4 sm:px-8 bg-gradient-to-br from-blue-600 to-indigo-700 border-0 rounded-[4px] text-white text-center shadow-2xl shadow-blue-200 overflow-hidden relative flex flex-col justify-center group h-fit">
                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-125 transition-transform duration-700" />
-                 <div className="relative z-10 group/avatar">
-                   <div 
-                     className={`w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20 shadow-2xl relative overflow-hidden p-0 ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}
+                    <div 
+                     className={`w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20 shadow-2xl relative overflow-hidden p-0 transition-all duration-500 ring-4 group/avatar-main ${isEditing ? 'cursor-pointer ring-blue-400/40' : 'cursor-not-allowed ring-white/5'}`}
                      onClick={() => isEditing && document.getElementById('photoInput')?.click()}
                    >
                       {formData.photoURL ? (
-                        <img src={formData.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                        <img src={formData.photoURL} alt="Profile" className={`w-full h-full object-cover transition-transform duration-700 ${isEditing ? 'group-hover/avatar-main:scale-110' : ''}`} />
                       ) : (
                         <UserCircle size={50} className="text-white/40" />
                       )}
+                      
+                      {/* 🔒 LOCKED OVERLAY (Visible when Hovering in Locked Mode) */}
+                      {!isEditing && (
+                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] flex flex-col items-center justify-center opacity-0 group-hover/avatar-main:opacity-100 transition-all duration-300">
+                           <Lock size={20} className="text-white/80 mb-1" />
+                           <span className="text-[6px] font-black text-white/80 tracking-widest uppercase">Locked</span>
+                        </div>
+                      )}
+
+                      {/* ⚡ UNLOCKED OVERLAY (Visible when Hovering in Edit Mode) */}
                       {isEditing && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                           <Camera size={20} className="text-white" />
+                        <div className="absolute inset-0 bg-blue-600/60 backdrop-blur-sm flex flex-col items-center justify-center opacity-0 group-hover/avatar-main:opacity-100 transition-all duration-300">
+                           <Camera size={24} className="text-white mb-1" />
+                           <span className="text-[7px] font-black text-white tracking-[0.2em] uppercase">Change Photo</span>
                         </div>
                       )}
                    </div>
+
                    <p className="text-[8px] text-blue-300 font-black mb-6 tracking-widest uppercase opacity-80">Profile Photo</p>
                   <input id="photoInput" type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   
@@ -304,7 +315,6 @@ export default function SettingsPage() {
                       <ShieldCheck className="h-5 w-5 text-cyan-400 mx-auto" />
                     </div>
                   </div>
-               </div>
             </Card>
 
             <Card className="p-4 bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md rounded-[4px] text-emerald-700">
@@ -408,7 +418,10 @@ export default function SettingsPage() {
 
                   <div className="mt-8 md:col-span-2 flex flex-col sm:flex-row gap-4">
                     {!isEditing ? (
-                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 h-14 rounded-[4px] font-black text-white text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-slate-800"><Edit2 size={16} className="mr-3" /> Edit My Profile</Button>
+                      <Button type="button" onClick={() => setIsEditing(true)} className="w-full bg-slate-900 h-14 rounded-[4px] font-black text-white text-[11px] uppercase tracking-[0.2em] shadow-xl hover:bg-blue-600 hover:shadow-blue-500/30 transition-all duration-300 active:scale-95 group/editbtn">
+                        <Edit2 size={16} className="mr-3 group-hover/editbtn:rotate-12 transition-transform" /> 
+                        Edit My Profile
+                      </Button>
                     ) : (
                       <>
                         <Button type="button" onClick={() => setIsEditing(false)} variant="outline" className="w-full sm:w-1/3 h-14 rounded-[4px] text-red-600 border-red-100 bg-red-50 hover:bg-red-100 font-black uppercase text-[10px] tracking-widest">Cancel</Button>

@@ -64,6 +64,8 @@ export default function SubmitCase() {
   }, []);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [processedEvidence, setProcessedEvidence] = useState<string>('');
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const selectedTreatment = TREATMENTS.find(t => t.id === formData.treatment);
 
   const processFile = (file: File): Promise<string> => {
@@ -103,17 +105,55 @@ export default function SubmitCase() {
       return;
     }
     
-    if (!formData.treatment) {
-      toast.error("Select Treatment Taken.");
+    // --- STRICT VALIDATION ---
+    if (!formData.patientName.trim()) {
+      toast.error("Patient Name is required");
       return;
     }
-
-    const toastId = toast.loading("Processing Cloud Sync...");
+    if (formData.patientName.trim().length < 3) {
+      toast.error("Please enter a valid Full Name (min 3 letters)");
+      return;
+    }
+    if (!formData.patientMobile) {
+      toast.error("Mobile number is required");
+      return;
+    }
+    if (formData.patientMobile.length !== 10) {
+      toast.error("Mobile number must be exactly 10 digits");
+      return;
+    }
+    if (!formData.treatment) {
+      toast.error("Please select a Treatment Taken");
+      return;
+    }
+    if (!formData.caseDate) {
+      toast.error("Please select a Submission Date");
+      return;
+    }
+    if (!formData.location.trim()) {
+      toast.error("Case Location is required");
+      return;
+    }
+    if (!selectedFile) {
+      toast.error("Please attach Case Evidence (X-Ray/Proof)");
+      return;
+    }
+    if (!formData.notes.trim()) {
+      toast.error("Please add Additional Case Notes");
+      return;
+    }
+    // --- END VALIDATION ---
+    
+    // 🚀 MICRO-SECOND OPTIMISTIC UI
+    const toastId = toast.loading("SYNCING CLINICAL REGISTRY...", {
+      style: { background: '#0f172a', color: '#fff', borderLeft: '4px solid #3b82f6' }
+    });
     setLoading(true);
 
     try {
-      let evidenceUrl = '';
-      if (selectedFile) {
+      // ⚡ Use pre-processed evidence if available
+      let evidenceUrl = processedEvidence;
+      if (!evidenceUrl && selectedFile) {
         evidenceUrl = await processFile(selectedFile);
       }
 
@@ -121,7 +161,7 @@ export default function SubmitCase() {
         ...formData,
         doctorUid: user.uid,
         doctorName: user.displayName || (userData as any)?.name || 'Practitioner',
-        doctorRole: (userData as any)?.role || 'doctor', // Tag case with submitter's role
+        doctorRole: (userData as any)?.role || 'doctor', 
         evidenceUrl: evidenceUrl, 
         treatmentName: selectedTreatment?.name || formData.treatment,
         points: (selectedTreatment as any)?.points || 0,
@@ -130,14 +170,27 @@ export default function SubmitCase() {
         submittedAt: serverTimestamp()
       };
 
-      // [HARDENED SYNC] Use Clinical Registry Hub for with-timeout resilience
+      // ⚡ Instant form clear for "Micro-second" feel
+      const resetForm = () => {
+        setFormData({
+            patientName: '',
+            patientMobile: '',
+            treatment: '',
+            caseDate: new Date().toISOString().split('T')[0],
+            notes: '',
+            evidenceName: '',
+            location: ''
+        });
+        setSelectedFile(null);
+        setProcessedEvidence('');
+      };
+
+      // Execute submission
       const res = await submitNewCase(user.uid, caseData);
       
-      if (!res.success) {
-        throw new Error(res.error || "Registry Sync Failed");
-      }
+      if (!res.success) throw new Error(res.error || "Registry Sync Failed");
       
-      // Notify System for Dashboard Feed
+      // Notify System (Background)
       try {
         const { createNotification } = await import('@/lib/firestore');
         await createNotification(
@@ -148,7 +201,7 @@ export default function SubmitCase() {
         );
       } catch (notifErr) { console.warn("Identity Notification Delayed"); }
 
-      // Clear local caches to force fresh fetch in History/Dashboard
+      // Clear local caches
       localStorage.removeItem('blueteeth_cases_cache');
       localStorage.removeItem('clinical_cases_v2_cache');
       localStorage.removeItem(`doctor_stats_${user.uid}`);
@@ -156,19 +209,8 @@ export default function SubmitCase() {
       localStorage.removeItem(`clinical_cases_${user.uid}`);
       window.dispatchEvent(new Event('clinical-identity-update'));
 
-      // INSTANT SUCCESS FEEDBACK
-      toast.success("Case Registered in Cloud Registry!", { id: toastId });
-      
-      setFormData({
-        patientName: '',
-        patientMobile: '',
-        treatment: '',
-        caseDate: new Date().toISOString().split('T')[0],
-        notes: '',
-        evidenceName: '',
-        location: ''
-      });
-      setSelectedFile(null);
+      toast.success("CASE REGISTERED IN CLOUD REGISTRY", { id: toastId });
+      resetForm();
       
     } catch (err: any) {
       console.error(">>> [SUBMISSION CORE ERROR]:", err);
@@ -309,12 +351,23 @@ export default function SubmitCase() {
                                type="file" 
                                accept="image/*,application/pdf"
                                className="absolute inset-0 opacity-0 cursor-pointer"
-                               onChange={(e) => {
+                               onChange={async (e) => {
                                  const file = e.target.files?.[0];
                                  if (file) {
                                     setSelectedFile(file);
                                     setFormData({...formData, evidenceName: file.name});
                                     toast.success(`${file.name} attached locally.`);
+                                    
+                                    // ⚡ Pre-process immediately
+                                    setIsProcessingFile(true);
+                                    try {
+                                        const processed = await processFile(file);
+                                        setProcessedEvidence(processed);
+                                    } catch (err) {
+                                        console.error("Pre-process error", err);
+                                    } finally {
+                                        setIsProcessingFile(false);
+                                    }
                                  }
                                }}
                              />
