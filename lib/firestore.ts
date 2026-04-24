@@ -117,11 +117,23 @@ export const submitNewCase = async (doctorUid: string, caseData: any) => {
 
     // 2. DATA SUBMISSION with 10s Fast Timeout
     const customCaseId = generateCaseId();
+    
+    // [SECURITY HARDENING] Strip sensitive fields from caseData to prevent points/status tampering
+    const { 
+      status: _status, 
+      points: _points, 
+      bonusPoints: _bonus,
+      approvedAt: _approvedAt,
+      doctorUid: _doctorUid,
+      ...safeCaseData 
+    } = caseData;
+
     const submissionResult = await withTimeout(() => addDoc(collection(db, 'cases'), {
-      ...caseData,
+      ...safeCaseData,
       doctorUid,
       customCaseId, // Save the professional ID
-      status: 'Pending',
+      status: 'Pending', // Force initial status
+      points: 0,         // Points must be zero until approved by admin
       submittedBy: caseData.submittedBy || 'associate',
       doctorName: caseData.doctorName || 'Practitioner', // DENORMALIZED for speed
       doctorRole: caseData.doctorRole || 'doctor',

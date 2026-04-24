@@ -3,6 +3,15 @@ import nodemailer from 'nodemailer';
 
 export async function POST(req: Request) {
   try {
+    // [SECURITY HUB] Identity Handshake
+    const portalToken = req.headers.get('x-portal-token');
+    const INTERNAL_SECRET = 'BLUETEETH_INTERNAL_NODE_SECURE_2024';
+
+    if (portalToken !== INTERNAL_SECRET) {
+      console.warn(">>> [SECURITY ALERT] Unauthorized Email API Access Attempted!");
+      return NextResponse.json({ success: false, error: 'Identity Verification Failed' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { email, to_email, to, subject, to_name, message, passcode } = body;
     const recipient = email || to_email || to;

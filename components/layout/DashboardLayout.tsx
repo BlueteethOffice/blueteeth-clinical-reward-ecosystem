@@ -167,29 +167,49 @@ export default function DashboardLayout({
         router.replace('/auth/login');
         return;
       }
+
+      const userRole = userData?.role;
+      const userEmailRaw = user.email?.toLowerCase();
+      
+      const masterEmails = [
+        'admin@blueteeth.in', 
+        'nitinchauhan378@gmail.com', 
+        'niteen02@gmail.com', 
+        'niteen02', 
+        'support@blueteeth.in',
+        'master_core_01@blueteeth.in',
+        'backup_core_02@blueteeth.in'
+      ];
+      const isRootEmail = userEmailRaw && masterEmails.map(e => e.toLowerCase()).includes(userEmailRaw);
+      const hasAdminRole = userRole === 'admin' || isUserAdmin;
+
+      // 1. Admin Route Protection
       if (isAdminRoute) {
-          const masterEmails = [
-            'admin@blueteeth.in', 
-            'nitinchauhan378@gmail.com', 
-            'niteen02@gmail.com', 
-            'niteen02', 
-            'support@blueteeth.in',
-            'master_core_01@blueteeth.in',
-            'backup_core_02@blueteeth.in'
-          ];
-          const userEmailRaw = user.email?.toLowerCase();
-          const isRootEmail = userEmailRaw && masterEmails.map(e => e.toLowerCase()).includes(userEmailRaw);
-          const hasAdminRole = userData?.role === 'admin' || isUserAdmin;
-          
-          if (!isRootEmail && !hasAdminRole) {
-            toast.error("SECURITY PROTOCOL: Administrative access denied.");
-            router.replace('/doctor');
-            return;
-          }
+        if (!isRootEmail && !hasAdminRole) {
+          toast.error("SECURITY: Administrative access denied.");
+          router.replace(userRole === 'clinician' ? '/clinician' : '/doctor');
+          return;
+        }
+      } 
+      // 2. Clinician Route Protection
+      else if (isClinicianPath) {
+        if (userRole !== 'clinician' && !hasAdminRole) {
+          toast.error("SECURITY: Specialist access restricted.");
+          router.replace('/doctor');
+          return;
+        }
       }
+      // 3. Associate (Doctor) Route Protection - Standard for default /doctor
+      else if (pathname?.startsWith('/doctor')) {
+        if (userRole === 'clinician' && !hasAdminRole) {
+          router.replace('/clinician');
+          return;
+        }
+      }
+
       setLoading(false);
     }
-  }, [mounted, authLoading, isAdminRoute, userData, user, router, isUserAdmin]);
+  }, [mounted, authLoading, isAdminRoute, userData, user, router, isUserAdmin, isClinicianPath, pathname]);
 
   const handleLogout = async () => {
     try {

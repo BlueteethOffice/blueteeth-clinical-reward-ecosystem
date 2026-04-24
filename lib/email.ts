@@ -25,7 +25,10 @@ export const sendEmail = async (params: Record<string, any>) => {
     try {
       const response = await fetch('/api/send-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-portal-token': 'BLUETEETH_INTERNAL_NODE_SECURE_2024' // Identity Handshake
+        },
         body: JSON.stringify(payload),
       });
 
