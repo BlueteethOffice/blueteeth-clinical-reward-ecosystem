@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
 
     // 3. Process Payout
     if (!RAZORPAY_KEY || !RAZORPAY_SECRET || !RAZORPAY_X_ACCOUNT) {
+      throw new Error('Razorpay credentials missing. Please configure environment variables.');
+    }
 
     const auth = btoa(`${RAZORPAY_KEY}:${RAZORPAY_SECRET}`);
     
