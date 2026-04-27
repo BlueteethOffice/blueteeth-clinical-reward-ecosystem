@@ -386,7 +386,18 @@ export default function SettingsPage() {
                       <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">Mobile Number</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-emerald-500"><Phone size={16} /></div>
-                        <input type="tel" required disabled={!isEditing} className={`w-full rounded-[4px] pl-10 pr-4 outline-none font-bold text-sm shadow-sm transition-all py-3 ${isEditing ? activeClass : disabledClass}`} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                        <input 
+                          type="tel" 
+                          required 
+                          disabled={!isEditing} 
+                          maxLength={10}
+                          className={`w-full rounded-[4px] pl-10 pr-4 outline-none font-bold text-sm shadow-sm transition-all py-3 ${isEditing ? activeClass : disabledClass}`} 
+                          value={formData.phone} 
+                          onChange={e => {
+                            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                            setFormData({...formData, phone: val});
+                          }} 
+                        />
                       </div>
                     </div>
 

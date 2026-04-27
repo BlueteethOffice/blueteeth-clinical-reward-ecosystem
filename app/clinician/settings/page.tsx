@@ -270,7 +270,18 @@ export default function ClinicianSettingsPage() {
                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Sync Mobile</label>
                        <div className="relative">
                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={14} />
-                         <input type="tel" required disabled={!isEditing} className={`w-full h-12 rounded-lg pl-10 pr-4 outline-none font-bold text-sm shadow-sm transition-all ${isEditing ? activeClass : disabledClass}`} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                         <input 
+                           type="tel" 
+                           required 
+                           disabled={!isEditing} 
+                           maxLength={10}
+                           className={`w-full h-12 rounded-lg pl-10 pr-4 outline-none font-bold text-sm shadow-sm transition-all ${isEditing ? activeClass : disabledClass}`} 
+                           value={formData.phone} 
+                           onChange={e => {
+                             const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                             setFormData({...formData, phone: val});
+                           }} 
+                         />
                        </div>
                      </div>
 
