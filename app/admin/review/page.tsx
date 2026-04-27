@@ -164,9 +164,9 @@ const CaseCard = ({ c, idx, onSelect, isSelected }: { c: any, idx: number, onSel
              </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-             <div className="flex items-center gap-2">
-                <span className={`px-2 py-0.5 rounded-[4px] text-[8px] font-black uppercase border shadow-sm ${
+          <div className="flex items-center justify-between pt-2 gap-2">
+             <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`px-2 py-0.5 rounded-[4px] text-[8px] font-black uppercase border shadow-sm flex-shrink-0 ${
                    status === 'Approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 
                    status === 'Assigned' ? 'bg-blue-50 border-blue-200 text-blue-600' :
                    status === 'In Progress' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
@@ -175,10 +175,12 @@ const CaseCard = ({ c, idx, onSelect, isSelected }: { c: any, idx: number, onSel
                  }`}>
                     {status}
                  </span>
-                 <span className="text-[10px] font-black text-slate-700 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-[2px] border border-slate-200">#{c.customCaseId || (c.id || '').toUpperCase().slice(0, 8)}</span>
+                 <span className="text-[9px] font-black text-slate-700 uppercase tracking-tighter bg-slate-100 px-1.5 py-0.5 rounded-[2px] border border-slate-200 truncate">
+                    #{c.customCaseId || (c.id || '').toUpperCase().slice(0, 8)}
+                 </span>
              </div>
-             <div className="flex items-center gap-1.5 text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">
-                Open Review <ExternalLink size={12} />
+             <div className="flex items-center gap-1 text-blue-600 font-black text-[9px] uppercase tracking-widest group-hover:translate-x-1 transition-transform flex-shrink-0 whitespace-nowrap">
+                Review <ExternalLink size={10} />
              </div>
           </div>
         </CardContent>
