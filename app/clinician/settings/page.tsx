@@ -130,44 +130,55 @@ export default function ClinicianSettingsPage() {
     if (e) e.preventDefault();
     if (!user) return;
 
-    // OPTIMISTIC UI: Close edit mode immediately for micro-second feel
-    setIsEditing(false);
-    toast.success("Profile Node Updated Locally!", { duration: 1000 });
+    setLoading(true);
+    const toastId = toast.loading("Syncing profile with clinical node...");
 
-    // BACKGROUND SYNC: Heavy tasks run without blocking the user
-    (async () => {
-      try {
-        let finalPhotoURL: string = formData.photoURL;
-        
-        // 1. Image Upload in Background
-        if (formData.photoURL.startsWith('data:image')) {
-          const photoResult = await uploadProfileImage(user.uid, formData.photoURL);
-          if (photoResult.success && photoResult.url) finalPhotoURL = photoResult.url;
+    try {
+      let finalPhotoURL: string = formData.photoURL;
+      
+      // 1. Image Upload (if new)
+      if (formData.photoURL.startsWith('data:image')) {
+        const photoResult = await uploadProfileImage(user.uid, formData.photoURL);
+        if (photoResult.success && photoResult.url) {
+          finalPhotoURL = photoResult.url;
         }
-
-        // 2. Cloud Database Sync
-        await updateUserProfile(user.uid, { ...formData, photoURL: finalPhotoURL });
-        
-        // 3. Auth Profile Sync
-        const { updateProfile } = await import('firebase/auth');
-        await updateProfile(user, { 
-          displayName: formData.name, 
-          photoURL: finalPhotoURL.startsWith('http') ? finalPhotoURL : user.photoURL 
-        });
-
-        // 4. Update Local Snapshot for Instant Dashboard Hydration
-        localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
-           role: 'clinician',
-           name: formData.name,
-           photoURL: finalPhotoURL
-        }));
-        window.dispatchEvent(new Event('clinical-identity-update'));
-
-
-      } catch (err) {
-        
       }
-    })();
+
+      // 2. Filter out sensitive fields that are protected by Firestore Rules
+      // We don't want to send 'email', 'role', etc. if they haven't changed or aren't allowed.
+      const { email, ...safeData } = formData;
+
+      // 3. Cloud Database Sync
+      const result = await updateUserProfile(user.uid, { 
+        ...safeData, 
+        photoURL: finalPhotoURL 
+      });
+
+      if (!result.success) throw new Error(result.error || "Firestore Sync Failed");
+
+      // 4. Auth Profile Sync
+      const { updateProfile } = await import('firebase/auth');
+      await updateProfile(user, { 
+        displayName: formData.name, 
+        photoURL: finalPhotoURL.startsWith('http') ? finalPhotoURL : user.photoURL 
+      });
+
+      // 5. Update Local Snapshot for Instant Dashboard Hydration
+      localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
+         role: userData?.role || 'clinician',
+         name: formData.name,
+         photoURL: finalPhotoURL
+      }));
+      window.dispatchEvent(new Event('clinical-identity-update'));
+
+      toast.success("Profile Node Synchronized!", { id: toastId });
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error("SYNC ERROR:", err);
+      toast.error(`Sync Failure: ${err.message}`, { id: toastId });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

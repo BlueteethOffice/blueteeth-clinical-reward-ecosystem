@@ -182,74 +182,63 @@ export default function SettingsPage() {
 
   const handleUpdate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
     if (!user) {
-      toast.error("Error: Login expired.");
+      toast.error("Session Expired. Please login again.");
       return;
     }
 
-    // [TURBO OPTIMIZATION] Step 1: Instant Persistence (No Waiting)
-    const instantState = { ...formData };
-    
-    // Immediate Local Hydration for zero-latency feel
-    const syncLocal = () => {
-      localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
-         role: (userData?.role || 'doctor'),
-         name: instantState.name,
-         photoURL: instantState.photoURL
-      }));
-      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(instantState));
-      window.dispatchEvent(new Event('clinical-identity-update'));
-    };
+    setLoading(true);
+    const toastId = toast.loading("Synchronizing Identity Node...");
 
-    syncLocal();
-    setIsEditing(false);
-    
-    // Immediate Success UI - The user feels the 'Micro Second' speed
-    const toastId = toast.loading("Securing Identity...");
-    
-    // Delayed background promise to handle cloud sync without blocking
-    (async () => {
-      try {
-        const isBase64 = instantState.photoURL && instantState.photoURL.startsWith('data:image');
-
-        // Parallel Task Processing
-        const cloudTasks = [];
-        
-        // Task A: Photo & Storage Sync
-        let finalPhotoURL = instantState.photoURL;
-        if (isBase64) {
-           const photoResult = await uploadProfileImage(user.uid, instantState.photoURL);
-           if (photoResult.success && photoResult.url) finalPhotoURL = photoResult.url;
+    try {
+      let finalPhotoURL: string = formData.photoURL;
+      
+      // 1. Photo Storage Sync
+      if (formData.photoURL.startsWith('data:image')) {
+        const photoResult = await uploadProfileImage(user.uid, formData.photoURL);
+        if (photoResult.success && photoResult.url) {
+          finalPhotoURL = photoResult.url;
         }
-
-        // Task B: Firestore Core Update
-        cloudTasks.push(updateUserProfile(user.uid, { ...instantState, photoURL: finalPhotoURL }));
-
-        // Task C: Auth Profile Integrity
-        const authTask = async () => {
-           const { updateProfile } = await import('firebase/auth');
-           const isUrlValid = finalPhotoURL && !finalPhotoURL.startsWith('data:');
-           await updateProfile(user, { 
-             displayName: instantState.name, 
-             photoURL: isUrlValid ? finalPhotoURL : (user.photoURL || '') 
-           });
-        };
-        cloudTasks.push(authTask());
-
-        await Promise.all(cloudTasks);
-
-        // Final background hydration
-        const finalState = { ...instantState, photoURL: finalPhotoURL };
-        localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify(finalState));
-        toast.success("Identity Secured in Cloud!", { id: toastId });
-      } catch (err) {
-        console.error("Turbo Sync Error:", err);
-        toast.error("Cloud Sync Delayed: Changes kept locally.", { id: toastId });
-      } finally {
-        setLoading(false);
       }
-    })();
+
+      // 2. Filter Sensitive Fields
+      const { email, ...safeData } = formData;
+
+      // 3. Firestore Master Update
+      const result = await updateUserProfile(user.uid, { 
+        ...safeData, 
+        photoURL: finalPhotoURL 
+      });
+
+      if (!result.success) throw new Error(result.error || "Firestore Sync Blocked");
+
+      // 4. Auth Profile Update
+      const { updateProfile } = await import('firebase/auth');
+      await updateProfile(user, { 
+        displayName: formData.name, 
+        photoURL: finalPhotoURL.startsWith('http') ? finalPhotoURL : user.photoURL 
+      });
+
+      // 5. Local State & Cache Refresh
+      localStorage.setItem(`clinical_identity_snapshot_${user.uid}`, JSON.stringify({
+         role: userData?.role || 'doctor',
+         name: formData.name,
+         photoURL: finalPhotoURL
+      }));
+      localStorage.setItem(`clinical_identity_v2_payload_${user.uid}`, JSON.stringify({
+        ...formData,
+        photoURL: finalPhotoURL
+      }));
+      window.dispatchEvent(new Event('clinical-identity-update'));
+
+      toast.success("Profile Node Secured!", { id: toastId });
+      setIsEditing(false);
+    } catch (err: any) {
+      console.error("SYNC FAILURE:", err);
+      toast.error(`Sync Failure: ${err.message}`, { id: toastId });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
