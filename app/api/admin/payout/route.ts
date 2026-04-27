@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     const validation = PayoutSchema.safeParse(body);
     
     if (!validation.success) {
-      return apiResponse(false, validation.error.errors[0].message, null, 400);
+      return apiResponse(false, (validation.error as any).errors[0]?.message || 'Invalid data', null, 400);
     }
 
     const { amount, vpa, name, redemptionId, upiId } = validation.data;
