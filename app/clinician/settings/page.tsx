@@ -1,4 +1,5 @@
 'use client';
+// Build trigger: V2.1.2 - Final Persistence Lock
 
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
