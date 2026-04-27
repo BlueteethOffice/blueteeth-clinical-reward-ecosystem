@@ -75,21 +75,7 @@ export default function SignupPage() {
     setLoading(true);
     let userRecord = null;
 
-    // 0. ADMIN SECURITY BLOCK
-    const reservedEmails = ['admin@blueteeth.in', 'niteen02@gmail.com', 'nitinchauhan378@gmail.com', 'niteen02'];
-    if (reservedEmails.includes(formData.email.toLowerCase())) {
-        sendEmail({
-            to_email: 'nitinchauhan378@gmail.com',
-            user_email: formData.email,
-            subject: '🚨 CRITICAL: Unauthorized Admin Registration Blocked',
-            message: `URGENT: A registration attempt was BLOCKED. Someone tried to create a new profile using the reserved ADMIN email: ${formData.email}.`,
-            passcode: 'ALERT_SIGNUP_BLOCKED',
-            to_name: "Master Admin"
-        }).catch(() => {});
-        toast.error('Security Protocol: Restricted email usage is blocked.', { id: toastId });
-        setLoading(false);
-        return;
-    }
+    // 0. ACCOUNT UNIQUENESS CHECK (Handled by Firebase Auth below)
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);

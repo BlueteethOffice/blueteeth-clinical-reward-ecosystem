@@ -67,18 +67,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (authUser) {
         localStorage.setItem('last_clinical_uid', authUser.uid);
-        // [OPTIMIZATION 1] FAST-PATH ADMIN DETECTION: Determine role via email prefix to bypass DB latency
-        const masterEmails = ['admin@blueteeth.in', 'nitinchauhan378@gmail.com', 'niteen02@gmail.com', 'niteen02', 'master_core_01@blueteeth.in', 'backup_core_02@blueteeth.in'];
-        const lowerEmail = authUser.email?.toLowerCase() || '';
-        const isMaster = masterEmails.includes(lowerEmail);
         
-        if (isMaster) {
-           console.log(">>> [AUTH GATEWAY] ELITE ADMIN IDENTITY RESOLVED (FAST-PATH)");
-           setIsAdmin(true);
-           // Release UI lock early for admin-speed navigation
-           setLoading(false); 
-        }
-
         const userRef = doc(db, 'users', authUser.uid);
         
         // [REAL-TIME IDENTITY SYNC] Direct Firestore listener for profile updates
@@ -87,7 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const data = snapshot.data();
             setUserData(data);
             
-            const verifiedAdmin = isMaster || data.role === 'admin';
+            const verifiedAdmin = data.role === 'admin';
             setIsAdmin(verifiedAdmin);
             
             // Persist for next-session optimistic load
@@ -100,22 +89,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             window.dispatchEvent(new Event('clinical-identity-update'));
           } else {
             setUserData({ 
-               name: isMaster ? 'Master Admin' : (authUser.displayName || 'Associate'), 
-               role: isMaster ? 'admin' : 'associate', 
+               name: authUser.displayName || 'Associate', 
+               role: 'associate', 
                pending: false 
             });
-            setIsAdmin(isMaster);
+            setIsAdmin(false);
           }
           setLoading(false);
         }, (error) => {
           console.warn(">>> [AUTH SYNC CLOUD FAULT]:", error.code, " - Using local baseline fallback.");
           // permission-denied is common during signup or rule sync, don't crash the app
           setUserData({ 
-             name: isMaster ? 'Master Admin' : (authUser.displayName || 'Associate'), 
-             role: isMaster ? 'admin' : 'associate', 
+             name: authUser.displayName || 'Associate', 
+             role: 'associate', 
              pending: false 
           });
-          setIsAdmin(isMaster);
+          setIsAdmin(false);
           setLoading(false);
         });
 

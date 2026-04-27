@@ -1,101 +1,84 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import '@/lib/env-config';
+import { apiResponse, verifyAdmin, logActivity } from '@/lib/api-utils';
+import { PayoutSchema } from '@/lib/schemas';
 
-const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+const RAZORPAY_KEY = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 const RAZORPAY_X_ACCOUNT = process.env.RAZORPAY_X_ACCOUNT_NUMBER;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { redemptionId, amount, details, method, doctorName, doctorEmail } = await req.json();
+    // 1. Verify Admin Authentication & Authorization
+    const { uid, userData } = await verifyAdmin(req);
 
-    // 1. Check for API Credentials — If missing, return simulation success
-    if (!RAZORPAY_KEY || !RAZORPAY_SECRET || !RAZORPAY_X_ACCOUNT) {
-      console.warn(">>> [PAYOUT SIMULATION] RAZORPAY KEYS NOT FOUND. BYPASSING ACTUAL DISPATCH.");
-      return NextResponse.json({ 
-        success: true, 
-        simulation: true,
-        message: "Simulation Completed. Connect Razorpay X for live settlement.",
-        payout_id: `sim_pay_${Math.random().toString(36).substring(7)}`
-      });
+    // 2. Parse & Validate Input
+    const body = await req.json();
+    const validation = PayoutSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return apiResponse(false, validation.error.errors[0].message, null, 400);
     }
 
+    const { amount, vpa, name, redemptionId, upiId } = validation.data;
+    const finalVpa = vpa || upiId;
+
+    // 3. Process Payout
+    if (!RAZORPAY_KEY || !RAZORPAY_SECRET || !RAZORPAY_X_ACCOUNT) {
+
     const auth = btoa(`${RAZORPAY_KEY}:${RAZORPAY_SECRET}`);
-
-    // 2. Create Razorpay Contact
-    const contactRes = await fetch('https://api.razorpay.com/v1/contacts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
-      body: JSON.stringify({
-        name: doctorName,
-        email: doctorEmail || "payout@blueteeth.in",
-        type: "associate",
-        reference_id: redemptionId
-      })
-    });
-
-    const contact = await contactRes.json();
-    if (contact.error) throw new Error(`Contact Fault: ${contact.error.description}`);
-
-    // 3. Create Fund Account
-    const fundBody = method === 'upi' ? {
-      account_type: 'vpa',
-      vpa: { address: details },
-      contact_id: contact.id
-    } : {
-      account_type: 'bank_account',
-      bank_account: {
-        name: doctorName,
-        ifsc: details.split(' • ')[1],
-        account_number: details.split(' • ')[0]
-      },
-      contact_id: contact.id
-    };
-
+    
+    // Create Fund Account
     const fundRes = await fetch('https://api.razorpay.com/v1/fund_accounts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
-      body: JSON.stringify(fundBody)
-    });
-
-    const fund = await fundRes.json();
-    if (fund.error) throw new Error(`Fund Account Fault: ${fund.error.description}`);
-
-    // 4. Dispatch Payout Request
-    const payoutRes = await fetch('https://api.razorpay.com/v1/payouts', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Basic ${auth}`,
-        'X-Payout-Idempotency': redemptionId // Prevent double payout
-      },
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        account_number: RAZORPAY_X_ACCOUNT,
-        fund_account_id: fund.id,
-        amount: amount * 100, // Amount in paise
-        currency: "INR",
-        mode: method === 'upi' ? "IMPS" : "NEFT",
-        purpose: "payout",
-        queue_if_low_balance: true,
-        reference_id: redemptionId,
-        narration: `Blueteeth: Associate Reward Payout - ${redemptionId.slice(-6)}`
+        account_type: 'vpa',
+        vpa: { address: finalVpa },
+        contact: { 
+           name: name || 'Associate Partner', 
+           type: 'vendor', 
+           contact: userData?.phone || '9999999999' 
+        }
       })
     });
 
-    const payout = await payoutRes.json();
-    if (payout.error) throw new Error(`Payout Dispatch Fault: ${payout.error.description}`);
+    const fundData = await fundRes.json();
+    if (!fundRes.ok) throw new Error(fundData.error?.description || 'Fund account creation failed');
 
-    return NextResponse.json({ 
-      success: true, 
-      simulation: false,
-      payout_id: payout.id,
-      status: payout.status 
+    // Execute Payout
+    const payoutRes = await fetch('https://api.razorpay.com/v1/payouts', {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_number: RAZORPAY_X_ACCOUNT,
+        fund_account_id: fundData.id,
+        amount: amount * 100, // Convert to paise
+        currency: 'INR',
+        mode: 'IMPS',
+        purpose: 'payout',
+        queue_if_low_balance: true,
+        reference_id: redemptionId,
+        notes: { redemptionId, adminUid: uid }
+      })
     });
 
+    const payoutData = await payoutRes.json();
+    if (!payoutRes.ok) throw new Error(payoutData.error?.description || 'Payout execution failed');
+
+    // 3. Log Payout Activity
+    await logActivity('payout', `Payout of ₹${amount} executed for ${name}`, {
+      redemptionId,
+      adminUid: uid,
+      payoutId: payoutData.id,
+      vpa: finalVpa
+    });
+
+    return apiResponse(true, 'Payout processed successfully', { payoutId: payoutData.id });
+
   } catch (error: any) {
-    console.error(">>> [PAYOUT CRITICAL FAILURE]:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message 
-    }, { status: 500 });
+    console.error('PAYOUT ERROR:', error.message);
+    const status = error.message.includes('Unauthorized') ? 401 : error.message.includes('Forbidden') ? 403 : 500;
+    return apiResponse(false, error.message, null, status);
   }
 }

@@ -1,34 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import '@/lib/env-config';
+import { adminAuth } from '@/lib/firebase-admin';
+import { rateLimit } from '@/lib/rate-limiter';
+import { apiResponse } from '@/lib/api-utils';
 
-/**
- * UPI VPA Verification API
- * Uses Razorpay's VPA validation endpoint to fetch the registered account holder name.
- * Requires RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env
- */
 export async function POST(req: NextRequest) {
   try {
+    // 1. Rate Limiting (10 requests per minute per IP)
+    const ip = req.headers.get('x-forwarded-for') || 'anonymous';
+    const limitResult = rateLimit(ip, 10, 60000);
+    if (!limitResult.success) {
+      return apiResponse(false, 'Too many requests. Please try again later.', null, 429);
+    }
+
+    // 2. Verify Authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+       return apiResponse(false, 'Unauthorized', null, 401);
+    }
+
+    const token = authHeader.split('Bearer ')[1];
+    try {
+      await adminAuth.verifyIdToken(token);
+    } catch (e) {
+       return apiResponse(false, 'Unauthorized', null, 401);
+    }
+
     const { upiId } = await req.json();
 
     if (!upiId || !upiId.includes('@')) {
-      return NextResponse.json({ success: false, error: 'Invalid UPI format' }, { status: 400 });
+      return apiResponse(false, 'Invalid UPI format', null, 400);
     }
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!keyId || !keySecret) {
-      // PROD-LEVEL DEMO FALLBACK: If no Razorpay keys configured, return a deterministic simulation.
-      const vpa = upiId.trim().toLowerCase();
-      // Generate a mock name based on the VPA for realistic feeling
-      const mockName = vpa.split('@')[0].split('.').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Associate Partner';
-      
-      return NextResponse.json({
-        success: true,
-        mock: true,
-        name: `${mockName} (Verified Identity)`,
-        vpa: vpa,
-        note: 'Razorpay keys not detected. Using Associate Mock Verifier.'
-      });
+      return apiResponse(false, 'Verification service unavailable', null, 503);
     }
 
     const credentials = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
@@ -45,24 +53,16 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
 
     if (response.ok && data.success) {
-      return NextResponse.json({
-        success: true,
+      return apiResponse(true, 'UPI verified', {
         name: data.customer_name || 'Name Verified',
         vpa: data.vpa,
       });
     } else {
-      return NextResponse.json({
-        success: false,
-        error: 'UPI ID not found or invalid. Please check and try again.',
-      });
+      return apiResponse(false, 'UPI ID not found or invalid.');
     }
 
   } catch (error: any) {
     console.error('UPI Verification Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Verification service temporarily unavailable.',
-      unverified: true
-    }, { status: 500 });
+    return apiResponse(false, 'Verification service temporarily unavailable.', null, 500);
   }
 }

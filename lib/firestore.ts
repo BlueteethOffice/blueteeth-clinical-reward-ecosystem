@@ -134,6 +134,7 @@ export const submitNewCase = async (doctorUid: string, caseData: any) => {
       customCaseId, // Save the professional ID
       status: 'Pending', // Force initial status
       points: 0,         // Points must be zero until approved by admin
+      estimatedPoints: caseData.points || 0, // Track expected points for UI
       submittedBy: caseData.submittedBy || 'associate',
       doctorName: caseData.doctorName || 'Practitioner', // DENORMALIZED for speed
       doctorRole: caseData.doctorRole || 'doctor',
@@ -173,13 +174,15 @@ export const approveCase = async (caseId: string, doctorUid: string, points: num
         return { success: true, message: "ALREADY_PROCESSED" };
     }
 
-    // USE POINTS FROM DATABASE (NOT CLIENT) TO PREVENT TAMPERING
-    const finalPoints = Number(caseData.points || 0);
-
+    // [FIX] Update points in the case document from the admin input
     await updateDoc(caseRef, {
       status: 'Approved',
+      points: Number(points), 
       approvedAt: serverTimestamp(),
     });
+
+    // Use the argument points for crediting
+    const finalPoints = Number(points);
 
     // Use setDoc with merge to create user document if it doesn't exist (UPSERT)
     await setDoc(doctorRef, {
@@ -590,7 +593,7 @@ export const fetchAdminCases = async (status: 'Pending' | 'Approved' | 'Assigned
     if (status === 'Assigned') {
       casesQuery = query(
         collection(db as any, 'cases'),
-        where('status', 'in', ['Assigned', 'In Progress', 'Submitted'])
+        where('status', 'in', ['Assigned', 'In Progress'])
       );
     } else {
       casesQuery = query(
@@ -647,7 +650,7 @@ export const listenAdminCases = (
   
   let casesQuery;
   if (status === 'Assigned') {
-    casesQuery = query(collection(db, 'cases'), where('status', 'in', ['Assigned', 'In Progress', 'Submitted']));
+    casesQuery = query(collection(db, 'cases'), where('status', 'in', ['Assigned', 'In Progress']));
   } else if (status === 'All') {
     casesQuery = collection(db, 'cases');
   } else {
@@ -785,7 +788,75 @@ export const rejectCase = async (caseId: string) => {
   }
 };
 
-// 9a. Admin: Fetch Global Stats - Enhanced with Clinical Baseline
+// 9a. Admin: Listen to Global Stats Real-time
+export const listenAdminStats = (callback: (stats: any) => void) => {
+  if (!db) return () => {};
+
+  const doctorsQuery = query(collection(db, 'users'), where('role', 'in', ['doctor', 'associate']));
+  const cliniciansQuery = query(collection(db, 'users'), where('role', '==', 'clinician'));
+  const pendingCasesQuery = query(collection(db, 'cases'), where('status', '==', 'Pending'));
+  const allApprovedQuery = query(collection(db, 'cases'), where('status', '==', 'Approved'));
+
+  let statsData = {
+    totalDoctors: 0,
+    totalClinicians: 0,
+    pendingReviews: 0,
+    approvedCases: 0,
+    totalRewarded: 0,
+    totalPoints: 0
+  };
+
+  let exchangeRate = 50;
+
+  const updateAndCallback = () => {
+    callback({
+      ...statsData,
+      totalRewarded: statsData.totalPoints * exchangeRate,
+      totalPoints: statsData.totalPoints
+    });
+  };
+
+  // Listen to Global Settings for Exchange Rate
+  const unsubSettings = onSnapshot(doc(db, 'settings', 'global'), (snap) => {
+    if (snap.exists()) {
+      exchangeRate = snap.data().exchangeRate || 50;
+      updateAndCallback();
+    }
+  });
+
+  const unsubDoctors = onSnapshot(doctorsQuery, (snap) => {
+    statsData.totalDoctors = snap.size;
+    updateAndCallback();
+  });
+
+  const unsubClinicians = onSnapshot(cliniciansQuery, (snap) => {
+    statsData.totalClinicians = snap.size;
+    updateAndCallback();
+  });
+
+  const unsubPending = onSnapshot(pendingCasesQuery, (snap) => {
+    statsData.pendingReviews = snap.size;
+    updateAndCallback();
+  });
+
+  const unsubApproved = onSnapshot(allApprovedQuery, (snap) => {
+    statsData.approvedCases = snap.size;
+    let points = 0;
+    snap.forEach(d => { points += (d.data().points || 0); });
+    statsData.totalPoints = points;
+    updateAndCallback();
+  });
+
+  return () => {
+    unsubSettings();
+    unsubDoctors();
+    unsubClinicians();
+    unsubPending();
+    unsubApproved();
+  };
+};
+
+// 9b. Admin: Fetch Global Stats - Enhanced with Clinical Baseline
 export const fetchAdminStats = async () => {
   try {
     const doctorsQuery = query(collection(db, 'users'), where('role', 'in', ['doctor', 'associate']));

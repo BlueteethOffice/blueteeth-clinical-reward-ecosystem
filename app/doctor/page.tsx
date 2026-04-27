@@ -4,7 +4,7 @@ import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Coins, Plus, Clock, CheckCircle2, XCircle, TrendingUp, Activity, ShieldAlert, ShieldCheck, Wifi, WifiOff, ChevronLeft, ChevronRight, X, User, Phone, Stethoscope, Calendar, Hash, BadgeCheck, AlertCircle, Banknote, ArrowRight, Monitor, FileText, Users } from 'lucide-react';
+import { Coins, Plus, Clock, CheckCircle2, XCircle, TrendingUp, Activity, ShieldAlert, ShieldCheck, Wifi, WifiOff, ChevronLeft, ChevronRight, X, User, Phone, Stethoscope, Calendar, Hash, BadgeCheck, AlertCircle, Banknote, ArrowRight, Monitor, FileText, Users, FileCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -36,6 +36,19 @@ const getCaseBorderClass = (id: string) => {
   const COLORS = ['border-t-blue-500', 'border-t-rose-500', 'border-t-emerald-500', 'border-t-amber-500', 'border-t-violet-500', 'border-t-cyan-500', 'border-t-indigo-500', 'border-t-pink-500'];
   const hash = (id || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return COLORS[Math.abs(hash) % COLORS.length];
+};
+
+const TREATMENT_POINTS: Record<string, number> = {
+  'Dental Implant': 10,
+  'Root Canal (RCT)': 5,
+  'Prophylaxis': 3,
+  'Crown & Bridge': 4,
+  'Orthodontics': 8,
+  'Complete Denture': 6,
+  'Scaling & Polishing': 2,
+  'Tooth Extraction': 2,
+  'Teeth Whitening': 3,
+  'Composite Filling': 1.5
 };
 
 export default function AssociateDashboard() {
@@ -112,9 +125,17 @@ export default function AssociateDashboard() {
 
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        let actualPoints = Number(data.points) || 0;
+        
+        // [FIX] Retroactive fallback for cases approved before estimatedPoints was introduced
+        if (data.status === 'Approved' && actualPoints === 0 && (data.treatmentName || data.treatment)) {
+           actualPoints = TREATMENT_POINTS[data.treatmentName] || TREATMENT_POINTS[data.treatment] || 8;
+        }
+
         const caseItem = {
           id: docSnap.id,
           ...data,
+          points: actualPoints,
           date: data.submittedAt?.toDate()?.toLocaleDateString('en-US', {
             month: 'short', day: 'numeric', year: 'numeric'
           }) || 'Recently'
@@ -124,14 +145,14 @@ export default function AssociateDashboard() {
         const isAdminEntry = String(data.patientName || '').trim().toUpperCase() === 'ADMIN MANUAL ADJUSTMENT';
         if (!isAdminEntry) {
           if (data.status === 'Approved') {
-            totalP += (Number(data.points) || 0) + (Number(data.bonusPoints) || 0);
+            totalP += actualPoints + (Number(data.bonusPoints) || 0);
             const approvedAt = data.approvedAt?.toDate();
             if (approvedAt && approvedAt >= today) approvedT++;
           } else if (data.status === 'Pending') {
             pendingC++;
           }
         } else {
-          totalP += Number(data.points) || 0;
+          totalP += actualPoints;
         }
       });
 
@@ -394,8 +415,8 @@ export default function AssociateDashboard() {
                         {c.date}
                       </div>
                       <div className="text-right">
-                        <span className="text-xl font-black text-slate-900 tracking-tighter">+{c.points || 0}</span>
-                        <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest ml-1">B-PTS</span>
+                        <span className="text-xl font-black text-slate-900 tracking-tighter">+{c.status === 'Approved' ? (c.points || 0) : (c.estimatedPoints || TREATMENT_POINTS[c.treatmentName] || TREATMENT_POINTS[c.treatment] || 0)}</span>
+                        <span className="text-[8px] font-black text-blue-500 uppercase tracking-widest ml-1">{c.status === 'Approved' ? 'B-PTS' : 'EST. PTS'}</span>
                       </div>
                     </div>
                   </div>
@@ -441,8 +462,8 @@ export default function AssociateDashboard() {
                             }`}>{c.status}</span>
                         </td>
                         <td className="px-8 py-3.5 text-right">
-                          <span className="text-base font-black text-slate-900 tracking-tighter">+{c.points || 0}</span>
-                          <div className="text-[8px] font-black text-blue-500 uppercase tracking-widest ml-1 inline-block">B-PTS</div>
+                          <span className="text-base font-black text-slate-900 tracking-tighter">+{c.status === 'Approved' ? (c.points || 0) : (c.estimatedPoints || TREATMENT_POINTS[c.treatmentName] || TREATMENT_POINTS[c.treatment] || 0)}</span>
+                          <div className="text-[8px] font-black text-blue-500 uppercase tracking-widest ml-1 inline-block">{c.status === 'Approved' ? 'B-PTS' : 'EST. PTS'}</div>
                         </td>
                       </tr>
                     ))
@@ -517,7 +538,7 @@ export default function AssociateDashboard() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                   <div className="flex items-center justify-between relative z-10">
                     <div>
-                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-white/80 mb-0.5 opacity-90">Case Details</p>
+                      <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-white/70 mb-0.5">Clinical Registry</p>
                       <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none uppercase">{selectedCase.patientName}</h2>
                     </div>
                     <button
@@ -529,7 +550,9 @@ export default function AssociateDashboard() {
                   </div>
 
                   <div className="mt-2.5 sm:mt-3 flex items-center gap-3 relative z-10">
-                    <span className="inline-flex items-center gap-2 bg-white/25 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-[4px] border border-white/10">
+                    <span className={`inline-flex items-center gap-2 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-black uppercase tracking-widest px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-[4px] border ${
+                      selectedCase.status === 'Approved' ? 'bg-white/30 border-white/40 ring-1 ring-white/20' : 'bg-black/20 border-white/10'
+                    }`}>
                       {selectedCase.status === 'Approved' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                       {selectedCase.status}
                     </span>
@@ -541,12 +564,12 @@ export default function AssociateDashboard() {
                 <div className="flex-1 overflow-y-auto scrollbar-hide px-5 sm:px-8 py-3 sm:py-4 space-y-2 sm:space-y-3">
                   <div className="flex gap-2 sm:gap-4">
                     <div className="flex-1 bg-blue-50/50 rounded-[4px] px-4 sm:px-5 py-2 sm:py-3 border border-blue-100 flex items-center justify-between group hover:bg-blue-50 transition-colors">
-                      <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-blue-500">B-Points</p>
-                      <p className="text-base sm:text-2xl font-black text-blue-700 tracking-tighter">+{selectedCase.points || 0} <span className="text-[7px] sm:text-[10px] font-black text-blue-400">PTS</span></p>
+                      <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-blue-500">{selectedCase.status === 'Approved' ? 'B-Points' : 'Est. Points'}</p>
+                      <p className="text-base sm:text-2xl font-black text-blue-700 tracking-tighter">+{selectedCase.status === 'Approved' ? (selectedCase.points || 0) : (selectedCase.estimatedPoints || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0)} <span className="text-[7px] sm:text-[10px] font-black text-blue-400">PTS</span></p>
                     </div>
                     <div className="flex-1 bg-emerald-50/50 rounded-[4px] px-4 sm:px-5 py-2 sm:py-3 border border-emerald-100 flex items-center justify-between group hover:bg-emerald-50 transition-colors">
                       <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-emerald-600">Points Value</p>
-                      <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter">₹{((selectedCase.points || 0) * exchangeRate).toLocaleString()}</p>
+                      <p className="text-base sm:text-2xl font-black text-emerald-700 tracking-tighter">₹{((selectedCase.status === 'Approved' ? (selectedCase.points || 0) : (selectedCase.estimatedPoints || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0)) * exchangeRate).toLocaleString()}</p>
                     </div>
                   </div>
 
@@ -554,10 +577,13 @@ export default function AssociateDashboard() {
                     {[
                       {icon: User,        label: 'Patient',    value: selectedCase.patientName || '—', color: 'text-blue-500', bg: 'bg-blue-50' },
                       {icon: Phone,       label: 'Mobile',     value: selectedCase.patientMobile || '—', color: 'text-emerald-500', bg: 'bg-emerald-50' },
-                      {icon: Users,       label: 'Treatment',  value: selectedCase.treatment || '—', color: 'text-sky-500', bg: 'bg-sky-50' },
+                      {icon: Banknote,    label: 'Charge',     value: selectedCase.treatmentCharge ? `₹${Number(selectedCase.treatmentCharge).toLocaleString()}` : '—', color: 'text-rose-500', bg: 'bg-rose-50' },
+                      {icon: Users,       label: 'Treatment',  value: selectedCase.treatmentName || selectedCase.treatment || '—', color: 'text-sky-500', bg: 'bg-sky-50' },
                       {icon: Monitor,     label: 'Tooth No.',  value: selectedCase.toothNumber || '—', color: 'text-amber-500', bg: 'bg-amber-50' },
                       {icon: Calendar,    label: 'Submitted',  value: selectedCase.date || '—', color: 'text-indigo-500', bg: 'bg-indigo-50' },
                       { icon: Hash,        label: 'Case ID',    value: selectedCase.id ? selectedCase.id.slice(0, 8).toUpperCase() : '—', color: 'text-slate-700', bg: 'bg-slate-50' },
+                      ...(selectedCase.solvedByName ? [{ icon: Stethoscope, label: 'Solved By', value: selectedCase.solvedByName, color: 'text-purple-600', bg: 'bg-purple-50' }] : []),
+                      ...(selectedCase.solvedByRegNo ? [{ icon: BadgeCheck, label: 'Reg No.', value: selectedCase.solvedByRegNo, color: 'text-emerald-600', bg: 'bg-emerald-50' }] : []),
                     ].map((item) => (
                       <div key={item.label} className="flex items-center gap-3 sm:gap-4 py-1 sm:py-2 group">
                         <div className={`h-8 w-8 sm:h-10 sm:w-10 rounded-[4px] ${item.bg} flex items-center justify-center shrink-0 border border-black/5 group-hover:scale-110 transition-transform shadow-sm`}>
@@ -573,7 +599,7 @@ export default function AssociateDashboard() {
 
                   {selectedCase.evidenceUrl && (
                     <div className="pt-0.5 sm:pt-1">
-                       <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Evidence Proof</p>
+                       <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-600 mb-1.5 ml-1">Initial Referral Proof</p>
                       <div 
                         onClick={() => {
                           const url = selectedCase.evidenceUrl;
@@ -602,14 +628,13 @@ export default function AssociateDashboard() {
                               window.open(url, '_blank');
                             }
                           } else {
-                            // 🧬 OPTIMIZED: ONE-TIME IMAGE LOAD IN NEW TAB
                             const newTab = window.open();
                             if (newTab) {
                               newTab.document.write(`
                                 <html>
-                                  <head><title>Clinical Proof - Identity Verified</title></head>
+                                  <head><title>Initial Proof - Blueteeth</title></head>
                                   <body style="margin:0; background:#0b0e14; display:flex; align-items:center; justify-content:center; min-height:100vh;">
-                                    <img src="${url}" style="max-width:100%; max-height:100vh; object-fit:contain; shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                                    <img src="${url}" style="max-width:100%; max-height:100vh; object-fit:contain;">
                                   </body>
                                 </html>
                               `);
@@ -623,12 +648,12 @@ export default function AssociateDashboard() {
                            String(selectedCase.evidenceUrl).toLowerCase().includes('application/pdf')) ? (
                            <div className="w-full flex items-center justify-between gap-4">
                              <div className="flex items-center gap-3">
-                               <div className="h-10 w-10 bg-rose-50 rounded-[4px] flex items-center justify-center text-rose-600 border border-rose-100 group-hover:scale-110 transition-transform">
+                               <div className="h-10 w-10 bg-blue-50 rounded-[4px] flex items-center justify-center text-blue-600 border border-blue-100 group-hover:scale-110 transition-transform">
                                  <FileText size={20} />
                                </div>
                                <div>
-                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none group-hover:text-blue-600 transition-colors">Treatment Proof</p>
-                                 <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Medical Document Attached</p>
+                                 <p className="text-[10px] font-black text-slate-700 uppercase tracking-tight leading-none group-hover:text-blue-600 transition-colors">Rx / Proof</p>
+                                 <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest mt-1">Initial Attachment</p>
                                </div>
                              </div>
                              <div className="h-9 px-4 bg-slate-900 group-hover:bg-blue-600 text-white rounded-[4px] flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg shadow-slate-200 transition-all">
@@ -639,6 +664,80 @@ export default function AssociateDashboard() {
                            <img
                              src={selectedCase.evidenceUrl}
                              alt="Clinical evidence"
+                             className="w-full h-auto max-h-24 sm:max-h-32 object-contain hover:scale-105 transition-all duration-500"
+                           />
+                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedCase.finalProof && (
+                    <div className="pt-2">
+                       <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-1.5 ml-1">Clinician Final Proof</p>
+                      <div 
+                        onClick={() => {
+                          const url = selectedCase.finalProof;
+                          if (!url) return;
+                          
+                          if (url.startsWith('data:application/pdf') || url.toLowerCase().includes('.pdf')) {
+                            const toastId = toast.loading("Opening clinician PDF...");
+                            try {
+                               if (url.startsWith('data:application/pdf')) {
+                                const base64Data = url.split(',')[1];
+                                const byteCharacters = atob(base64Data);
+                                const byteNumbers = new Array(byteCharacters.length);
+                                for (let i = 0; i < byteCharacters.length; i++) {
+                                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                                }
+                                const byteArray = new Uint8Array(byteNumbers);
+                                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                                const blobUrl = URL.createObjectURL(blob);
+                                window.open(blobUrl, '_blank');
+                              } else {
+                                window.open(url, '_blank');
+                              }
+                              toast.success("Document opened.", { id: toastId });
+                            } catch (e) {
+                              toast.error("Format error.", { id: toastId });
+                              window.open(url, '_blank');
+                            }
+                          } else {
+                            const newTab = window.open();
+                            if (newTab) {
+                              newTab.document.write(`
+                                <html>
+                                  <head><title>Final Treatment Proof</title></head>
+                                  <body style="margin:0; background:#0b0e14; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+                                    <img src="${url}" style="max-width:100%; max-height:100vh; object-fit:contain; border: 4px solid #10b981;">
+                                  </body>
+                                </html>
+                              `);
+                              newTab.document.close();
+                            }
+                          }
+                        }}
+                        className="relative group bg-emerald-50 rounded-[4px] border-2 border-emerald-100 overflow-hidden min-h-[50px] sm:min-h-[70px] flex items-center justify-center p-2 sm:p-4 cursor-pointer hover:border-emerald-400 hover:bg-emerald-100 transition-all active:scale-[0.99]"
+                      >
+                         {(String(selectedCase.finalProof).toLowerCase().includes('.pdf') || 
+                           String(selectedCase.finalProof).toLowerCase().includes('application/pdf')) ? (
+                           <div className="w-full flex items-center justify-between gap-4">
+                             <div className="flex items-center gap-3">
+                               <div className="h-10 w-10 bg-emerald-600 rounded-[4px] flex items-center justify-center text-white border border-emerald-500 group-hover:scale-110 transition-transform">
+                                 <FileCheck size={20} />
+                               </div>
+                               <div>
+                                 <p className="text-[10px] font-black text-emerald-800 uppercase tracking-tight leading-none group-hover:text-emerald-900 transition-colors">Final Report</p>
+                                 <p className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Verified Resolution</p>
+                               </div>
+                             </div>
+                             <div className="h-9 px-4 bg-emerald-700 group-hover:bg-emerald-800 text-white rounded-[4px] flex items-center justify-center text-[9px] font-black uppercase tracking-[0.2em] shadow-lg transition-all">
+                               View Proof
+                             </div>
+                           </div>
+                         ) : (
+                           <img
+                             src={selectedCase.finalProof}
+                             alt="Final resolution proof"
                              className="w-full h-auto max-h-24 sm:max-h-32 object-contain hover:scale-105 transition-all duration-500"
                            />
                          )}

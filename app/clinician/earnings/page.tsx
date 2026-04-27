@@ -59,6 +59,8 @@ export default function ClinicianEarningsPage() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [panFile, setPanFile] = useState<File | null>(null);
   const [isEditingKyc, setIsEditingKyc] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const [minPayout, setMinPayout] = useState(500);
 
@@ -225,6 +227,59 @@ export default function ClinicianEarningsPage() {
     }
   };
 
+  const handlePanValidation = async (file: File) => {
+    setIsScanning(true);
+    setScanResult(null);
+    const toastId = toast.loading("AI NODE: Scanning Identity Document...");
+    
+    try {
+      // 1. Ensure Tesseract is loaded via CDN
+      if (!(window as any).Tesseract) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+          script.onload = resolve;
+          script.onerror = () => reject(new Error("Failed to load AI Engine"));
+          document.head.appendChild(script);
+        });
+      }
+
+      const Tesseract = (window as any).Tesseract;
+      
+      // 2. Perform OCR
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: (m: any) => console.log(m)
+      });
+      
+      const text = result.data.text.toUpperCase();
+      // Regex for Indian PAN: 5 Letters, 4 Digits, 1 Letter
+      const panRegex = /[A-Z]{5}[0-9]{4}[A-Z]{1}/;
+      const match = text.match(panRegex);
+      
+      if (match) {
+        const detectedPan = match[0].trim();
+        const inputPan = (kycData.panNo || "").trim();
+        
+        if (inputPan && inputPan !== detectedPan) {
+          setScanResult({ success: false, message: `Mismatch: Detected ${detectedPan}` });
+          toast.error(`AI Alert: Image PAN (${detectedPan}) does not match input!`, { id: toastId });
+        } else {
+          setScanResult({ success: true, message: "AI VERIFIED: Identity Match Found" });
+          toast.success("AI: Identity Verified with Clinical Registry", { id: toastId });
+          if (!kycData.panNo) setKycData(prev => ({ ...prev, panNo: detectedPan }));
+        }
+      } else {
+        setScanResult({ success: false, message: "OCR Failed: No PAN pattern detected" });
+        toast.error("AI Alert: Could not detect clear PAN pattern in image.", { id: toastId });
+      }
+    } catch (err) {
+      console.error("OCR_ERR:", err);
+      toast.error("AI Node Offline: Manual Verification Required", { id: toastId });
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   const handleSendKycOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.email) {
@@ -239,6 +294,7 @@ export default function ClinicianEarningsPage() {
     const { sendEmail } = await import('@/lib/email');
     const res = await sendEmail({
       to_email: user.email,
+      to_name: (userData as any)?.name || 'Practitioner',
       subject: 'SECURITY PASSCODE: Payout Node Verification',
       message: 'Use this 6-digit passcode to verify your payout node and financial credentials.',
       passcode: newOtp
@@ -248,7 +304,7 @@ export default function ClinicianEarningsPage() {
       setShowOtpModal(true);
       toast.success("Security Passcode Dispatched to Email");
     } else {
-      toast.error("Dispatch Failed. Check network connection.");
+      toast.error(res.error || "Dispatch Failed. Check network connection.");
     }
     setIsSubmitting(false);
   };
@@ -266,7 +322,23 @@ export default function ClinicianEarningsPage() {
       let finalPanPhotoURL = kycData.panPhotoURL;
       
       if (panFile) {
-        const photoResult = await uploadProfileImage(user!.uid, kycData.panPhotoURL, 'kyc_docs');
+        // Compress image before upload for faster save
+        const compressedDataUrl = await new Promise<string>((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX = 800;
+            let { width, height } = img;
+            if (width > MAX) { height = (height * MAX) / width; width = MAX; }
+            if (height > MAX) { width = (width * MAX) / height; height = MAX; }
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          };
+          img.src = kycData.panPhotoURL;
+        });
+        const photoResult = await uploadProfileImage(user!.uid, compressedDataUrl, 'kyc_docs');
         if (photoResult.success && photoResult.url) finalPanPhotoURL = photoResult.url;
       }
 
@@ -279,12 +351,10 @@ export default function ClinicianEarningsPage() {
       
       toast.success("KYC Credentials Secured & Synced!");
       
-      // Close modals
       setShowOtpModal(false);
       setIsKycModalOpen(false);
       setIsEditingKyc(false);
 
-      // Force a reload after a short delay to sync the Auth Context
       setTimeout(() => {
         window.location.reload();
       }, 800);
@@ -498,12 +568,19 @@ export default function ClinicianEarningsPage() {
                                      {item.patientName?.[0]?.toUpperCase() || 'C'}
                                   </div>
                                   <div className="flex flex-col items-end gap-1.5">
-                                    <span className={`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-1.5 ${
-                                       item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-blue-50 text-blue-600 border-blue-200'
-                                    }`}>
-                                       {item.status === 'Approved' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
-                                       {item.status === 'Approved' ? 'Verified' : item.status}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                       {item.doctorUid === user?.uid && (
+                                          <span className="px-3 py-1 bg-indigo-600 text-white rounded-md text-[9px] font-black uppercase tracking-widest shadow-lg shadow-indigo-200 border border-indigo-500 animate-in fade-in zoom-in duration-300 whitespace-nowrap">
+                                             SELF CASE
+                                          </span>
+                                       )}
+                                       <span className={`px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest border shadow-sm flex items-center gap-1.5 ${
+                                          item.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-blue-50 text-blue-600 border-blue-200'
+                                       }`}>
+                                          {item.status === 'Approved' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
+                                          {item.status === 'Approved' ? 'Verified' : item.status}
+                                       </span>
+                                    </div>
                                   </div>
                                </div>
                                <div className="space-y-1">
@@ -795,7 +872,8 @@ export default function ClinicianEarningsPage() {
                                   <input 
                                     type={isEditingKyc ? "text" : "password"} 
                                     required disabled={!isEditingKyc}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
                                     value={kycData.bankAccount} onChange={e => setKycData({...kycData, bankAccount: e.target.value})}
                                     placeholder="•••• •••• ••••"
                                   />
@@ -808,7 +886,8 @@ export default function ClinicianEarningsPage() {
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
                                     value={kycData.ifsc} onChange={e => setKycData({...kycData, ifsc: e.target.value.toUpperCase()})}
                                     placeholder="SBIN000XXXX"
                                   />
@@ -821,7 +900,8 @@ export default function ClinicianEarningsPage() {
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
                                     value={kycData.upiId} onChange={e => setKycData({...kycData, upiId: e.target.value})}
                                     placeholder="dr.specialist@upi"
                                   />
@@ -840,7 +920,8 @@ export default function ClinicianEarningsPage() {
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc} maxLength={12}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
                                     value={kycData.aadhaarNo} onChange={e => setKycData({...kycData, aadhaarNo: e.target.value.replace(/\D/g, '')})}
                                     placeholder="12-digit number"
                                   />
@@ -853,7 +934,8 @@ export default function ClinicianEarningsPage() {
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc} maxLength={10}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
                                     value={kycData.panNo} onChange={e => setKycData({...kycData, panNo: e.target.value.toUpperCase()})}
                                     placeholder="ABCDE1234F"
                                   />
@@ -863,21 +945,31 @@ export default function ClinicianEarningsPage() {
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">PAN Card Image</label>
                                <div className="relative">
-                                  <input type="file" disabled={!isEditingKyc} accept="image/*" className="hidden" id="panUploadE" onChange={e => {
+                                  <input type="file" disabled={!isEditingKyc || isScanning} accept="image/*" className="hidden" id="panUploadE" onChange={e => {
                                      const file = e.target.files?.[0];
                                      if (file) {
+                                        setScanResult(null); // Clear previous result immediately
                                         setPanFile(file);
                                         const reader = new FileReader();
                                         reader.onloadend = () => setKycData({...kycData, panPhotoURL: reader.result as string});
                                         reader.readAsDataURL(file);
+                                        handlePanValidation(file);
+                                        e.target.value = ''; // Reset input to allow re-uploading same file
                                      }
                                   }} />
                                   <div 
-                                    onClick={() => isEditingKyc && document.getElementById('panUploadE')?.click()}
-                                    className={`w-full h-12 rounded-lg px-5 flex items-center justify-between cursor-pointer border ${kycData.panPhotoURL ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-200 bg-white'} transition-all`}
+                                    onClick={() => isEditingKyc && !isScanning && document.getElementById('panUploadE')?.click()}
+                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
+                                    className={`w-full h-12 rounded-lg px-5 flex items-center justify-between border ${isScanning ? 'border-blue-400 bg-blue-50 animate-pulse' : kycData.panPhotoURL ? (scanResult?.success ? 'border-emerald-500 bg-emerald-50/30' : scanResult ? 'border-rose-500 bg-rose-50/30' : 'border-emerald-500 bg-emerald-50/30') : 'border-slate-200 bg-white'} transition-all ${isEditingKyc && !isScanning ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                   >
-                                     <span className="text-[10px] font-black text-slate-400 uppercase">{kycData.panPhotoURL ? "Document Captured" : "Upload PAN Image"}</span>
-                                     <ShieldCheck size={16} className={kycData.panPhotoURL ? "text-emerald-500" : "text-slate-300"} />
+                                     <span className={`text-[10px] font-black uppercase ${isScanning ? 'text-blue-600' : scanResult?.success ? 'text-emerald-600' : scanResult ? 'text-rose-600' : 'text-slate-400'}`}>
+                                       {isScanning ? "Scanning Identity Node..." : scanResult ? scanResult.message : kycData.panPhotoURL ? "Document Captured" : "Upload PAN Image"}
+                                     </span>
+                                     {isScanning ? (
+                                       <div className="h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                                     ) : (
+                                       <ShieldCheck size={16} className={kycData.panPhotoURL ? (scanResult?.success ? "text-emerald-500" : scanResult ? "text-rose-500" : "text-emerald-500") : "text-slate-300"} />
+                                     )}
                                   </div>
                                </div>
                             </div>

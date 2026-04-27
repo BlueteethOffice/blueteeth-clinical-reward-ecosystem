@@ -55,8 +55,20 @@ async function manageAdmin(email, password, name) {
 }
 
 async function run() {
-    await manageAdmin('master_core_01@blueteeth.in', 'Niteen@102', 'Master Admin Niteen02');
-    await manageAdmin('backup_core_02@blueteeth.in', 'Niteen@0987', 'Backup Admin');
+    // [SECURITY HARDENING] Hardcoded credentials removed. Use environment variables.
+    const admin1Email = process.env.MASTER_ADMIN_EMAIL || 'admin@blueteeth.in';
+    const admin1Pass = process.env.MASTER_ADMIN_PASSWORD;
+    const admin2Email = process.env.BACKUP_ADMIN_EMAIL;
+    const admin2Pass = process.env.BACKUP_ADMIN_PASSWORD;
+
+    if (admin1Email && admin1Pass) {
+        await manageAdmin(admin1Email, admin1Pass, 'Master Admin Node');
+    }
+    
+    if (admin2Email && admin2Pass) {
+        await manageAdmin(admin2Email, admin2Pass, 'Backup Admin Node');
+    }
+
     console.log("\n=> ALL SECURITY INJECTIONS COMPLETED.");
     process.exit(0);
 }

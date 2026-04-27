@@ -2,31 +2,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Check if the user is authenticated
+    // Core Verification Functions
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Role + Email Based Dual-Verification (Security Core)
     function isAdmin() {
-      let masterEmails = [
-        'admin@blueteeth.in', 
-        'nitinchauhan378@gmail.com', 
-        'niteen02@gmail.com', 
-        'niteen02', 
-        'support@blueteeth.in', 
-        'master_core_01@blueteeth.in', 
-        'backup_core_02@blueteeth.in'
-      ];
       return isSignedIn() && 
-             (request.auth.token.email.lower() in masterEmails || 
-              (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
     // 1. Users Collection (Secure Cloud Nodes)
     match /users/{userId} {
-      allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      // Users can only read their own profile; Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // [SECURITY FIX]: Prevent self-promotion to admin or balance tampering
+      allow create: if isSignedIn() && request.auth.uid == userId && 
+                    request.resource.data.role in ['doctor', 'associate', 'clinician', 'specialist'] &&
+                    (request.resource.data.walletBalance == 0 || !('walletBalance' in request.resource.data)) &&
+                    (request.resource.data.totalPoints == 0 || !('totalPoints' in request.resource.data));
+      
+      allow update: if isAdmin() || (
+        isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'walletBalance', 'totalPoints', 'points', 'isVerified', 'pending', 'email'])
+      );
+
+      allow delete: if isAdmin();
     }
 
     // 1b. Legacy Doctors Collection
@@ -65,9 +72,8 @@ service cloud.firestore {
     }
 
     match /withdrawals/{id} {
-      allow read: if isSignedIn() && (resource.data.doctorUid == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && 
-        request.resource.data.doctorUid == request.auth.uid &&
+      allow read: if isOwner(resource.data.doctorUid) || isAdmin();
+      allow create: if isOwner(request.resource.data.doctorUid) &&
         request.resource.data.status == 'Pending' &&
         hasSufficientBalance(request.resource.data.amount);
       allow update: if isAdmin();
@@ -75,9 +81,8 @@ service cloud.firestore {
     }
     
     match /redemptions/{id} {
-      allow read: if isSignedIn() && (resource.data.doctorUid == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && 
-        request.resource.data.doctorUid == request.auth.uid &&
+      allow read: if isOwner(resource.data.doctorUid) || isAdmin();
+      allow create: if isOwner(request.resource.data.doctorUid) &&
         request.resource.data.status == 'Pending' &&
         hasSufficientBalance(request.resource.data.amount);
       allow update: if isAdmin();
@@ -92,10 +97,21 @@ service cloud.firestore {
 
     // 5. Notifications Collection
     match /notifications/{notifId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.userId == 'admin');
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if false;
+      allow read: if isOwner(resource.data.userId) || resource.data.userId == 'admin';
+      // Authenticated users can create notifications for themselves or for 'admin'
+      allow create: if isSignedIn() && (
+        request.resource.data.userId == request.auth.uid || 
+        request.resource.data.userId == 'admin'
+      );
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isAdmin();
+    }
+
+    // 6. Logs Collection (System Activity)
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn(); // Allow apps to log events
+      allow update, delete: if false;
     }
 
     // Global Deny catch-all

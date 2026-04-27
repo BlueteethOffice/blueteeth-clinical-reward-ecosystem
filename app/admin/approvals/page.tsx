@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { 
   CheckCircle, XCircle, Eye, User, Phone, MapPin, 
   Search, FileCheck, Image as ImageIcon, ShieldCheck, FileText,
-  BadgeCheck, ArrowRight, Zap, ShieldAlert, Activity, Printer, X
+  BadgeCheck, ArrowRight, Zap, ShieldAlert, Activity, Printer, X, Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -16,6 +16,19 @@ import { Suspense } from 'react';
 
 import { listenAdminCases, approveCase, rejectCase } from '@/lib/firestore';
 import { sendEmail } from '@/lib/email';
+
+const TREATMENT_POINTS: Record<string, number> = {
+  'Dental Implant': 10,
+  'Root Canal (RCT)': 5,
+  'Prophylaxis': 3,
+  'Crown & Bridge': 4,
+  'Orthodontics': 8,
+  'Complete Denture': 6,
+  'Scaling & Polishing': 2,
+  'Tooth Extraction': 2,
+  'Teeth Whitening': 3,
+  'Composite Filling': 1.5
+};
 
 function FinalApprovalsContent() {
   const searchParams = useSearchParams();
@@ -64,7 +77,12 @@ function FinalApprovalsContent() {
     setProcessing(true);
 
     try {
-      const result = await approveCase(caseId, caseToProcess.doctorUid, caseToProcess.points);
+      const fallbackPoints = TREATMENT_POINTS[caseToProcess.treatmentName] || TREATMENT_POINTS[caseToProcess.treatment] || 8;
+      const basePoints = caseToProcess.points || caseToProcess.estimatedPoints || fallbackPoints;
+      const bonusPoints = Number(caseToProcess.bonusPoints || 0);
+      const finalPoints = basePoints + bonusPoints;
+
+      const result = await approveCase(caseId, caseToProcess.doctorUid, finalPoints);
 
       if (result.success) {
         toast.success(`AUTHORIZED: Settlement released successfully.`, { id: tid });
@@ -386,17 +404,15 @@ Blueteeth Clinical Network`
 
                               <div className="grid grid-cols-2 gap-2">
                                   <div className="p-2 bg-gradient-to-br from-violet-500/10 to-purple-500/5 backdrop-blur-sm rounded-[4px] border border-violet-200/60">
-                                     <p className="text-[7px] font-black text-violet-500 uppercase mb-0.5 tracking-widest">
-                                        {c.doctorRole === 'associate' ? 'Associate' : (c.doctorRole === 'clinician' ? 'Clinician' : 'Referred By')}
+                                     <p className="text-[7px] font-black text-violet-500 uppercase mb-0.5 tracking-widest leading-none">
+                                        {c.doctorRole === 'associate' ? 'Associate' : 'Submitter'}
                                      </p>
                                      <p className="text-[9px] font-black text-slate-900 truncate">{c.doctorName || 'N/A'}</p>
                                   </div>
                                   <div className="p-2 bg-gradient-to-br from-cyan-500/10 to-blue-500/5 backdrop-blur-sm rounded-[4px] border border-cyan-200/60">
-                                     <p className="text-[7px] font-black text-cyan-600 uppercase mb-0.5 tracking-widest">Specialist</p>
-                                     <p className="text-[9px] font-black text-slate-900 truncate">
-                                        {c.clinicianName?.startsWith('Dr.') ? c.clinicianName : (c.clinicianName ? `Dr. ${c.clinicianName}` : 'Not Assigned')}
-                                     </p>
-                                     {c.clinicianRegNo && <p className="text-[6px] font-black text-slate-400 uppercase mt-0.5">Reg: {c.clinicianRegNo}</p>}
+                                     <p className="text-[7px] font-black text-cyan-600 uppercase mb-0.5 tracking-widest leading-none">Charge & Reward</p>
+                                     <p className="text-[9px] font-black text-emerald-600 truncate">₹{Number(c.treatmentCharge || 0).toLocaleString()}</p>
+                                     <p className="text-[8px] font-black text-blue-600 mt-0.5">+{Number(c.points || 0).toFixed(1)} Pts {c.bonusPoints > 0 && <span className="text-amber-500">+{c.bonusPoints}B</span>}</p>
                                   </div>
                               </div>
 
@@ -532,29 +548,44 @@ Blueteeth Clinical Network`
                    </button>
                 </div>
 
-                <div className="p-3 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                   {/* Specialist & Treatment Block */}
-                   <div className="flex gap-2">
-                      <div className="flex-1 flex items-center gap-2 p-2 bg-slate-50 rounded-[4px] border-2 border-slate-900">
-                         <div className="h-7 w-7 rounded-[2px] bg-blue-100 flex items-center justify-center text-blue-600">
-                            <Activity size={14} />
-                         </div>
-                         <div className="min-w-0">
-                            <p className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Specialist</p>
-                            <p className="text-[9px] font-black text-slate-900 truncate">
-                               {selectedCase.clinicianName?.startsWith('Dr.') ? selectedCase.clinicianName : `Dr. ${selectedCase.clinicianName || 'N/A'}`}
-                            </p>
-                            {selectedCase.clinicianRegNo && <p className="text-[6px] font-black text-blue-600 uppercase">Reg: {selectedCase.clinicianRegNo}</p>}
+                <div className="p-3 space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                   {/* Primary Identity Row */}
+                   <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-slate-50 rounded-[4px] border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                         <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Source Associate</p>
+                         <div className="flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-[2px] bg-amber-100 flex items-center justify-center text-amber-600 border border-amber-200">
+                               <User size={14} />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-900 truncate">{selectedCase.doctorName || 'Practitioner'}</p>
                          </div>
                       </div>
-                      <div className="flex-1 flex items-center gap-2 p-2 bg-blue-600 rounded-[4px] text-white border-2 border-slate-900 shadow-sm">
-                         <div className="h-7 w-7 rounded-[2px] bg-white/20 flex items-center justify-center">
-                            <ShieldCheck size={14} />
+                      <div className="p-3 bg-slate-50 rounded-[4px] border-2 border-slate-900 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                         <p className="text-[8px] font-black text-blue-700 uppercase tracking-widest mb-1">Technical Specialist</p>
+                         <div className="flex items-center gap-2">
+                            <div className="h-7 w-7 rounded-[2px] bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                               <Activity size={14} />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-900 truncate">{selectedCase.clinicianName || 'Specialist'}</p>
                          </div>
-                         <div className="min-w-0">
-                            <p className="text-[6px] font-black text-blue-100 uppercase tracking-widest">Protocol</p>
-                            <p className="text-[9px] font-black uppercase tracking-tight truncate">{selectedCase.treatment || 'Consultation'}</p>
-                         </div>
+                      </div>
+                   </div>
+
+                   {/* Financial Metrics Deck */}
+                   <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 bg-white rounded-[4px] border-2 border-slate-900 flex flex-col items-center justify-center text-center">
+                         <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest mb-1">Treatment Fee</p>
+                         <p className="text-[11px] font-black text-slate-900 leading-none">₹{Number(selectedCase.treatmentCharge || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="p-3 bg-blue-600 rounded-[4px] border-2 border-slate-900 flex flex-col items-center justify-center text-center shadow-lg">
+                         <p className="text-[6px] font-black text-blue-100 uppercase tracking-widest mb-1">Associate Reward</p>
+                         <p className="text-[11px] font-black text-white leading-none">
+                            {(Number(selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0) + Number(selectedCase.bonusPoints || 0)).toFixed(1)} Pts
+                         </p>
+                      </div>
+                      <div className="p-3 bg-emerald-50 rounded-[4px] border-2 border-slate-900 flex flex-col items-center justify-center text-center">
+                         <p className="text-[7px] font-black text-emerald-700 uppercase tracking-widest mb-1">Specialist Fee</p>
+                         <p className="text-[11px] font-black text-emerald-800 leading-none">₹{Number(selectedCase.clinicianFee || 150).toLocaleString()}</p>
                       </div>
                    </div>
 
@@ -564,28 +595,28 @@ Blueteeth Clinical Network`
                          <div className="h-5 w-5 rounded-[2px] bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
                             <User size={10} />
                          </div>
-                         <div className="min-w-0">
-                            <p className="text-[5px] font-black text-slate-400 uppercase">Patient</p>
-                            <p className="text-[8px] font-black text-slate-900 truncate">{selectedCase.patientName}</p>
-                         </div>
+                          <div className="min-w-0">
+                             <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Patient</p>
+                             <p className="text-[9px] font-black text-slate-900 truncate uppercase">{selectedCase.patientName}</p>
+                          </div>
                       </div>
                       <div className="flex items-center gap-2 p-2 bg-white rounded-[4px] border-2 border-slate-900">
                          <div className="h-5 w-5 rounded-[2px] bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
                             <Phone size={10} />
                          </div>
-                         <div className="min-w-0">
-                            <p className="text-[5px] font-black text-slate-400 uppercase">Contact</p>
-                            <p className="text-[8px] font-black text-slate-900 truncate">{selectedCase.patientMobile || selectedCase.mobile}</p>
-                         </div>
+                          <div className="min-w-0">
+                             <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Contact</p>
+                             <p className="text-[9px] font-black text-slate-900 truncate">{selectedCase.patientMobile || selectedCase.mobile}</p>
+                          </div>
                       </div>
                       <div className="flex items-center gap-2 p-2 bg-white rounded-[4px] border-2 border-slate-900">
                          <div className="h-5 w-5 rounded-[2px] bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100">
                             <MapPin size={10} />
                          </div>
-                         <div className="min-w-0">
-                            <p className="text-[5px] font-black text-slate-400 uppercase">Site</p>
-                            <p className="text-[8px] font-black text-slate-900 truncate">{selectedCase.location || 'N/A'}</p>
-                         </div>
+                          <div className="min-w-0">
+                             <p className="text-[7px] font-black text-slate-600 uppercase tracking-widest">Site</p>
+                             <p className="text-[9px] font-black text-slate-900 truncate uppercase">{selectedCase.location || 'N/A'}</p>
+                          </div>
                       </div>
                    </div>
 

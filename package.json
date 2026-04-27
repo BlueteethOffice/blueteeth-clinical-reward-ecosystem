@@ -15,6 +15,7 @@
     "@types/nodemailer": "^8.0.0",
     "clsx": "latest",
     "firebase": "^10.8.0",
+    "firebase-admin": "^13.8.0",
     "framer-motion": "latest",
     "jspdf": "^4.2.1",
     "lucide-react": "latest",
@@ -25,13 +26,13 @@
     "react-dom": "latest",
     "react-hot-toast": "^2.6.0",
     "resend": "^6.10.0",
-    "tailwind-merge": "latest"
+    "tailwind-merge": "latest",
+    "zod": "^4.3.6"
   },
   "engines": {
     "node": "22.x"
   },
   "devDependencies": {
-
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",

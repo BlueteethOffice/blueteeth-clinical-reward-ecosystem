@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { 
   ShieldCheck, User, Phone, ClipboardList, Calendar, 
   Loader2, Zap, Info, CheckCircle2, ChevronRight, Calculator,
-  Activity, MapPin, FileImage, Trash2, FileText
+  Activity, MapPin, FileImage, Trash2, FileText, DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,6 +43,7 @@ const CLINICIAN_GUIDELINES = [
 export default function ClinicianSubmitCase() {
   const { user, userData } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isTreatmentOpen, setIsTreatmentOpen] = useState(false);
   const [formData, setFormData] = useState({
     patientName: '',
     patientMobile: '',
@@ -50,7 +51,8 @@ export default function ClinicianSubmitCase() {
     caseDate: '',
     notes: '',
     evidenceName: '',
-    location: ''
+    location: '',
+    treatmentCharge: ''
   });
 
   useEffect(() => {
@@ -64,6 +66,8 @@ export default function ClinicianSubmitCase() {
   const [processedEvidence, setProcessedEvidence] = useState<string>('');
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const selectedTreatment = TREATMENTS.find(t => t.id === formData.treatment);
+  const calculatedSettlement = Number(formData.treatmentCharge || 0);
+
 
   const processFile = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -137,8 +141,6 @@ export default function ClinicianSubmitCase() {
     }
     // --- END VALIDATION ---
 
-    // --- END VALIDATION ---
-
     // 🚀 MICRO-SECOND OPTIMISTIC UI
     const toastId = toast.loading("SYNCING CLINICAL NODE...", {
       style: { background: '#0f172a', color: '#fff', borderLeft: '4px solid #3b82f6' }
@@ -154,16 +156,17 @@ export default function ClinicianSubmitCase() {
 
       const caseData = {
         ...formData,
+        treatmentCharge: Number(formData.treatmentCharge) || 0,
         doctorUid: user.uid,
         doctorName: userData?.displayName || userData?.name || 'Dr. Specialist',
         doctorRegNo: userData?.regNo || '',
-        evidenceUrl: evidenceUrl, 
+        initialProof: evidenceUrl, // Correct field for firestore
         treatmentName: selectedTreatment?.name || formData.treatment,
-        clinicianFee: selectedTreatment?.fee || 0,
+        clinicianFee: 0, // Admin will assign this later
         status: 'Pending',
         submittedBy: 'clinician',
         clinicianSubmitted: true,
-        clinicianId: null, 
+        clinicianId: user.uid, 
         location: formData.location || userData?.clinicName || 'Clinician Hub',
         submittedAt: serverTimestamp()
       };
@@ -177,7 +180,9 @@ export default function ClinicianSubmitCase() {
             caseDate: new Date().toISOString().split('T')[0],
             notes: '',
             evidenceName: '',
-            location: ''
+            location: '',
+            treatmentCharge: '',
+            consultationFee: ''
         });
         setSelectedFile(null);
         setProcessedEvidence('');
@@ -257,24 +262,56 @@ export default function ClinicianSubmitCase() {
                         />
                       </div>
 
-                      {/* Treatment Selection */}
-                      <div className="space-y-3">
+                      {/* Treatment Selection - CUSTOM DROPDOWN */}
+                      <div className="space-y-3 relative">
                         <Label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-1">
                            <ClipboardList size={12} className="text-blue-500" /> Clinical Procedure
                         </Label>
                         <div className="relative">
-                           <select 
-                             required
-                             value={formData.treatment} 
-                             onChange={(e) => setFormData({...formData, treatment: e.target.value})}
-                             className="h-12 w-full rounded-[4px] border border-slate-100 bg-slate-50 px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100/50 transition-all font-bold text-slate-900 cursor-pointer appearance-none shadow-inner"
+                           <div 
+                             onClick={() => setIsTreatmentOpen(!isTreatmentOpen)}
+                             className={`h-12 w-full rounded-[4px] border flex items-center justify-between px-4 cursor-pointer transition-all font-bold text-sm shadow-inner ${
+                               isTreatmentOpen ? 'border-blue-400 bg-white ring-4 ring-blue-100/50' : 'border-slate-100 bg-slate-50'
+                             }`}
                            >
-                             <option value="" disabled>SELECT PROTOCOL</option>
-                             {TREATMENTS.map(t => (
-                               <option key={t.id} value={t.id}>{t.name} ({t.value})</option>
-                             ))}
-                           </select>
-                           <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" />
+                             <span className={formData.treatment ? "text-slate-900" : "text-slate-400"}>
+                               {formData.treatment ? TREATMENTS.find(t => t.id === formData.treatment)?.name : "SELECT PROTOCOL"}
+                             </span>
+                             <ChevronRight size={16} className={`text-slate-400 transition-transform duration-300 ${isTreatmentOpen ? 'rotate-90' : 'rotate-0'}`} />
+                           </div>
+
+                           <AnimatePresence mode="wait">
+                            {isTreatmentOpen && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 8, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="absolute top-full left-0 right-0 z-[100] bg-white border border-slate-200 rounded-[4px] shadow-2xl overflow-hidden"
+                              >
+                                <div className="bg-slate-50 px-4 py-2 border-b border-slate-100">
+                                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Select Procedure</p>
+                                </div>
+                                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                                  {TREATMENTS.map((t) => (
+                                    <div 
+                                      key={t.id}
+                                      onClick={() => {
+                                        setFormData({...formData, treatment: t.id});
+                                        setIsTreatmentOpen(false);
+                                      }}
+                                      className={`px-4 py-3 text-xs font-bold cursor-pointer transition-all flex items-center justify-between hover:bg-blue-50 hover:text-blue-600 ${
+                                        formData.treatment === t.id ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                                      }`}
+                                    >
+                                      <span>{t.name}</span>
+                                      {formData.treatment === t.id && <CheckCircle2 size={12} className="text-blue-600" />}
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
 
@@ -302,6 +339,21 @@ export default function ClinicianSubmitCase() {
                           required 
                           value={formData.location}
                           onChange={(e) => setFormData({...formData, location: e.target.value})}
+                          className="h-12 rounded-[4px] bg-slate-50 border-slate-100 focus:bg-white transition-all text-sm font-bold shadow-inner"
+                        />
+                      </div>
+
+                      {/* Treatment Charge */}
+                      <div className="space-y-3">
+                        <Label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-1">
+                           <Zap size={12} className="text-emerald-500" /> Treatment Charge (₹)
+                        </Label>
+                        <Input 
+                          type="number"
+                          placeholder="e.g. 5000" 
+                          required 
+                          value={formData.treatmentCharge}
+                          onChange={(e) => setFormData({...formData, treatmentCharge: e.target.value})}
                           className="h-12 rounded-[4px] bg-slate-50 border-slate-100 focus:bg-white transition-all text-sm font-bold shadow-inner"
                         />
                       </div>
@@ -401,27 +453,34 @@ export default function ClinicianSubmitCase() {
                           <Calculator className="h-6 w-6 text-blue-400" />
                        </div>
                        <div>
-                          <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1.5">Direct Settlement</p>
-                          <h3 className="text-lg sm:text-xl font-black tracking-tight uppercase">Yield Profile</h3>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Submission Details</p>
+                          <h3 className="text-lg sm:text-xl font-black tracking-tight uppercase text-white">Case Summary</h3>
                        </div>
                     </div>
  
                     <div className="space-y-4">
                        <div className="p-4 bg-white/5 rounded-[4px] border border-white/5">
-                          <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Protocol Identified</p>
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Procedure Type</p>
                           <p className="text-xs sm:text-sm font-black text-white leading-tight uppercase truncate">
                              {selectedTreatment?.name || 'AWAITING SELECTION...'}
                           </p>
-                       </div>
- 
-                       <div className="p-6 sm:p-8 bg-gradient-to-br from-emerald-500/10 to-transparent rounded-[4px] border border-emerald-500/20">
-                          <p className="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2 leading-none">Target Settlement Fee</p>
-                          <p className="text-4xl sm:text-5xl font-black text-white tracking-tighter">
-                             ₹{selectedTreatment?.fee.toLocaleString() || '0'}
-                          </p>
-                          <div className="mt-5 flex items-center gap-2 text-[8px] sm:text-[9px] font-black text-emerald-400 uppercase tracking-widest">
-                             <Zap size={12} fill="currentColor" className="animate-pulse" /> Post-Audit Credit Node
-                          </div>
+                        <div className="p-6 sm:p-8 bg-white/5 rounded-[4px] border border-white/10 relative">
+                           <div className="absolute top-4 right-4">
+                              {formData.treatmentCharge ? (
+                                <span className="px-2 py-0.5 bg-blue-600 text-white text-[8px] font-black uppercase rounded-[2px]">Active</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-slate-800 text-slate-500 text-[8px] font-black uppercase rounded-[2px]">Empty</span>
+                              )}
+                           </div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 leading-none">Settlement Fee</p>
+                           <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter">
+                              ₹{calculatedSettlement.toLocaleString()}
+                           </p>
+                           <div className="mt-5 flex items-center gap-2 text-[10px] font-black text-white uppercase tracking-widest">
+                              <ShieldCheck size={14} className="text-blue-500" /> 
+                              {formData.treatmentCharge ? 'Direct Settlement (1:1 Value)' : 'Awaiting Input'}
+                           </div>
+                        </div>
                        </div>
                     </div>
  
@@ -434,14 +493,14 @@ export default function ClinicianSubmitCase() {
                   </div>
                </motion.div>
 
-              <div className="bg-white rounded-[4px] p-6 sm:p-8 border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+              <div className="bg-white rounded-[4px] p-5 sm:p-6 border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+                <div className="flex items-center gap-3 mb-3">
                    <div className="h-8 w-8 bg-blue-50 rounded-[4px] flex items-center justify-center">
                     <ShieldCheck size={18} className="text-blue-600" />
                    </div>
                    <h3 className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Clinical Protocol Rules</h3>
                 </div>
-                <ul className="space-y-4">
+                <ul className="space-y-2">
                    {CLINICIAN_GUIDELINES.map((guide, idx) => (
                      <li key={idx} className="flex gap-4 items-start group">
                         <div className="h-5 w-5 rounded-[4px] bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 group-hover:bg-blue-600 transition-colors">

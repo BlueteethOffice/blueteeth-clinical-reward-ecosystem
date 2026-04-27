@@ -43,10 +43,8 @@ const adminLinks: SidebarItem[] = [
 const clinicianLinks: SidebarItem[] = [
   { name: 'Dashboard', href: '/clinician', icon: LayoutDashboard },
   { name: 'Submit New Case', href: '/clinician/submit-case', icon: FilePlus },
-  { name: 'Assigned Cases', href: '/clinician/cases?status=Assigned', icon: ListTodo },
   { name: 'My Submissions', href: '/clinician/my-cases', icon: FilePlus },
-  { name: 'My Work (Active)', href: '/clinician/cases?status=In Progress', icon: Activity },
-  { name: 'Completed Cases', href: '/clinician/cases?status=Completed', icon: CheckCircle2 },
+  { name: 'Assigned Cases', href: '/clinician/cases', icon: ListTodo },
   { name: 'My Earnings', href: '/clinician/earnings', icon: Wallet },
   { name: 'Settings', href: '/clinician/settings', icon: Settings },
 ];
@@ -169,23 +167,11 @@ export default function DashboardLayout({
       }
 
       const userRole = userData?.role;
-      const userEmailRaw = user.email?.toLowerCase();
-      
-      const masterEmails = [
-        'admin@blueteeth.in', 
-        'nitinchauhan378@gmail.com', 
-        'niteen02@gmail.com', 
-        'niteen02', 
-        'support@blueteeth.in',
-        'master_core_01@blueteeth.in',
-        'backup_core_02@blueteeth.in'
-      ];
-      const isRootEmail = userEmailRaw && masterEmails.map(e => e.toLowerCase()).includes(userEmailRaw);
       const hasAdminRole = userRole === 'admin' || isUserAdmin;
 
       // 1. Admin Route Protection
       if (isAdminRoute) {
-        if (!isRootEmail && !hasAdminRole) {
+        if (!hasAdminRole) {
           toast.error("SECURITY: Administrative access denied.");
           router.replace(userRole === 'clinician' ? '/clinician' : '/doctor');
           return;
@@ -242,6 +228,37 @@ export default function DashboardLayout({
   const avatarName = displayName;
   const initials = avatarName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'A';
 
+  // [SMOOTHNESS OPTIMIZATION] Global Loading Overlay for Refresh/Auth
+  if (!mounted || (authLoading && !localProfile)) {
+    return (
+      <div className="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center p-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative"
+        >
+          <div className="absolute inset-0 bg-blue-600/20 blur-3xl rounded-full animate-pulse" />
+          <div className="relative h-20 w-20 bg-white rounded-[4px] flex items-center justify-center p-3 shadow-2xl mb-8">
+            <img src="/logo.png" className="h-full w-full object-contain" alt="Logo" />
+          </div>
+        </motion.div>
+        <div className="space-y-4">
+          <div className="flex flex-col">
+            <span className="text-2xl font-black text-white tracking-tighter uppercase mb-1">Blueteeth Clinical</span>
+            <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Identity Hub Syncing...</span>
+          </div>
+          <div className="h-1 w-48 bg-white/10 rounded-full overflow-hidden mx-auto border border-white/5">
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: '100%' }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              className="h-full w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row relative" suppressHydrationWarning>

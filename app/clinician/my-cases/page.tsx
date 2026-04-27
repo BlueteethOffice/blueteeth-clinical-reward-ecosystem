@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { 
   FileCheck, Clock, CheckCircle2, ChevronLeft, 
   ChevronRight, Search, Hash, Activity, ExternalLink,
-  FilePlus, Calendar
+  FilePlus, Calendar, Eye, X, User, Phone, MapPin, 
+  Image as ImageIcon, ShieldCheck, DollarSign, Zap, FileText
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
@@ -21,6 +22,7 @@ const ClinicianSubmissions = () => {
   const [cases, setCases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCase, setSelectedCase] = useState<any>(null);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -62,7 +64,8 @@ const ClinicianSubmissions = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
+      <DashboardLayout>
       <div className="max-w-[1600px] mx-auto space-y-3 pt-4 pb-0">
         
         {/* Header Section */}
@@ -153,11 +156,12 @@ const ClinicianSubmissions = () => {
                                 <Calendar size={12} className="text-blue-500" />
                                 {c.submittedAt?.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                              </div>
-                             <Link href={`/clinician/work/${c.id}`}>
-                                <button className="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5 group/btn">
-                                   Manifest <ChevronRight size={12} className="group-hover/btn:translate-x-1 transition-transform" />
-                                 </button>
-                             </Link>
+                             <button 
+                               onClick={() => setSelectedCase(c)}
+                               className="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5 group/btn"
+                             >
+                                Details <Eye size={12} className="group-hover/btn:scale-110 transition-transform" />
+                             </button>
                           </div>
                           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-slate-50 rounded-full blur-3xl opacity-50 group-hover:scale-150 transition-transform duration-700" />
                        </div>
@@ -219,6 +223,191 @@ const ClinicianSubmissions = () => {
         )}
       </div>
     </DashboardLayout>
+
+    {/* Case Detail Modal */}
+    <AnimatePresence>
+       {selectedCase && (
+         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+           <motion.div 
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+             className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+             onClick={() => setSelectedCase(null)}
+           />
+           <motion.div
+             initial={{ opacity: 0, scale: 0.9, y: 20 }}
+             animate={{ opacity: 1, scale: 1, y: 0 }}
+             exit={{ opacity: 0, scale: 0.9, y: 20 }}
+             className="relative bg-white w-full max-w-lg rounded-[4px] shadow-3xl overflow-hidden border border-slate-200"
+             onClick={(e) => e.stopPropagation()}
+           >
+             {/* Header */}
+             <div className="bg-slate-900 p-5 text-white flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                   <div className="h-10 w-10 bg-blue-600 rounded-[4px] flex items-center justify-center shadow-lg">
+                      <FileCheck size={20} />
+                   </div>
+                   <div>
+                      <h3 className="text-sm font-black uppercase tracking-widest">Submission Detail</h3>
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest opacity-80">Node ID: #{selectedCase.id.slice(-8)}</p>
+                   </div>
+                </div>
+                <button onClick={() => setSelectedCase(null)} className="h-8 w-8 rounded-[4px] bg-white/10 hover:bg-red-500 flex items-center justify-center transition-all group">
+                   <X size={18} className="text-white" />
+                </button>
+             </div>
+
+             <div className="p-5 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                {/* Status & Date */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-[4px] border border-slate-100">
+                   <div className="flex flex-col gap-0.5">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Submission Status</span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${
+                         selectedCase.status === 'Approved' ? 'text-emerald-600' : 'text-amber-600'
+                      }`}>{selectedCase.status}</span>
+                   </div>
+                   <div className="text-right flex flex-col gap-0.5">
+                      <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Submitted On</span>
+                      <span className="text-[10px] font-black text-slate-900 uppercase">
+                         {selectedCase.submittedAt?.toDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                   </div>
+                </div>
+
+                {/* Information Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-3">
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <User size={10} className="text-blue-500" /> Patient Name
+                         </p>
+                         <p className="text-sm font-black text-slate-900 uppercase">{selectedCase.patientName}</p>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <Activity size={10} className="text-blue-500" /> Protocol
+                         </p>
+                         <p className="text-sm font-black text-slate-900 uppercase">{selectedCase.treatment || selectedCase.treatmentName}</p>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <Activity size={10} className="text-emerald-500" /> Treatment Charge
+                         </p>
+                         <p className="text-sm font-black text-emerald-600 uppercase italic">₹{Number(selectedCase.treatmentCharge || 0).toLocaleString()}</p>
+                      </div>
+                   </div>
+                   <div className="space-y-3">
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <Phone size={10} className="text-blue-500" /> Contact
+                         </p>
+                         <p className="text-sm font-black text-slate-900 uppercase">{selectedCase.patientMobile || selectedCase.mobile || 'N/A'}</p>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <MapPin size={10} className="text-blue-500" /> Location
+                         </p>
+                         <p className="text-sm font-black text-slate-900 uppercase">{selectedCase.location || 'N/A'}</p>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                            <DollarSign size={10} className="text-blue-600" /> Consultation Fee
+                         </p>
+                         <p className="text-sm font-black text-blue-700 uppercase italic">₹{selectedCase.status === 'Pending' ? '0' : Number(selectedCase.clinicianFee || 0).toLocaleString()}</p>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Evidence Section */}
+                <div className="space-y-2 pt-2">
+                   <p className="text-[9px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <ImageIcon size={12} className="text-blue-600" /> Clinical Asset Proof (Click to Enlarge)
+                   </p>
+                   {(selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.initialProof || selectedCase.imageUrl) ? (
+                      <div 
+                        onClick={() => {
+                          const imageUrl = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.initialProof || selectedCase.imageUrl;
+                          if (imageUrl.startsWith('data:')) {
+                            const parts = imageUrl.split(',');
+                            const base64Data = parts[1];
+                            const mimeString = parts[0].split(':')[1].split(';')[0];
+                            const byteCharacters = atob(base64Data);
+                            const byteNumbers = new Array(byteCharacters.length);
+                            for (let i = 0; i < byteCharacters.length; i++) {
+                              byteNumbers[i] = byteCharacters.charCodeAt(i);
+                            }
+                            const byteArray = new Uint8Array(byteNumbers);
+                            const blob = new Blob([byteArray], {type: mimeString});
+                            const blobUrl = URL.createObjectURL(blob);
+                            window.open(blobUrl, '_blank');
+                          } else {
+                            window.open(imageUrl, '_blank');
+                          }
+                        }}
+                        className="block aspect-video bg-slate-50 rounded-[4px] border border-slate-200 overflow-hidden relative group cursor-pointer"
+                      >
+                         {(() => {
+                            const url = selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.initialProof || selectedCase.imageUrl;
+                            const isPDF = url?.includes('application/pdf') || url?.includes('.pdf') || url?.startsWith('data:application/pdf');
+                            
+                            if (isPDF) {
+                              return (
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-slate-50">
+                                   <FileText size={48} className="text-red-500" />
+                                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Clinical PDF Document</p>
+                                   <span className="text-[8px] font-bold text-blue-600 underline">CLICK TO VIEW FULL DOSSIER</span>
+                                </div>
+                              );
+                            }
+                            
+                            return (
+                              <img 
+                                src={url} 
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                alt="submission proof" 
+                                onError={(e) => {
+                                  // Fallback for broken images if they are actually PDFs but not detected
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    const div = document.createElement('div');
+                                    div.className = "w-full h-full flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-[10px] uppercase";
+                                    div.innerText = "Document View (Click to Open)";
+                                    parent.appendChild(div);
+                                  }
+                                }}
+                              />
+                            );
+                         })()}
+                         <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <ExternalLink size={24} className="text-white" />
+                         </div>
+                      </div>
+                   ) : (
+                      <div className="aspect-video bg-slate-100 rounded-[4px] border border-slate-200 overflow-hidden relative flex flex-col items-center justify-center text-slate-300">
+                         <Activity size={48} className="mb-2" />
+                         <p className="text-[10px] font-black uppercase tracking-widest">No Visual Proof Attached</p>
+                      </div>
+                   )}
+                </div>
+
+                {/* Reward Detail */}
+                <div className="p-4 bg-blue-600 rounded-[4px] text-white shadow-xl shadow-blue-500/20 flex items-center justify-between">
+                   <div>
+                       <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Authorized Settlement</p>
+                       <p className="text-3xl font-black italic">₹{Number(Number(selectedCase.treatmentCharge || 0) + (selectedCase.status === 'Pending' ? 0 : Number(selectedCase.clinicianFee || 0))).toLocaleString()}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Verified Node</p>
+                      <ShieldCheck size={24} className="text-white/40" />
+                   </div>
+                </div>
+             </div>
+           </motion.div>
+         </div>
+       )}
+    </AnimatePresence>
+    </>
   );
 };
 

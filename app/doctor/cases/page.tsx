@@ -4,13 +4,46 @@ import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Search, Filter, CheckCircle2, Clock, XCircle, ChevronLeft, ChevronRight, Eye, Smartphone, Calendar, FileText, BadgeCheck, X, Award, ShieldCheck, Hash, Phone, FileImage, Info, ListTodo } from 'lucide-react';
+import { Search, Filter, CheckCircle2, Clock, XCircle, ChevronLeft, ChevronRight, Eye, Smartphone, Calendar, FileText, BadgeCheck, X, Award, ShieldCheck, Hash, Phone, FileImage, Info, ListTodo, Stethoscope, FileCheck } from 'lucide-react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { generateCertificate } from '@/lib/certificate';
+
+const TREATMENT_POINTS: Record<string, number> = {
+  'Dental Implant': 10,
+  'Root Canal (RCT)': 5,
+  'Prophylaxis': 3,
+  'Crown & Bridge': 4,
+  'Orthodontics': 8,
+  'Complete Denture': 6,
+  'Scaling & Polishing': 2,
+  'Tooth Extraction': 2,
+  'Teeth Whitening': 3,
+  'Composite Filling': 1.5
+};
+
+const CASE_GRADIENTS = [
+  'bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700',
+  'bg-gradient-to-br from-rose-500 via-pink-600 to-rose-700',
+  'bg-gradient-to-br from-emerald-500 via-teal-600 to-emerald-700',
+  'bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700',
+  'bg-gradient-to-br from-violet-600 via-purple-600 to-violet-700',
+  'bg-gradient-to-br from-cyan-500 via-blue-600 to-cyan-700',
+  'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900',
+  'bg-gradient-to-br from-fuchsia-600 via-pink-600 to-rose-600',
+  'bg-gradient-to-br from-lime-500 via-emerald-600 to-teal-700',
+  'bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600',
+];
+
+const getCaseGradient = (id: string) => {
+  if (!id) return CASE_GRADIENTS[0];
+  const hash = (id || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return CASE_GRADIENTS[Math.abs(hash) % CASE_GRADIENTS.length];
+};
 
 export default function CaseHistory() {
   const { user } = useAuth();
@@ -58,9 +91,17 @@ export default function CaseHistory() {
       const data: any[] = [];
       snapshot.forEach((docSnap) => {
         const item = docSnap.data();
+        let actualPoints = Number(item.points) || 0;
+        
+        // [FIX] Retroactive fallback for cases approved before estimatedPoints was introduced
+        if (item.status === 'Approved' && actualPoints === 0 && (item.treatmentName || item.treatment)) {
+           actualPoints = TREATMENT_POINTS[item.treatmentName] || TREATMENT_POINTS[item.treatment] || 8;
+        }
+
         data.push({
           id: docSnap.id,
           ...item,
+          points: actualPoints,
           rawDate: item.submittedAt?.toDate(),
           date: item.submittedAt?.toDate()?.toLocaleDateString('en-US', {
             month: 'short', day: 'numeric', year: 'numeric'
@@ -87,6 +128,7 @@ export default function CaseHistory() {
           status: c.status,
           points: c.points,
           bonusPoints: c.bonusPoints,
+          treatmentCharge: c.treatmentCharge,
           date: c.date
         }));
         localStorage.setItem('blueteeth_cases_cache', JSON.stringify(lightweightData));
@@ -339,12 +381,12 @@ export default function CaseHistory() {
           <div className="hidden lg:block overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gradient-to-r from-blue-600 to-blue-900 text-white border-b border-blue-800 shadow-xl">
-                  <th className="px-4 py-5 text-left text-[10px] font-bold uppercase tracking-wider whitespace-nowrap w-[22%]">Patient Name</th>
-                  <th className="px-4 py-5 text-left text-[10px] font-bold uppercase tracking-wider whitespace-nowrap w-[22%]">Treatment Details</th>
-                  <th className="px-4 py-5 text-center text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">Points</th>
-                  <th className="px-6 py-5 text-center text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">Status</th>
-                  <th className="px-4 pr-10 py-5 text-right text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">Record</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 w-[30%]">Patient Identity</th>
+                  <th className="px-6 py-4 text-left text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 w-[25%]">Treatment Case</th>
+                  <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Points</th>
+                  <th className="px-6 py-4 text-center text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Case Status</th>
+                  <th className="px-6 py-4 text-right text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 pr-10">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -362,55 +404,63 @@ export default function CaseHistory() {
                   paginatedCases.map((c, idx) => (
                       <motion.tr 
                         key={c.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className={`group transition-all hover:bg-slate-50/70 border-b border-slate-50 last:border-0 border-l-4 ${
-                           c.status === 'Approved' ? 'border-l-emerald-500 bg-emerald-50/10' :
-                           c.status === 'Pending' ? 'border-l-amber-500 bg-amber-50/10' : 'border-l-rose-500 bg-rose-50/10'
-                        }`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`group transition-all hover:bg-blue-50/40 border-b border-slate-100 last:border-0 cursor-pointer`}
                         onClick={() => setSelectedCase(c)}
                       >
-                      <td className="px-6 py-3">
-                        <div className="flex flex-col gap-1.5">
-                           <span className="text-[14px] font-bold text-slate-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate max-w-[150px] sm:max-w-none">{c.patientName}</span>
-                           <div className="text-[9px] font-bold text-slate-600 uppercase tracking-widest flex flex-wrap items-center gap-x-3 gap-y-1">
-                              <span className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-[4px]"><Hash size={9} className="text-blue-500" /> REF-{(c.id || '').toUpperCase().slice(0, 8)}</span>
-                              <span className="flex items-center gap-1 text-[9px]"><Smartphone size={9} className="text-indigo-400" /> {(c.patientMobile || '').slice(0, 3)}****{(c.patientMobile || '').slice(-3)}</span>
+                      <td className="px-6 py-6">
+                        <div className="flex flex-col gap-2">
+                           <span className="text-[15px] font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{c.patientName}</span>
+                           <div className="flex items-center gap-3">
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-[3px] text-[8px] font-black tracking-widest border border-slate-200">
+                                 <Hash size={10} className="text-slate-400" /> REF: {(c.id || '').toUpperCase().slice(0, 6)}
+                              </span>
+                              <span className="flex items-center gap-1.5 text-[9px] font-bold text-slate-500">
+                                 <Smartphone size={10} className="text-blue-400" /> {(c.patientMobile || '').slice(0, 3)}****{(c.patientMobile || '').slice(-3)}
+                              </span>
                            </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                           <span className="font-bold text-slate-800 text-[13.5px] uppercase tracking-tight group-hover:text-blue-600 transition-colors">{c.treatmentName || c.treatment}</span>
-                           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1.5 flex items-center gap-2">
-                             <Calendar size={11} className="text-slate-300" /> {c.date}
+                      <td className="px-6 py-6">
+                        <div className="flex flex-col gap-1.5">
+                           <span className="font-black text-slate-800 text-[12px] uppercase tracking-wide group-hover:text-blue-600 transition-colors">{c.treatmentName || c.treatment}</span>
+                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                             <Calendar size={11} className="text-blue-400/50" /> {c.date}
                            </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="inline-flex flex-col items-center gap-1.5 p-3 px-4 bg-blue-50/30 rounded-[4px] border border-blue-100 ring-1 ring-inset ring-blue-500/5">
-                           <span className="text-sm font-bold text-blue-700 tracking-tighter">+{Number(c.points || 0).toFixed(1)}</span>
-                           <span className="text-[7.5px] font-bold text-blue-400 uppercase tracking-widest leading-none">Points</span>
+                      <td className="px-6 py-6 text-center">
+                        <div className="inline-flex flex-col items-center justify-center min-w-[70px] py-1.5 px-3 bg-white border border-slate-200 rounded-[4px] group-hover:border-blue-200 group-hover:bg-blue-50/50 transition-all shadow-sm">
+                           <span className="text-sm font-black text-blue-600 tracking-tighter">+{Number(c.points || TREATMENT_POINTS[c.treatmentName] || TREATMENT_POINTS[c.treatment] || 0).toFixed(1)}</span>
+                           <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-0.5">B-Pts</span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 text-center">
-                        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-[4px] border shadow-sm ${
-                           c.status === 'Approved' ? 'bg-emerald-50/30 border-emerald-100 text-emerald-600' :
-                           c.status === 'Pending' ? 'bg-amber-50/30 border-amber-100 text-amber-600' : 'bg-red-50/30 border-red-100 text-red-600'
+                      <td className="px-6 py-6 text-center">
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${
+                           c.status === 'Approved' ? 'bg-emerald-50 border-emerald-100 text-emerald-700' :
+                           c.status === 'Pending' ? 'bg-amber-50 border-amber-100 text-amber-700' : 
+                           (c.status === 'Rejected' || c.status === 'Revoked') ? 'bg-rose-50 border-rose-100 text-rose-700' :
+                           'bg-blue-50 border-blue-100 text-blue-700'
                         }`}>
-                           <div className={`h-1.5 w-1.5 rounded-full ${c.status === 'Approved' ? 'bg-emerald-500 animate-pulse' : c.status === 'Pending' ? 'bg-amber-500' : 'bg-red-500'}`} />
-                           <span className="text-[9px] font-bold tracking-widest uppercase">{c.status}</span>
+                           <div className={`h-1.5 w-1.5 rounded-full ${
+                             c.status === 'Approved' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
+                             c.status === 'Pending' ? 'bg-amber-500' : 
+                             'bg-rose-500'
+                           }`} />
+                           <span className="text-[8px] font-black tracking-[0.1em] uppercase">{c.status}</span>
                         </div>
                       </td>
-                      <td className="px-4 pr-10 py-3 text-right">
+                      <td className="px-6 py-6 text-right pr-10">
                         <button 
                            onClick={(e) => { e.stopPropagation(); setSelectedCase(c); }}
-                           className="h-10 w-9 rounded-[4px] bg-white border border-slate-100 text-slate-700 hover:text-blue-600 hover:border-blue-200 hover:shadow-lg transition-all flex items-center justify-center active:scale-95 hover:bg-blue-50 ml-auto"
+                           className="h-9 w-9 rounded-[4px] bg-white border border-slate-200 text-slate-400 group-hover:text-blue-600 group-hover:border-blue-200 group-hover:bg-blue-50 transition-all flex items-center justify-center active:scale-95 ml-auto"
                         >
-                           <Eye className="h-5 w-5" />
+                           <Eye className="h-4 w-4" />
                         </button>
                       </td>
                       </motion.tr>
+
                   ))
                 ) : (
                   <tr>
@@ -494,23 +544,23 @@ export default function CaseHistory() {
                 transition={{ type: 'spring', damping: 28, stiffness: 380 }}
                 className="pointer-events-auto relative w-full h-auto max-h-[96vh] sm:max-h-none sm:h-auto max-w-none sm:max-w-[550px] bg-white rounded-[4px] shadow-2xl flex flex-col border border-slate-100 sm:border-slate-100 overflow-hidden"
               >
-                {/* Modal Header - Premium Slate Look */}
-                <div className="p-4 sm:p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 shrink-0 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                {/* Modal Header - Status-Based Background */}
+                <div className={`p-4 sm:p-4 border-b border-white/10 flex items-center justify-between shrink-0 relative overflow-hidden ${getCaseGradient(selectedCase.id)}`}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                   <div className="flex items-center gap-4 relative z-10">
-                    <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/10 rounded-[4px] flex items-center justify-center text-white border border-white/10 shadow-inner">
+                    <div className="h-9 w-9 sm:h-10 sm:w-10 bg-white/20 rounded-[4px] flex items-center justify-center text-white border border-white/20 shadow-inner">
                       <FileText size={18} className="sm:size-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-white uppercase tracking-wider text-[9px] sm:text-[10px] leading-none mb-1">Case Details Summary</h3>
-                      <p className="text-[9px] sm:text-[10px] font-bold text-white tracking-tighter uppercase flex items-center gap-2">
-                        <ShieldCheck size={10} className="text-blue-400" /> Case ID: {(selectedCase.id || '').toUpperCase().slice(0, 8)}
+                      <h3 className="font-bold text-white uppercase tracking-wider text-[9px] sm:text-[10px] leading-none mb-1">Case Detail Audit</h3>
+                      <p className="text-[9px] sm:text-[10px] font-bold text-white/90 tracking-tighter uppercase flex items-center gap-2">
+                        {selectedCase.status} <span className="opacity-40">|</span> ID: {(selectedCase.id || '').toUpperCase().slice(0, 8)}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedCase(null)}
-                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-[4px] bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90 text-white/50 hover:text-white border border-white/10 relative z-10"
+                    className="h-8 w-8 sm:h-9 sm:w-9 rounded-[4px] bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-90 text-white border border-white/10 relative z-10"
                   >
                     <X className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
@@ -535,6 +585,22 @@ export default function CaseHistory() {
                            <Calendar size={12} className="text-indigo-400" /> {selectedCase.date}
                         </p>
                      </div>
+                     {selectedCase.solvedByName && (
+                       <div className="space-y-1 sm:space-y-1">
+                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-0.5">Solved By</p>
+                          <p className="text-purple-700 font-bold text-[10px] sm:text-xs bg-purple-50 p-3 sm:p-3 rounded-[4px] border border-purple-100 shadow-sm flex items-center gap-3">
+                             <Stethoscope size={12} className="text-purple-500" /> {selectedCase.solvedByName}
+                          </p>
+                       </div>
+                     )}
+                     {selectedCase.solvedByRegNo && (
+                       <div className="space-y-1 sm:space-y-1">
+                          <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-0.5">Reg Number</p>
+                          <p className="text-emerald-700 font-bold text-[10px] sm:text-xs bg-emerald-50 p-3 sm:p-3 rounded-[4px] border border-emerald-100 shadow-sm flex items-center gap-3">
+                             <BadgeCheck size={12} className="text-emerald-500" /> {selectedCase.solvedByRegNo}
+                          </p>
+                       </div>
+                     )}
                   </div>
 
                   <div className="p-4 sm:p-5 bg-white rounded-[4px] border border-slate-200 shadow-sm space-y-5 sm:space-y-4">
@@ -545,12 +611,18 @@ export default function CaseHistory() {
                               {selectedCase.treatmentName || selectedCase.treatment}
                            </span>
                         </div>
-                        <div className="flex flex-col gap-1.5 sm:items-end">
-                           <span className="font-bold text-blue-500 uppercase tracking-widest text-[8px]">Total Case Points</span>
-                           <span className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tighter leading-none">
-                              +{Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)} <span className="text-[10px] uppercase">B-Pts</span>
+                        <div className="flex flex-col gap-1.5">
+                           <span className="font-bold text-slate-600 uppercase tracking-widest text-[8px]">Treatment Charge</span>
+                           <span className="font-bold text-slate-900 text-[11px] sm:text-[11px] py-1.5 px-3 rounded-[4px] bg-emerald-50 border border-emerald-100 inline-block w-fit">
+                              ₹{Number(selectedCase.treatmentCharge || 0).toLocaleString()}
                            </span>
                         </div>
+                         <div className="flex flex-col gap-1.5 sm:items-end">
+                            <span className="font-bold text-blue-500 uppercase tracking-widest text-[8px]">Total Case Points</span>
+                            <span className="text-2xl sm:text-3xl font-bold text-blue-600 tracking-tighter leading-none">
+                               +{(selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0).toFixed(1)} <span className="text-[10px] uppercase">B-Pts</span>
+                            </span>
+                         </div>
                      </div>
                      
                      <div className="flex justify-between items-center bg-slate-950 p-4 sm:p-4 rounded-[4px]">
@@ -558,42 +630,81 @@ export default function CaseHistory() {
                            <span className="font-bold text-white/80 uppercase tracking-wider text-[7px] sm:text-[8px]">Cash Value</span>
                            <span className="text-[8px] sm:text-[9px] text-blue-400 font-bold italic">Status: {selectedCase.status}</span>
                         </div>
-                        <span className="text-2xl sm:text-3xl font-bold text-white tracking-tighter">₹{Math.round((Number(selectedCase.points) + Number(selectedCase.bonusPoints || 0)) * 50).toLocaleString()}</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-white tracking-tighter">
+                           ₹{Math.round((Number(selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0) + Number(selectedCase.bonusPoints || 0)) * 50).toLocaleString()}
+                        </span>
                      </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-                     <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-1">Case Photo / PDF Proof</p>
-                        {selectedCase.evidenceUrl ? (
-                          <button 
-                            onClick={() => handleViewAttachment(selectedCase.evidenceUrl)}
-                            className="flex items-center gap-4 p-3 sm:p-3 w-full bg-slate-50 text-slate-900 rounded-[4px] border border-slate-200 hover:bg-slate-900 hover:text-white transition-all group active:scale-[0.99]"
-                          >
-                             <div className="h-8 w-8 bg-slate-900 rounded-[4px] flex items-center justify-center text-white group-hover:bg-white group-hover:text-slate-900 transition-colors">
-                               {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? <FileText size={16} /> : <FileImage size={16} />}
-                             </div>
-                             <span className="font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">View Archive</span>
-                          </button>
-                        ) : (
-                          <div className="flex items-center gap-3 p-3 bg-slate-50 text-slate-600 rounded-[4px] border border-slate-200 border-dashed">
-                             <Info size={16} />
-                             <span className="font-bold text-[9px] uppercase tracking-widest">No Evidence attached</span>
-                          </div>
-                        )}
-                     </div>
-                     
-                     <div className="space-y-1 sm:space-y-1.5">
-                        <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-1">Associate's Notes</p>
-                        <div className="bg-white rounded-[4px] p-3 text-[11px] sm:text-[11px] text-slate-600 font-medium border border-slate-200 italic leading-snug min-h-[60px] sm:min-h-[70px]">
-                           {selectedCase.notes || "Case submitted normally."}
+                      <div className="space-y-1 sm:space-y-1.5">
+                         <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-1">Initial Referral Proof</p>
+                         {selectedCase.evidenceUrl ? (
+                           <button 
+                             onClick={() => handleViewAttachment(selectedCase.evidenceUrl)}
+                             className="flex items-center gap-4 p-3 sm:p-3 w-full bg-white text-slate-900 rounded-[4px] border border-slate-200 hover:bg-slate-900 hover:text-white transition-all group active:scale-[0.99] shadow-sm"
+                           >
+                              <div className="h-8 w-8 bg-slate-900 rounded-[4px] flex items-center justify-center text-white group-hover:bg-white group-hover:text-slate-900 transition-colors">
+                                {(selectedCase.evidenceUrl.toLowerCase().includes('.pdf') || selectedCase.evidenceUrl.includes('application/pdf')) ? <FileText size={16} /> : <FileImage size={16} />}
+                              </div>
+                              <span className="font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">Initial Proof</span>
+                           </button>
+                         ) : (
+                           <div className="flex items-center gap-3 p-3 bg-slate-50 text-slate-400 rounded-[4px] border border-slate-200 border-dashed">
+                              <Info size={16} />
+                              <span className="font-bold text-[9px] uppercase tracking-widest">No initial proof</span>
+                           </div>
+                         )}
+                      </div>
+
+                      {selectedCase.finalProof ? (
+                        <div className="space-y-1 sm:space-y-1.5">
+                           <p className="text-[8px] sm:text-[9px] font-bold text-emerald-600 uppercase tracking-widest px-1">Final Treatment Proof</p>
+                           <button 
+                             onClick={() => handleViewAttachment(selectedCase.finalProof)}
+                             className="flex items-center gap-4 p-3 sm:p-3 w-full bg-emerald-50 text-emerald-900 rounded-[4px] border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all group active:scale-[0.99] shadow-sm"
+                           >
+                              <div className="h-8 w-8 bg-emerald-600 rounded-[4px] flex items-center justify-center text-white group-hover:bg-white group-hover:text-emerald-600 transition-colors">
+                                {(selectedCase.finalProof.toLowerCase().includes('.pdf') || selectedCase.finalProof.includes('application/pdf')) ? <FileText size={16} /> : <FileCheck size={16} />}
+                              </div>
+                              <span className="font-bold text-[9px] sm:text-[10px] uppercase tracking-widest">Treatment Proof</span>
+                           </button>
                         </div>
-                     </div>
-                  </div>
+                      ) : (
+                        <div className="space-y-1 sm:space-y-1.5">
+                           <p className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase tracking-widest px-1">Associate's Notes</p>
+                           <div className="bg-white rounded-[4px] p-3 text-[11px] sm:text-[11px] text-slate-600 font-medium border border-slate-200 italic leading-snug min-h-[60px] sm:min-h-[70px]">
+                              {selectedCase.notes || "Case submitted normally."}
+                           </div>
+                        </div>
+                      )}
+                   </div>
                 </div>
 
                 {/* Modal Footer */}
-                <div className="p-4 sm:p-4 shrink-0 bg-slate-50 border-t border-slate-200">
+                <div className="p-4 sm:p-4 shrink-0 bg-slate-50 border-t border-slate-200 space-y-3">
+                  {selectedCase.status === 'Approved' && (
+                    <button
+                      onClick={async () => {
+                        const toastId = toast.loading('Generating High-Fidelity Certificate...');
+                        try {
+                          const certificateDataUrl = await generateCertificate(selectedCase, { name: user?.displayName || 'Authorized Doctor' });
+                          const link = document.createElement('a');
+                          link.href = certificateDataUrl;
+                          link.setAttribute('download', `Certificate_${selectedCase.patientName.replace(/\s+/g, '_')}_${selectedCase.id.slice(-6)}.png`);
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          toast.success('Premium Certificate Downloaded', { id: toastId });
+                        } catch (err) {
+                          toast.error('Generation Failed', { id: toastId });
+                        }
+                      }}
+                      className="w-full h-12 rounded-[4px] bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2"
+                    >
+                      <Award size={16} className="text-amber-300" /> Download Case Certificate
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedCase(null)}
                     className="w-full h-12 sm:h-12 rounded-[4px] bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-widest transition-all shadow-lg"

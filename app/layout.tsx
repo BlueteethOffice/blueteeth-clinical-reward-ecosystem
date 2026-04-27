@@ -19,6 +19,9 @@ export const viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  other: {
+    'preconnect': 'https://firestore.googleapis.com',
+  },
   title: {
     default: 'Blueteeth | Associate B-Points Reward System',
     template: '%s | Blueteeth Associate Portal',

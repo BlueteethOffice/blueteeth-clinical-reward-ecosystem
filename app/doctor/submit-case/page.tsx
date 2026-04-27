@@ -44,6 +44,7 @@ const ASSOCIATE_GUIDELINES = [
 export default function SubmitCase() {
   const { user, userData } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isTreatmentOpen, setIsTreatmentOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     patientName: '',
@@ -52,7 +53,8 @@ export default function SubmitCase() {
     caseDate: '', // Start empty for SSR consistency
     notes: '',
     evidenceName: '',
-    location: ''
+    location: '',
+    treatmentCharge: ''
   });
 
   useEffect(() => {
@@ -159,6 +161,7 @@ export default function SubmitCase() {
 
       const caseData = {
         ...formData,
+        treatmentCharge: Number(formData.treatmentCharge) || 0,
         doctorUid: user.uid,
         doctorName: user.displayName || (userData as any)?.name || 'Practitioner',
         doctorRole: (userData as any)?.role || 'doctor', 
@@ -179,7 +182,8 @@ export default function SubmitCase() {
             caseDate: new Date().toISOString().split('T')[0],
             notes: '',
             evidenceName: '',
-            location: ''
+            location: '',
+            treatmentCharge: ''
         });
         setSelectedFile(null);
         setProcessedEvidence('');
@@ -220,7 +224,8 @@ export default function SubmitCase() {
     }
   };
 
-  if (!mounted) return null;
+  // [PERFORMANCE] DashboardLayout now handles the loading guard globally
+  // We can render immediately to benefit from layout-level caching
 
   return (
     <DashboardLayout>
@@ -292,20 +297,50 @@ export default function SubmitCase() {
                            <ClipboardList size={18} className="text-indigo-600" /> Treatment Taken
                         </Label>
                         <div className="relative">
-                          <select 
-                            required
-                            value={formData.treatment} 
-                            onChange={(e) => setFormData({...formData, treatment: e.target.value})}
-                            className="h-14 w-full rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-2 text-sm focus:outline-none focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400 transition-all font-bold text-slate-900 appearance-none cursor-pointer shadow-sm hover:bg-slate-100/30"
-                            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.25rem' }}
+                          <div 
+                            onClick={() => setIsTreatmentOpen(!isTreatmentOpen)}
+                            className={`h-14 w-full rounded-lg border flex items-center justify-between px-4 cursor-pointer transition-all font-bold shadow-sm ${
+                              isTreatmentOpen ? 'border-blue-400 ring-4 ring-blue-100/50 bg-white' : 'border-slate-100 bg-slate-50/50 hover:bg-slate-100/30'
+                            }`}
                           >
-                            <option value="" disabled>Select Treatment</option>
-                            {TREATMENTS.map(t => (
-                              <option key={t.id} value={t.id} className="font-bold">
-                                {t.name} ({t.points} Pts)
-                              </option>
-                            ))}
-                          </select>
+                            <span className={formData.treatment ? "text-slate-900" : "text-slate-500"}>
+                              {formData.treatment ? TREATMENTS.find(t => t.id === formData.treatment)?.name : "Select Treatment"}
+                            </span>
+                            <ChevronRight size={18} className={`text-slate-400 transition-transform duration-300 ${isTreatmentOpen ? 'rotate-90' : 'rotate-0'}`} />
+                          </div>
+
+                          <AnimatePresence mode="wait">
+                            {isTreatmentOpen && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 8, scale: 1 }}
+                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className="absolute top-full left-0 right-0 z-[100] bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden"
+                              >
+                                <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200">
+                                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Select Treatment</p>
+                                </div>
+                                <div className="max-h-[320px] overflow-y-auto custom-scrollbar">
+                                  {TREATMENTS.map((t) => (
+                                    <div 
+                                      key={t.id}
+                                      onClick={() => {
+                                        setFormData({...formData, treatment: t.id});
+                                        setIsTreatmentOpen(false);
+                                      }}
+                                      className={`px-4 py-3.5 text-sm font-bold cursor-pointer transition-all flex items-center justify-between hover:bg-blue-50 hover:text-blue-600 ${
+                                        formData.treatment === t.id ? 'bg-blue-50 text-blue-600' : 'text-slate-700'
+                                      }`}
+                                    >
+                                      <span>{t.name} ({t.points} Pts)</span>
+                                      {formData.treatment === t.id && <CheckCircle2 size={14} className="text-blue-600" />}
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
                       </div>
 
@@ -331,6 +366,20 @@ export default function SubmitCase() {
                           required 
                           value={formData.location}
                           onChange={(e) => setFormData({...formData, location: e.target.value})}
+                          className="h-14 rounded-[4px] bg-white border-slate-200 shadow-sm transition-all text-base font-bold placeholder:text-slate-600 focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
+                        />
+                      </div>
+
+                      <div className="space-y-3 group transition-all">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 group-focus-within:text-emerald-600">
+                           <DollarSign size={18} className="text-emerald-600" /> Treatment Charge (₹)
+                        </Label>
+                        <Input 
+                          type="number"
+                          placeholder="e.g. 5000" 
+                          required 
+                          value={formData.treatmentCharge}
+                          onChange={(e) => setFormData({...formData, treatmentCharge: e.target.value})}
                           className="h-14 rounded-[4px] bg-white border-slate-200 shadow-sm transition-all text-base font-bold placeholder:text-slate-600 focus:ring-4 focus:ring-blue-100/50 focus:border-blue-400"
                         />
                       </div>
@@ -464,15 +513,28 @@ export default function SubmitCase() {
                              {selectedTreatment?.name || 'Awaiting Selection...'}
                           </p>
                        </div>
+
+                       <div className="p-5 sm:p-3.5 bg-rose-500/10 rounded-[4px] border border-rose-500/20 backdrop-blur-sm transition-all">
+                          <p className="text-[10px] sm:text-[8px] font-bold text-rose-400 uppercase tracking-widest mb-1">Patient Treatment Charge</p>
+                          <p className="text-xl sm:text-lg font-black text-white leading-tight flex items-baseline">
+                             <span className="-ml-1 text-rose-400">₹</span>
+                             <span>{Number(formData.treatmentCharge).toLocaleString() || '0'}</span>
+                          </p>
+                       </div>
  
                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-4">
-                          <div className="p-6 sm:p-4 bg-blue-500/10 rounded-[4px] border border-blue-500/20 shadow-inner">
+                          <div className="p-6 px-4 sm:p-4 sm:px-2 bg-blue-500/10 rounded-[4px] border border-blue-500/20 shadow-inner overflow-hidden">
                              <p className="text-[11px] sm:text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">B-Points</p>
-                             <p className="text-3xl sm:text-2xl font-black text-white">+{selectedTreatment?.points || 0}</p>
+                             <p className="text-xl sm:text-2xl font-black text-white tracking-tighter">
+                               <span className="-ml-1 opacity-80">+</span>{selectedTreatment?.points || 0}
+                             </p>
                           </div>
-                          <div className="p-6 sm:p-4 bg-emerald-500/10 rounded-[4px] border border-emerald-500/20 shadow-inner">
+                          <div className="p-6 px-4 sm:p-4 sm:px-2 bg-emerald-500/10 rounded-[4px] border border-emerald-500/20 shadow-inner overflow-hidden">
                              <p className="text-[11px] sm:text-[9px] font-bold text-emerald-400 uppercase tracking-widest mb-1">Cash Value</p>
-                             <p className="text-3xl sm:text-2xl font-black text-emerald-400">₹{selectedTreatment ? (selectedTreatment.points * 50).toFixed(0) : '0'}</p>
+                             <p className="text-xl sm:text-2xl font-black text-emerald-400 tracking-tighter flex items-baseline">
+                               <span className="-ml-1">₹</span>
+                               <span>{selectedTreatment ? (selectedTreatment.points * 50).toFixed(0) : '0'}</span>
+                             </p>
                           </div>
                        </div>
                     </div>
@@ -487,12 +549,12 @@ export default function SubmitCase() {
                 </motion.div>
               </AnimatePresence>
 
-              <div className="bg-white rounded-[4px] p-7 sm:p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-start min-h-[310px] sm:min-h-[260px]">
-                <div className="flex items-center gap-2 mb-5">
+              <div className="bg-white rounded-[4px] p-5 sm:p-6 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden flex flex-col justify-start">
+                <div className="flex items-center gap-2 mb-3">
                    <ShieldCheck size={16} className="text-blue-600" />
                    <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Submission Guidelines</h3>
                 </div>
-                <ul className="space-y-5 sm:space-y-4 text-wrap leading-relaxed">
+                <ul className="space-y-2 text-wrap leading-relaxed">
                    {ASSOCIATE_GUIDELINES.map((guide, idx) => (
                       <li key={idx} className="flex gap-4 items-center group p-1.5 rounded-[4px] hover:bg-blue-50/50 transition-colors">
                         <div className="h-5 w-8 rounded-[4px] bg-blue-100 flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-all shadow-sm">

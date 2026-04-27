@@ -9,7 +9,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { 
   CheckCircle, XCircle, Eye, User, Users, Phone, MapPin, 
   Calendar, ClipboardList, Coins, Search, Filter, ExternalLink,
-  FileCheck, Image as ImageIcon, ShieldCheck, FileText, Activity, Award
+  FileCheck, Image as ImageIcon, ShieldCheck, FileText, Activity, Award, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -17,6 +17,32 @@ import Link from 'next/link';
 
 import { listenAdminCases, approveCase, rejectCase, revokeCase, fetchClinicians, assignClinician } from '@/lib/firestore';
 import { Suspense } from 'react';
+
+const TREATMENTS = [
+  { id: 'implant', name: 'Dental Implant', points: 10, value: '₹500.00' },
+  { id: 'rct', name: 'Root Canal (RCT)', points: 5, value: '₹250.00' },
+  { id: 'prophylaxis', name: 'Prophylaxis', points: 3, value: '₹150.00' },
+  { id: 'crown', name: 'Crown & Bridge', points: 4, value: '₹200.00' },
+  { id: 'ortho', name: 'Orthodontics', points: 8, value: '₹400.00' },
+  { id: 'denture', name: 'Complete Denture', points: 6, value: '₹300.00' },
+  { id: 'scaling', name: 'Scaling & Polishing', points: 2, value: '₹100.00' },
+  { id: 'extraction', name: 'Tooth Extraction', points: 2, value: '₹100.00' },
+  { id: 'whitening', name: 'Teeth Whitening', points: 3, value: '₹150.00' },
+  { id: 'composite', name: 'Composite Filling', points: 1.5, value: '₹75.00' }
+];
+
+const TREATMENT_POINTS: Record<string, number> = {
+  'Dental Implant': 10,
+  'Root Canal (RCT)': 5,
+  'Prophylaxis': 3,
+  'Crown & Bridge': 4,
+  'Orthodontics': 8,
+  'Complete Denture': 6,
+  'Scaling & Polishing': 2,
+  'Tooth Extraction': 2,
+  'Teeth Whitening': 3,
+  'Composite Filling': 1.5
+};
 
 // Responsive Dual-Style Case Card Component
 const CaseCard = ({ c, idx, onSelect, isSelected }: { c: any, idx: number, onSelect: (c: any) => void, isSelected: boolean }) => {
@@ -30,9 +56,9 @@ const CaseCard = ({ c, idx, onSelect, isSelected }: { c: any, idx: number, onSel
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.03 }}
-      className="w-full sm:max-w-[380px] mx-auto"
+      className="w-full sm:max-w-[420px] mx-auto"
     >
-      {/* MOBILE VIEW: Elite Case History Style (Same as Associate Portal) */}
+      {/* MOBILE VIEW: Enhanced for Admin Visibility */}
       <div 
         onClick={() => onSelect(c)}
         className={`sm:hidden p-4 active:bg-blue-50/50 transition-all border-l-4 cursor-pointer ${
@@ -41,87 +67,115 @@ const CaseCard = ({ c, idx, onSelect, isSelected }: { c: any, idx: number, onSel
           isAssociate ? 'border-l-amber-500 bg-amber-50/30' : 'border-l-blue-500 bg-blue-50/30'
         } mb-3 bg-white shadow-sm rounded-r-[4px] border border-slate-100 relative group ${isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
       >
-         <div className="flex justify-between items-start mb-3">
+         <div className="flex justify-between items-start mb-2">
             <div>
-               <p className="text-[15px] font-black text-slate-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors">
-                  {!isAssociate && <span className="text-blue-600 mr-1">**</span>}
+               <p className="text-[14px] font-black text-slate-900 uppercase tracking-tight leading-tight group-hover:text-blue-600 transition-colors">
                   {c.patientName || 'Anonymous Node'}
                </p>
-               <p className="text-[9px] font-black text-slate-600 mt-1 uppercase tracking-widest leading-none">
-                  REF-{(c.id || '').toUpperCase().slice(0, 8)} 
-                  <span className="mx-1 opacity-20">|</span> 
-                  {c.submittedAt ? new Date(c.submittedAt.seconds * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'N/A'}
-               </p>
+               <div className="flex items-center gap-2 mt-1">
+                  <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-1.5 py-0.5 rounded-[2px] border border-blue-100">
+                    {c.doctorName || 'Practitioner'}
+                  </p>
+                  <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">
+                    REF: {(c.id || '').toUpperCase().slice(0, 6)}
+                  </span>
+               </div>
             </div>
-            <span className={`inline-flex px-2.5 py-1 rounded-[4px] text-[8px] font-black uppercase tracking-widest border shadow-sm ${
+            <span className={`inline-flex px-2 py-0.5 rounded-[4px] text-[7px] font-black uppercase tracking-widest border shadow-sm ${
                status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                status === 'Assigned' ? 'bg-blue-50 text-blue-600 border-blue-100' :
                status === 'In Progress' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
-               'bg-amber-50 text-amber-600 border-amber-100'
+               status === 'Submitted' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+               'bg-slate-50 text-slate-600 border-slate-100'
             }`}>{status}</span>
          </div>
          
-         <div className="flex justify-between items-end">
-            <div className="text-[10px] font-black text-slate-700 uppercase tracking-tighter max-w-[65%] truncate border-l-2 border-blue-500 pl-2 leading-none py-0.5">
-               {c.treatmentName || c.treatment || 'Consultation Node'}
+         <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-50">
+            <div>
+               <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Procedure & Fee</p>
+               <p className="text-[10px] font-black text-slate-700 uppercase truncate leading-tight">{c.treatmentName || c.treatment || 'Consultation'}</p>
+               <p className="text-[9px] font-black text-emerald-600 mt-0.5">₹{Number(c.treatmentCharge || 0).toLocaleString()}</p>
             </div>
             <div className="text-right">
-               <span className="text-xl font-black text-slate-900 tracking-tighter">+{Number(c.points || 0).toFixed(1)}</span>
-               <span className="text-[8px] text-blue-500 font-black ml-1 uppercase tracking-widest">Points</span>
+               <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Reward</p>
+               <div className="flex flex-col items-end">
+                  <span className="text-lg font-black text-blue-600 tracking-tighter leading-none">
+                    +{(Number(c.points || TREATMENT_POINTS[c.treatmentName] || TREATMENT_POINTS[c.treatment] || 0) + Number(c.bonusPoints || 0)).toFixed(1)}
+                  </span>
+                  {Number(c.bonusPoints || 0) > 0 && (
+                    <span className="text-[7px] font-black text-amber-600 uppercase tracking-widest mt-0.5 bg-amber-50 px-1 rounded-[2px]">
+                       +{c.bonusPoints} Bonus Incl.
+                    </span>
+                  )}
+               </div>
             </div>
          </div>
-         {isSelected && <div className="absolute inset-0 bg-blue-500/5 pointer-events-none rounded-r-[4px]" />}
       </div>
 
-      {/* DESKTOP VIEW: Original Boxy Blue Design */}
+      {/* DESKTOP VIEW: High-Density Data Card */}
       <Card 
         onClick={() => onSelect(c)}
-        className={`hidden sm:flex group cursor-pointer transition-all border-2 relative overflow-hidden rounded-[4px] min-h-[190px] w-full max-w-[380px] mx-auto flex-col justify-between ${
+        className={`hidden sm:flex group cursor-pointer transition-all border-2 relative overflow-hidden rounded-[4px] min-h-[220px] w-full max-w-[420px] mx-auto flex-col justify-between ${
           isSelected 
             ? `border-blue-600 shadow-xl bg-blue-50/30` 
-            : `${isAssociate ? 'border-indigo-900' : 'border-pink-200'} hover:border-blue-400 bg-white hover:shadow-lg`
+            : `${isAssociate ? 'border-amber-200' : 'border-blue-100'} hover:border-blue-400 bg-white hover:shadow-lg`
         }`}
       >
-        <CardContent className="p-5 flex flex-col h-full gap-5">
+        <CardContent className="p-5 flex flex-col h-full gap-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-50 border border-blue-100 rounded-[4px] flex items-center justify-center font-black text-blue-600 text-lg shadow-inner">
+              <div className="h-10 w-10 bg-slate-900 border border-slate-800 rounded-[4px] flex items-center justify-center font-black text-white text-lg shadow-xl">
                 {firstLetter}
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 <h4 className="font-black text-slate-900 uppercase text-sm tracking-tight leading-none group-hover:text-blue-600 transition-colors">
-                  {!isAssociate && <span className="text-blue-600 mr-1">**</span>}
                   {c.patientName}
                 </h4>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[120px]">{c.treatmentName || c.treatment}</p>
+                <div className="flex items-center gap-2">
+                   <span className="text-[8px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-[4px] border border-blue-100 uppercase tracking-widest truncate max-w-[120px]">
+                      {c.doctorName || 'Practitioner'}
+                   </span>
+                </div>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rewards</p>
-              <p className="text-lg font-black text-slate-900 tracking-tight">₹{(Number(c.points || 0) * 50).toLocaleString()}</p>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Case Reward</p>
+              <div className="flex flex-col items-end">
+                 <p className="text-xl font-black text-blue-600 tracking-tighter leading-none">
+                   ₹{((Number(c.points || TREATMENT_POINTS[c.treatmentName] || TREATMENT_POINTS[c.treatment] || 0) + Number(c.bonusPoints || 0)) * 50).toLocaleString()}
+                 </p>
+                 {Number(c.bonusPoints || 0) > 0 && (
+                   <p className="text-[8px] font-black text-amber-600 mt-1 uppercase bg-amber-50 px-1.5 py-0.5 rounded-[2px] border border-amber-100">
+                     +{c.bonusPoints} Bonus Node
+                   </p>
+                 )}
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 py-2">
-             <div className="flex items-center gap-2">
-                 <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase border ${
-                  status === 'Approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 
-                  status === 'Assigned' ? 'bg-blue-50 border-blue-200 text-blue-600' :
-                  status === 'In Progress' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
-                  'bg-amber-50 border-amber-200 text-amber-600'
-                }`}>
-                   {status}
-                </span>
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">#{c.customCaseId || (c.id || '').toUpperCase().slice(0, 8)}</span>
+          <div className="grid grid-cols-2 gap-4 py-3 bg-slate-50/50 rounded-[4px] border border-slate-100 px-3">
+             <div className="space-y-1">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none">Treatment</p>
+                <p className="text-[10px] font-black text-slate-900 uppercase truncate leading-none">{c.treatmentName || c.treatment}</p>
+             </div>
+             <div className="space-y-1 text-right">
+                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest leading-none">Charge</p>
+                <p className="text-[10px] font-black text-emerald-700 uppercase leading-none">₹{Number(c.treatmentCharge || 0).toLocaleString()}</p>
              </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-             <div className="flex items-center gap-2 text-slate-400">
-                <Calendar size={14} />
-                <span className="text-[10px] font-black uppercase tracking-wider">
-                   {c.submittedAt ? new Date(c.submittedAt.seconds * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Recently'}
-                </span>
+          <div className="flex items-center justify-between pt-2">
+             <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 rounded-[4px] text-[8px] font-black uppercase border shadow-sm ${
+                   status === 'Approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 
+                   status === 'Assigned' ? 'bg-blue-50 border-blue-200 text-blue-600' :
+                   status === 'In Progress' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
+                   status === 'Submitted' ? 'bg-amber-50 border-amber-200 text-amber-600' :
+                   'bg-slate-50 border-slate-200 text-slate-600'
+                 }`}>
+                    {status}
+                 </span>
+                 <span className="text-[10px] font-black text-slate-700 uppercase tracking-tighter bg-slate-100 px-2 py-0.5 rounded-[2px] border border-slate-200">#{c.customCaseId || (c.id || '').toUpperCase().slice(0, 8)}</span>
              </div>
              <div className="flex items-center gap-1.5 text-blue-600 font-black text-[10px] uppercase tracking-widest group-hover:translate-x-1 transition-transform">
                 Open Review <ExternalLink size={12} />
@@ -169,7 +223,7 @@ function CaseReviewContent() {
   const [clinicians, setClinicians] = useState<any[]>([]);
   const [assignmentModal, setAssignmentModal] = useState<{ open: boolean; caseId: string; } | null>(null);
   const [selectedClinician, setSelectedClinician] = useState('');
-  const [clinicianFee, setClinicianFee] = useState(500);
+  const [clinicianFee, setClinicianFee] = useState<number | string>(0);
   const [showPreview, setShowPreview] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [modalState, setModalState] = useState<{ open: boolean; title: string; message: string; type: 'success' | 'error' | 'warning' }>({
@@ -242,7 +296,7 @@ function CaseReviewContent() {
     const res = await assignClinician(
       assignmentModal.caseId, 
       selectedClinician, 
-      clinicianFee,
+      Number(clinicianFee) || 0,
       selectedClinicianData?.name,
       selectedClinicianData?.registrationNumber
     );
@@ -264,7 +318,7 @@ function CaseReviewContent() {
       await assignClinician(
         caseId, 
         doctorUid, 
-        clinicianFee,
+        Number(clinicianFee) || 0,
         clinicianData?.name,
         clinicianData?.registrationNumber
       );
@@ -285,7 +339,12 @@ function CaseReviewContent() {
     try {
       let result;
       if (action === 'approve') {
-        result = await approveCase(caseId, caseToProcess.doctorUid, points || caseToProcess.points);
+        const fallbackPoints = TREATMENT_POINTS[caseToProcess.treatmentName] || TREATMENT_POINTS[caseToProcess.treatment] || 8;
+        const basePoints = caseToProcess.estimatedPoints || fallbackPoints;
+        const bonusPoints = Number(caseToProcess.bonusPoints || 0);
+        const finalPoints = basePoints + bonusPoints;
+        
+        result = await approveCase(caseId, caseToProcess.doctorUid, finalPoints);
       } else if (action === 'revoke') {
         result = await revokeCase(caseId, caseToProcess.doctorUid, caseToProcess.points);
       } else {
@@ -310,7 +369,9 @@ function CaseReviewContent() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sticky top-0 bg-slate-50/80 backdrop-blur-md z-50 py-4 px-2 sm:px-0">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase">Admin Case Hub</h1>
-            <p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-[0.2em]">Clinical Verification Protocol • {filteredCases.length} Nodes Found</p>
+            <p className="text-[11px] font-black text-slate-600 mt-1 uppercase tracking-[0.2em] flex items-center gap-2">
+               <Activity size={12} className="text-blue-600" /> Clinical Verification Protocol • <span className="text-blue-700">{filteredCases.length} NODES FOUND</span>
+            </p>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="relative group flex-1 sm:flex-initial">
@@ -393,8 +454,9 @@ function CaseReviewContent() {
                     ))
                   }
                   {filteredCases.filter(c => c.doctorRole?.toLowerCase() !== 'associate').length === 0 && (
-                    <div className="col-span-full py-10 bg-slate-50/50 rounded-[4px] border border-dashed border-slate-200 text-center">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Clinician Submissions</p>
+                    <div className="col-span-full py-20 bg-white rounded-[4px] border-2 border-dashed border-slate-200 text-center shadow-inner">
+                       <ClipboardList size={40} className="text-slate-200 mx-auto mb-4" />
+                       <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.2em]">No Clinician Submissions Detected</p>
                     </div>
                   )}
                 </div>
@@ -462,8 +524,9 @@ function CaseReviewContent() {
                     ))
                   }
                   {filteredCases.filter(c => c.doctorRole?.toLowerCase() === 'associate').length === 0 && (
-                    <div className="col-span-full py-10 bg-slate-50/50 rounded-[4px] border border-dashed border-slate-200 text-center">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Associate Submissions</p>
+                    <div className="col-span-full py-20 bg-white rounded-[4px] border-2 border-dashed border-slate-200 text-center shadow-inner">
+                       <Users size={40} className="text-slate-200 mx-auto mb-4" />
+                       <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.2em]">No Associate Submissions Detected</p>
                     </div>
                   )}
                 </div>
@@ -574,32 +637,43 @@ function CaseReviewContent() {
                              </h4>
                           </div>
                        </div>
-                       <div className="text-right">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Standard Fee</p>
-                          <p className="text-lg font-black text-slate-900 tracking-tighter leading-none">
-                             ₹{(selectedCase.clinicianFee || 
-                                // Fallback mapping for associate cases if fee is 0
-                                (({
-                                  'Dental Implant': 1500, 'Root Canal (RCT)': 800, 'Prophylaxis': 400,
-                                  'Crown & Bridge': 600, 'Orthodontics': 1200, 'Complete Denture': 1000,
-                                  'Scaling & Polishing': 300, 'Tooth Extraction': 500, 'Teeth Whitening': 700,
-                                  'Composite Filling': 400
-                                } as any)[selectedCase.treatmentName || selectedCase.treatment] || 0)
-                             ).toLocaleString()}
-                          </p>
-                       </div>
+                        <div className="text-right">
+                           <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest leading-none mb-1.5 italic">Treatment Charge</p>
+                           <p className="text-lg font-black text-emerald-700 tracking-tighter leading-none">
+                              ₹{Number(selectedCase.treatmentCharge || 0).toLocaleString()}
+                           </p>
+                        </div>
                     </div>
 
                     {selectedCase.doctorRole?.toLowerCase() === 'associate' && (
-                       <div className="flex items-center justify-between pt-3 border-t border-slate-200 border-dashed">
-                          <div className="flex items-center gap-2">
-                             <Award size={14} className="text-amber-500" />
-                             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Associate Reward Node</span>
+                       <div className="flex flex-col gap-3 pt-3 border-t border-slate-200 border-dashed">
+                          <div className="flex items-center justify-between">
+                             <div className="flex items-center gap-2">
+                                <Award size={14} className="text-amber-500" />
+                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Reward Protocol Audit</span>
+                             </div>
+                             <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-[4px] border border-blue-100">RATE: ₹50 / PT</span>
                           </div>
-                          <div className="flex items-center gap-2">
-                             <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-[4px] border border-emerald-100">
-                                Bonus: ₹{(Number(selectedCase.points || 0) * 50).toLocaleString()}
-                             </span>
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                             <div className="bg-slate-50 p-2 rounded-[4px] border border-slate-100">
+                                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Base Points</p>
+                                <p className="text-xs font-black text-slate-900 leading-none">
+                                   +{(selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0).toFixed(1)}
+                                </p>
+                             </div>
+                             <div className="bg-amber-50 p-2 rounded-[4px] border border-amber-100">
+                                <p className="text-[7px] font-black text-amber-600 uppercase mb-1">Bonus Nodes</p>
+                                <p className="text-xs font-black text-amber-700 leading-none">
+                                   +{Number(selectedCase.bonusPoints || 0).toFixed(1)}
+                                </p>
+                             </div>
+                             <div className="bg-blue-600 p-2 rounded-[4px] shadow-lg shadow-blue-500/20">
+                                <p className="text-[7px] font-black text-blue-100 uppercase mb-1">Total Reward</p>
+                                <p className="text-xs font-black text-white leading-none">
+                                   ₹{((Number(selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0) + Number(selectedCase.bonusPoints || 0)) * 50).toLocaleString()}
+                                </p>
+                             </div>
                           </div>
                        </div>
                     )}
@@ -613,7 +687,7 @@ function CaseReviewContent() {
                      </div>
                      <div 
                        onClick={() => {
-                         const url = (selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                         const url = (selectedCase.finalProof || selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
                          if (!url || typeof url !== 'string') return;
                          
                          // Detect PDF for direct tab opening
@@ -645,12 +719,15 @@ function CaseReviewContent() {
                        className="group relative h-40 bg-slate-50 rounded-[4px] overflow-hidden cursor-pointer border-2 border-dashed border-slate-200 hover:border-blue-400 transition-all flex items-center justify-center"
                      >
                         {(() => {
-                          const url = (selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                          const initialUrl = (selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url);
+                          const finalUrl = selectedCase.finalProof;
+                          const url = finalUrl || initialUrl;
+
                           if (!url || typeof url !== 'string') {
                             return (
                               <div className="text-center">
                                  <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">No Proof Synced</p>
+                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white px-2 py-1 rounded-[4px] border border-slate-200 shadow-inner">NO CASE NODES SYNCHRONIZED</p>
                               </div>
                             );
                           }
@@ -679,23 +756,51 @@ function CaseReviewContent() {
                             );
                           }
 
-                          return (
-                            <>
-                              <img 
-                                src={url} 
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                alt=""
-                                onError={() => setImageError(true)}
-                              />
-                              <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
-                                 <div className="h-12 w-12 rounded-[4px] bg-white flex items-center justify-center text-slate-900 shadow-2xl scale-75 group-hover:scale-100 transition-transform">
-                                    <Eye size={20} />
-                                 </div>
-                              </div>
-                            </>
-                          );
-                        })()}
-                     </div>
+                           return (
+                             <>
+                               <div className="absolute top-2 right-2 z-20 flex gap-2">
+                                 {finalUrl && initialUrl && (
+                                   <div className="px-2 py-1 bg-emerald-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Final Proof Active</div>
+                                 )}
+                                 {initialUrl && !finalUrl && (
+                                   <div className="px-2 py-1 bg-blue-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Patient Proof Active</div>
+                                 )}
+                               </div>
+                               <img 
+                                 src={url} 
+                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                 alt=""
+                                 onError={() => setImageError(true)}
+                               />
+                               <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center backdrop-blur-sm">
+                                  <div className="flex flex-col items-center gap-2">
+                                    <div className="h-10 w-10 rounded-[4px] bg-white flex items-center justify-center text-slate-900 shadow-2xl">
+                                       <Eye size={18} />
+                                    </div>
+                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Click to View Full Node</span>
+                                  </div>
+                               </div>
+                             </>
+                           );
+                         })()}
+                      </div>
+
+                      {/* Dual Proof Gallery - If both exist */}
+                      {selectedCase.finalProof && (selectedCase.initialProof || selectedCase.evidenceUrl) && (
+                         <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div 
+                              onClick={() => { /* View Initial */ }}
+                              className="h-20 bg-slate-100 rounded-[4px] overflow-hidden border border-slate-200 cursor-pointer relative group"
+                            >
+                               <img src={selectedCase.initialProof || selectedCase.evidenceUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="Initial" />
+                               <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-white text-[6px] font-black uppercase rounded-[2px]">Patient Proof</div>
+                            </div>
+                            <div className="h-20 bg-slate-100 rounded-[4px] overflow-hidden border-2 border-emerald-500 cursor-pointer relative">
+                               <img src={selectedCase.finalProof} className="w-full h-full object-cover" alt="Final" />
+                               <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[6px] font-black uppercase rounded-[2px]">Final Proof</div>
+                            </div>
+                         </div>
+                      )}
                   </div>
 
                   {/* Procedural Data - Cyan Morphism */}
@@ -726,7 +831,7 @@ function CaseReviewContent() {
 
                   {/* Decision & Assignment Deck */}
                   <div className="pt-4 border-t border-slate-100 space-y-6">
-                     {['Approved', 'Assigned', 'In Progress', 'Submitted'].includes(selectedCase.status) ? (
+                     {['Approved', 'Assigned', 'In Progress'].includes(selectedCase.status) ? (
                         <div className="space-y-4">
                            {/* Status Banner */}
                            <div className={`h-14 rounded-[4px] border flex flex-col items-center justify-center font-black uppercase text-[10px] tracking-[0.2em] shadow-sm ${
@@ -752,6 +857,35 @@ function CaseReviewContent() {
                               </div>
                            </div>
                         </div>
+                     ) : selectedCase.status === 'Submitted' ? (
+                        <div className="space-y-4">
+                           {/* Action Buttons for Submitted cases */}
+                           <div className="grid grid-cols-2 gap-3">
+                              <Button 
+                                onClick={() => handleAction(selectedCase.id, 'reject')}
+                                variant="outline" 
+                                className="h-12 rounded-[4px] border-rose-100 text-rose-500 hover:bg-rose-50 hover:border-rose-200 font-black uppercase text-[10px] tracking-widest transition-all"
+                              >
+                                Reject Case
+                              </Button>
+                              <Button 
+                                onClick={() => handleAction(selectedCase.id, 'approve')}
+                                isLoading={loading === 'approving'}
+                                className="h-12 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-[10px] tracking-widest transition-all shadow-md shadow-emerald-500/20"
+                              >
+                                Approve Case
+                              </Button>
+                           </div>
+
+                           <div className="space-y-4 bg-emerald-50/50 p-4 rounded-[4px] border border-emerald-100 mt-3">
+                               <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2">
+                                  <Activity size={12} /> Reward Protocol Verified
+                               </p>
+                               <p className="text-[9px] font-bold text-emerald-700 leading-relaxed">
+                                 Allocating <span className="font-black text-emerald-600 text-[10px]">{((selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0) + Number(selectedCase.bonusPoints || 0)).toFixed(1)} B-Points</span> (Base + {Number(selectedCase.bonusPoints || 0)} Bonus) to Associate upon authorization.
+                               </p>
+                           </div>
+                        </div>
                      ) : (
                         <div className="space-y-4">
                            {/* Action Buttons for Pending cases */}
@@ -763,17 +897,45 @@ function CaseReviewContent() {
                               >
                                 Reject Case
                               </Button>
-                              <Button 
-                                onClick={() => handleAction(selectedCase.id, 'approve')}
-                                className="h-12 rounded-[4px] bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all"
-                              >
-                                Instant Approve
-                              </Button>
+                              <div className="h-12 rounded-[4px] bg-slate-100 border border-slate-200 flex items-center justify-center cursor-not-allowed">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest text-center px-2">
+                                   {selectedCase.doctorRole?.toLowerCase() === 'associate' ? 'Specialist Audit Required' : 'Assignment Required'}
+                                </span>
+                              </div>
                            </div>
 
-                           {/* Assignment Block for Associates */}
-                           {selectedCase.doctorRole?.toLowerCase() === 'associate' ? (
-                             <div className="space-y-3 bg-blue-50/50 p-3 rounded-[4px] border border-blue-100">
+                           {/* Role-Based Assignment/Reward Block */}
+                           {selectedCase.doctorRole?.toLowerCase() === 'clinician' ? (
+                             <div className="space-y-3 bg-blue-50 p-4 rounded-[4px] border border-blue-200 mt-3 shadow-sm">
+                               <div className="flex items-center gap-2">
+                                 <Zap size={14} className="text-blue-600" />
+                                 <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Priority Assignment Protocol</p>
+                               </div>
+                               <p className="text-[9px] font-bold text-blue-500 leading-relaxed">
+                                 This case was submitted by a Clinician. System priority is set to assign this back to the source specialist for verification. If unavailable, you may select an alternate specialist.
+                               </p>
+                               <div className="space-y-2">
+                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Specialist Fee (₹)</label>
+                                 <div className="relative">
+                                    <input 
+                                      type="number"
+                                      placeholder="150"
+                                      className="w-full h-11 bg-white border border-blue-200 rounded-[4px] pl-8 px-4 text-xs font-bold focus:ring-4 focus:ring-blue-100 outline-none"
+                                      value={clinicianFee}
+                                      onChange={(e) => setClinicianFee(e.target.value)}
+                                    />
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-blue-500 text-xs">₹</span>
+                                 </div>
+                               </div>
+                               <Button 
+                                 onClick={() => setAssignmentModal({ open: true, caseId: selectedCase.id })}
+                                 className="w-full h-12 bg-slate-900 hover:bg-blue-600 text-white rounded-[4px] font-black text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all"
+                               >
+                                 {selectedClinician ? 'Priority Specialist Linked' : 'Assign to Priority Specialist'}
+                               </Button>
+                             </div>
+                           ) : selectedCase.doctorRole?.toLowerCase() === 'associate' ? (
+                             <div className="space-y-3 bg-blue-50/50 p-3 rounded-[4px] border border-blue-100 mt-3">
                                <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2">
                                   <Users size={12} /> Specialist Assignment Node
                                </p>
@@ -782,10 +944,10 @@ function CaseReviewContent() {
                                  <div className="relative">
                                     <input 
                                       type="number"
-                                      placeholder="150"
+                                      placeholder="ENTER FEE..."
                                       className="w-full h-11 bg-white border border-slate-200 rounded-[4px] pl-8 px-4 text-xs font-bold focus:ring-4 focus:ring-blue-100 outline-none"
                                       value={clinicianFee}
-                                      onChange={(e) => setClinicianFee(Number(e.target.value))}
+                                      onChange={(e) => setClinicianFee(e.target.value)}
                                     />
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 font-black text-blue-600 text-xs">₹</span>
                                  </div>
@@ -798,20 +960,13 @@ function CaseReviewContent() {
                                </Button>
                              </div>
                            ) : (
-                             <div className="space-y-4 bg-emerald-50/50 p-4 rounded-[4px] border border-emerald-100">
+                             <div className="space-y-4 bg-emerald-50/50 p-4 rounded-[4px] border border-emerald-100 mt-3">
                                <p className="text-[10px] font-black uppercase text-emerald-600 tracking-widest flex items-center gap-2">
-                                  <Activity size={12} /> Direct Reward Protocol
+                                  <Activity size={12} /> Reward Protocol Sync
                                </p>
-                               <div className="space-y-2">
-                                 <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Allocation Points</label>
-                                 <input 
-                                   type="number"
-                                   placeholder="Points (e.g. 8)"
-                                   className="w-full h-11 bg-white border border-slate-200 rounded-[4px] px-4 text-xs font-bold focus:ring-4 focus:ring-emerald-100 outline-none"
-                                   value={points}
-                                   onChange={(e) => setPoints(e.target.value)}
-                                 />
-                               </div>
+                               <p className="text-[9px] font-bold text-emerald-700 leading-relaxed">
+                                 Allocating <span className="font-black text-emerald-600 text-[10px]">{((selectedCase.points || TREATMENT_POINTS[selectedCase.treatmentName] || TREATMENT_POINTS[selectedCase.treatment] || 0) + Number(selectedCase.bonusPoints || 0)).toFixed(1)} B-Points</span> (Base + {Number(selectedCase.bonusPoints || 0)} Bonus) to Associate upon specialist audit.
+                               </p>
                              </div>
                            )}
                         </div>
@@ -942,12 +1097,13 @@ function CaseReviewContent() {
                          <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Assignment Fee Allocation (₹)</label>
                          <div className="relative">
                             <Input 
-                              type="number"
-                              value={clinicianFee}
-                              onChange={(e) => setClinicianFee(Number(e.target.value))}
-                              style={{ paddingLeft: '44px' }}
-                              className="h-12 rounded-[4px] border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-blue-100"
-                            />
+                               type="number"
+                               placeholder="ENTER FEE..."
+                               value={clinicianFee}
+                               onChange={(e) => setClinicianFee(e.target.value)}
+                               style={{ paddingLeft: '44px' }}
+                               className="h-12 rounded-[4px] border-2 border-slate-100 font-black text-sm focus:ring-4 focus:ring-blue-100"
+                             />
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-blue-600 pointer-events-none">₹</div>
                          </div>
                       </div>

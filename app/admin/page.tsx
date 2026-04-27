@@ -11,42 +11,86 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { fetchAdminStats, fetchWithdrawals } from '@/lib/firestore';
+import { 
+  collection, 
+  query, 
+  where, 
+  limit, 
+  onSnapshot, 
+  doc 
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { listenAdminStats } from '@/lib/firestore';
 
 export default function AdminDashboard() {
   const [stats, setStats] = React.useState({ totalDoctors: 0, totalClinicians: 0, pendingReviews: 0, totalRewarded: 0, totalPoints: 0, approvedCases: 0 });
   const [loading, setLoading] = React.useState(true);
-  const [isMounted, setIsMounted] = React.useState(false);
   const [pendingWithdrawals, setPendingWithdrawals] = React.useState<any[]>([]);
+  const [notifications, setNotifications] = React.useState<any[]>([]);
+  const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
-    const loadStats = async () => {
-      try {
-        const data = await fetchAdminStats();
-        if (data) setStats(data);
-      } catch (e) { 
-        console.error("Stats latency identified."); 
-      } finally { 
-        setLoading(false); 
+    
+    // 1. Real-time Stats Listener - Now Live from Collections
+    const unsubscribeStats = listenAdminStats((data) => {
+      setStats(data);
+      setLoading(false);
+    });
+
+    // 2. Real-time Withdrawals Listener
+    // NOTE: No orderBy here to avoid requiring a Firestore composite index.
+    // Sorting is done client-side after fetching.
+    const withdrawalsQuery = query(
+      collection(db, 'withdrawals'),
+      where('status', '==', 'Pending'),
+      limit(10)
+    );
+    const unsubscribeWithdrawals = onSnapshot(withdrawalsQuery, (snapshot) => {
+      const data = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .sort((a: any, b: any) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))
+        .slice(0, 5);
+      setPendingWithdrawals(data);
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error("Withdrawals sync error:", error);
       }
+    });
+
+    // 3. Real-time Notifications/Activity Listener (Logs)
+    // NOTE: No orderBy to avoid composite index requirement — sorted client-side.
+    const logsQuery = query(
+      collection(db, 'logs'),
+      limit(10)
+    );
+    const unsubscribeLogs = onSnapshot(logsQuery, (snapshot) => {
+      const data = snapshot.docs
+        .map(doc => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          title: doc.data().type === 'auth' ? 'Auth Event' : 'System Event',
+          msg: doc.data().message || 'Activity recorded',
+          icon: doc.data().type === 'auth' ? Users : Activity,
+          color: doc.data().type === 'auth' ? 'bg-indigo-600' : 'bg-blue-600',
+          iconColor: doc.data().type === 'auth' ? 'text-indigo-600' : 'text-blue-600',
+          bg: doc.data().type === 'auth' ? 'bg-indigo-50' : 'bg-blue-50',
+          action: 'View Details'
+        }))
+        .sort((a: any, b: any) => (b.timestamp?.seconds ?? 0) - (a.timestamp?.seconds ?? 0))
+        .slice(0, 5);
+      setNotifications(data);
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error('Logs sync error:', error);
+      }
+    });
+
+    return () => {
+      unsubscribeStats();
+      unsubscribeWithdrawals();
+      unsubscribeLogs();
     };
-
-    const loadWithdrawals = async () => {
-      try {
-        const data = await fetchWithdrawals();
-        if (data && Array.isArray(data)) setPendingWithdrawals(data.slice(0, 3));
-      } catch (e) {}
-    };
-
-    // Fire both in parallel for faster initial load
-    Promise.all([loadStats(), loadWithdrawals()]);
-
-    const interval = setInterval(() => {
-      loadStats();
-      loadWithdrawals();
-    }, 60000);
-    return () => clearInterval(interval);
   }, []);
 
 
@@ -232,12 +276,9 @@ export default function AdminDashboard() {
                     <Button variant="ghost" className="h-auto p-0 sm:px-4 text-[11px] sm:text-[11px] font-black uppercase tracking-widest text-blue-600 hover:bg-transparent whitespace-nowrap">Mark all read</Button>
                   </div>
                   <div className="space-y-5">
-                    {[
-                      { title: 'Security Alert', msg: "Mobile number '91XXXXX420' was submitted twice today.", type: 'security', icon: AlertTriangle, color: 'bg-orange-600', iconColor: 'text-orange-600', bg: 'bg-orange-50', action: 'Review' },
-                      { title: 'New Doctor Signed Up', msg: 'Dr. Anita Roy has created a new account.', type: 'auth', icon: Users, color: 'bg-indigo-600', iconColor: 'text-indigo-600', bg: 'bg-indigo-50', action: 'View Doctor' }
-                    ].map((notif, i) => (
+                    {notifications.length > 0 ? notifications.map((notif, i) => (
                       <motion.div 
-                        key={i}
+                        key={notif.id || i}
                         whileHover={{ x: 5 }}
                         className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center p-4 sm:p-5 bg-white rounded-[4px] border border-slate-100 shadow-xl shadow-slate-200/10 gap-4 sm:gap-6 group cursor-pointer transition-all"
                       >
@@ -254,7 +295,11 @@ export default function AdminDashboard() {
                         </div>
                         <Button size="sm" variant="ghost" className="w-full sm:w-auto h-10 sm:h-11 px-6 rounded-[4px] font-black text-[10px] uppercase tracking-widest text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-50/50 sm:border-transparent">{notif.action}</Button>
                       </motion.div>
-                    ))}
+                    )) : (
+                      <div className="p-10 text-center border border-dashed border-slate-200 rounded-lg">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No recent activity logs found</p>
+                      </div>
+                    )}
                   </div>
               </div>
             </div>

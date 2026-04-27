@@ -20,6 +20,7 @@ import { sendEmail } from '@/lib/email';
 import toast from 'react-hot-toast';
 
 import { Suspense } from 'react';
+import { generateCertificate } from '@/lib/certificate';
 
 function DoctorListContent() {
   const searchParams = useSearchParams();
@@ -344,7 +345,6 @@ function DoctorListContent() {
       await updateDoc(caseRef, {
         bonusPoints: increment(bonusPointsVal),
         bonusReason: reason || "Special Performance Reward",
-        status: "Approved",
         adminNote: "Authorized with Bonus by Admin Panel",
         authorizedBy: "System Admin",
         authorizedAt: serverTimestamp()
@@ -364,8 +364,8 @@ function DoctorListContent() {
       const updatedDrPoints = (selectedDoctor.totalPoints || 0) + bonusPointsVal;
       const updatedDrBalance = (selectedDoctor.walletBalance || 0) + bonusCashVal;
 
-      setSelectedAuditCase({ ...selectedAuditCase, bonusPoints: updatedCaseBonus, bonusReason: reason, status: 'Approved' });
-      setDoctorCases(prev => prev.map(c => c.id === caseId ? { ...c, bonusPoints: updatedCaseBonus, bonusReason: reason, status: 'Approved' } : c));
+      setSelectedAuditCase({ ...selectedAuditCase, bonusPoints: updatedCaseBonus, bonusReason: reason });
+      setDoctorCases(prev => prev.map(c => c.id === caseId ? { ...c, bonusPoints: updatedCaseBonus, bonusReason: reason } : c));
       setSelectedDoctor({ ...selectedDoctor, totalPoints: updatedDrPoints, walletBalance: updatedDrBalance });
       toast.success(`Bonus Synchronized to Case ID: ${caseId.slice(-6)}`);
 
@@ -1190,6 +1190,10 @@ function DoctorListContent() {
                                     <span className="text-[9px] font-black text-slate-900 uppercase">{selectedAuditCase.treatment}</span>
                                   </div>
                                   <div className="flex justify-between items-center py-1.5 border-b border-white">
+                                    <span className="text-[9px] font-bold text-emerald-600 uppercase italic">Treatment Charge</span>
+                                    <span className="text-[10px] font-black text-emerald-700">₹{Number(selectedAuditCase.treatmentCharge || 0).toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center py-1.5 border-b border-white">
                                     <span className="text-[9px] font-bold text-slate-500 uppercase">Base Reward</span>
                                     <span className="text-[9px] font-black text-slate-900">{Number(selectedAuditCase.points).toFixed(1)} pts</span>
                                   </div>
@@ -1251,37 +1255,21 @@ function DoctorListContent() {
                                 })()}
 
                                 <button
-                                  onClick={() => {
-                                    const content = `
-BLUETEETH CLINICAL CERTIFICATE
--------------------------------
-VERIFICATION INDEX: ${selectedAuditCase.id.toUpperCase()}
-DATE: ${new Date().toLocaleDateString()}
-PRACTITIONER: ${selectedDoctor?.name || 'Authorized Network Node'}
-
-CASE DOSSIER DETAILS:
-- Patient Reference: ${selectedAuditCase.patientName}
-- Clinical Treatment: ${selectedAuditCase.treatment}
-- Base Reward Yield: ${Number(selectedAuditCase.points).toFixed(1)} PTS
-- Administrative Bonus: +${Number(selectedAuditCase.bonusPoints || 0).toFixed(1)} PTS
-
-FINANCIAL STANDING:
-- Total Protocol Wealth: ₹${Math.round((Number(selectedAuditCase.points) + Number(selectedAuditCase.bonusPoints || 0)) * exchangeRate).toLocaleString()}
-
-STATUS: CLINICALLY VERIFIED & SECURED
--------------------------------
-INTERNAL REGISTRY AUDIT SUCCESSFUL
-`;
-                                    const blob = new Blob([content], { type: 'text/plain' });
-                                    const url = window.URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.setAttribute('download', `Certificate_${selectedAuditCase.patientName.replace(/\s+/g, '_')}_${selectedAuditCase.id.slice(-6)}.txt`);
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    toast.success('Clinical Archive Downloaded');
-                                  }}
+                                   onClick={async () => {
+                                     const toastId = toast.loading('Generating High-Fidelity Certificate...');
+                                     try {
+                                       const certificateDataUrl = await generateCertificate(selectedAuditCase, selectedDoctor);
+                                       const link = document.createElement('a');
+                                       link.href = certificateDataUrl;
+                                       link.setAttribute('download', `Certificate_${selectedAuditCase.patientName.replace(/\s+/g, '_')}_${selectedAuditCase.id.slice(-6)}.png`);
+                                       document.body.appendChild(link);
+                                       link.click();
+                                       document.body.removeChild(link);
+                                       toast.success('Premium Certificate Downloaded', { id: toastId });
+                                     } catch (err) {
+                                       toast.error('Generation Failed', { id: toastId });
+                                     }
+                                   }}
                                   className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all hover:shadow-2xl hover:shadow-slate-300 active:scale-95"
                                 >
                                   Download Case Certificate
