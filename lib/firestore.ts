@@ -548,7 +548,7 @@ export const fetchClinicianCases = async (clinicianId: string) => {
 
 // 7. Update User Profile (Hardened with Binary Support & Fail-Safe Timeouts)
 export const updateUserProfile = async (uid: string, profileData: any) => {
-  console.log('[DEBUG] Syncing identity with 30s clinical buffer...');
+  console.log('[DEBUG] Syncing identity node...');
   try {
     if (!db) throw new Error('Firestore is not initialized (Database OFFLINE)');
     const userRef = doc(db, 'users', uid);
@@ -556,7 +556,7 @@ export const updateUserProfile = async (uid: string, profileData: any) => {
     const syncResult = await withTimeout(() => setDoc(userRef, {
       ...profileData,
       updatedAt: serverTimestamp()
-    }, { merge: true }), 30000);
+    }, { merge: true }), 10000, 1);
     
     if (!syncResult.success) {
       throw new Error(syncResult.error);

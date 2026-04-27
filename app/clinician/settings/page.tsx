@@ -151,7 +151,8 @@ export default function ClinicianSettingsPage() {
       // 3. Cloud Database Sync
       const result = await updateUserProfile(user.uid, { 
         ...safeData, 
-        photoURL: finalPhotoURL 
+        photoURL: finalPhotoURL,
+        role: userData?.role || 'clinician'
       });
 
       if (!result.success) throw new Error(result.error || "Firestore Sync Failed");

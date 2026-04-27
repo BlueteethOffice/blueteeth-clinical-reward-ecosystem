@@ -207,7 +207,8 @@ export default function SettingsPage() {
       // 3. Firestore Master Update
       const result = await updateUserProfile(user.uid, { 
         ...safeData, 
-        photoURL: finalPhotoURL 
+        photoURL: finalPhotoURL,
+        role: userData?.role || 'doctor'
       });
 
       if (!result.success) throw new Error(result.error || "Firestore Sync Blocked");
