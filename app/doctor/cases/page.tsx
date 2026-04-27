@@ -542,7 +542,7 @@ export default function CaseHistory() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 380 }}
-                className="pointer-events-auto relative w-full h-auto max-h-[96vh] sm:max-h-none sm:h-auto max-w-none sm:max-w-[550px] bg-white rounded-[4px] shadow-2xl flex flex-col border border-slate-100 sm:border-slate-100 overflow-hidden"
+                className="pointer-events-auto relative w-full h-auto max-h-[96vh] sm:max-h-[92vh] max-w-none sm:max-w-[550px] bg-white rounded-[4px] shadow-2xl flex flex-col border border-slate-100 sm:border-slate-100 overflow-hidden"
               >
                 {/* Modal Header - Status-Based Background */}
                 <div className={`p-4 sm:p-4 border-b border-white/10 flex items-center justify-between shrink-0 relative overflow-hidden ${getCaseGradient(selectedCase.id)}`}>

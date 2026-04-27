@@ -237,11 +237,11 @@ const ClinicianSubmissions = () => {
              initial={{ opacity: 0, scale: 0.9, y: 20 }}
              animate={{ opacity: 1, scale: 1, y: 0 }}
              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-             className="relative bg-white w-full max-w-lg rounded-[4px] shadow-3xl overflow-hidden border border-slate-200"
+             className="relative bg-white w-full max-w-lg max-h-[96vh] sm:max-h-[92vh] rounded-[4px] shadow-3xl overflow-hidden border border-slate-200 flex flex-col"
              onClick={(e) => e.stopPropagation()}
            >
              {/* Header */}
-             <div className="bg-slate-900 p-5 text-white flex items-center justify-between">
+             <div className="bg-slate-900 p-5 text-white flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3">
                    <div className="h-10 w-10 bg-blue-600 rounded-[4px] flex items-center justify-center shadow-lg">
                       <FileCheck size={20} />
@@ -256,7 +256,7 @@ const ClinicianSubmissions = () => {
                 </button>
              </div>
 
-             <div className="p-5 space-y-5 max-h-[80vh] overflow-y-auto custom-scrollbar">
+             <div className="p-5 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
                 {/* Status & Date */}
                 <div className="flex items-center justify-between p-3 bg-slate-50 rounded-[4px] border border-slate-100">
                    <div className="flex flex-col gap-0.5">
