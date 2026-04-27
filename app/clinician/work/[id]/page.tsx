@@ -11,7 +11,7 @@ import {
   ShieldCheck, Loader2, Zap, CheckCircle2, ChevronRight,
   FileText, Trash2, ArrowLeft, Play,
   Image as ImageIcon, Eye, AlertCircle, Activity, Paperclip, Calendar, Banknote,
-  CheckCircle, Info, LifeBuoy
+  CheckCircle, Info, LifeBuoy, Award
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';

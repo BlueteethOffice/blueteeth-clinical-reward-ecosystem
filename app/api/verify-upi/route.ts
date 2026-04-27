@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     // 1. Rate Limiting (10 requests per minute per IP)
     const ip = req.headers.get('x-forwarded-for') || 'anonymous';
-    const limitResult = rateLimit(ip, 10, 60000);
+    const limitResult = await rateLimit(ip, 10, 60000);
     if (!limitResult.success) {
       return apiResponse(false, 'Too many requests. Please try again later.', null, 429);
     }

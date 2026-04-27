@@ -181,8 +181,7 @@ export default function ClinicianSubmitCase() {
             notes: '',
             evidenceName: '',
             location: '',
-            treatmentCharge: '',
-            consultationFee: ''
+            treatmentCharge: ''
         });
         setSelectedFile(null);
         setProcessedEvidence('');
