@@ -16,6 +16,7 @@ import { db } from '@/lib/firebase';
 import { sendEmail } from '@/lib/email';
 import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 import { updateWithdrawalStatus } from '@/lib/firestore';
 
 import { Suspense } from 'react';
@@ -74,33 +75,44 @@ function PayoutManagementContent() {
     return () => unsubscribe();
   }, [db]);
 
+  const { user } = useAuth();
+
   const handleProcess = async (req: any) => {
+    if (!user) {
+      toast.error('Identity authentication required.');
+      return;
+    }
+
     setProcessingId(req.id);
     try {
+      const token = await user.getIdToken();
+
       // 1. DISPATCH ACTUAL MONEY TRANSFER (Automated Node)
       const payoutRes = await fetch('/api/admin/payout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           redemptionId: req.id,
           amount: req.amount,
-          details: req.details,
-          method: req.method,
-          doctorName: req.doctorName,
-          doctorEmail: req.email || "clinical@blueteeth.in"
+          vpa: req.details?.upiId || req.details?.vpa || "",
+          name: req.doctorName,
+          upiId: req.details?.upiId || ""
         })
       });
 
       const payoutData = await payoutRes.json();
       
       if (!payoutRes.ok || !payoutData.success) {
-         throw new Error(payoutData.error || "Internal API Dispatch Fault.");
+         throw new Error(payoutData.message || payoutData.error || "Internal API Dispatch Fault.");
       }
 
 
       
       // ENTERPRISE DIAGNOSTIC FEEDBACK — CUSTOM PREMIUM TOASTS
-      if (payoutData.simulation) {
+      if (payoutData.data?.simulation) {
          toast.custom((t) => (
            <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-slate-900 shadow-2xl rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-white/10 backdrop-blur-md`}>
              <div className="flex-1 w-0 p-5">
@@ -135,7 +147,7 @@ function PayoutManagementContent() {
                  <div className="ml-4 flex-1 text-white">
                    <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-1">Clinical Settlement Success</p>
                    <p className="text-sm font-black leading-none uppercase tracking-tight">Rupees Dispatched to {req.doctorName}</p>
-                   <p className="mt-2 text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-none opacity-80 italic">Transaction ID: {payoutData.payout_id}</p>
+                   <p className="mt-2 text-[10px] font-bold text-blue-100 uppercase tracking-widest leading-none opacity-80 italic">Transaction ID: {payoutData.data?.payoutId}</p>
                  </div>
                </div>
              </div>
@@ -148,8 +160,8 @@ function PayoutManagementContent() {
 
       // 2. Finalize Redemption Identity & Deduct Balances (SECURE NODE)
       const res = await updateWithdrawalStatus(req.id, 'Paid', {
-        payoutId: payoutData.payout_id,
-        isSimulation: payoutData.simulation || false
+        payoutId: payoutData.data?.payoutId,
+        isSimulation: payoutData.data?.simulation || false
       });
 
       if (!res.success) throw new Error(res.error || "Database Sync Failure.");

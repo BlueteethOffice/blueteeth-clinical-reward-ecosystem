@@ -894,7 +894,7 @@ export default function EarningsPage() {
                           setIsPayoutEditing(!isPayoutEditing);
                           if (!isPayoutEditing) toast.success("Security Node: Edit Mode Active");
                         }}
-                        className={`text-[8px] font-bold uppercase tracking-widest hover:underline ${isPayoutEditing ? 'text-amber-600' : 'text-blue-600'}`}
+                        className={`text-[8px] font-bold uppercase tracking-widest hover:underline transition-all duration-300 ${isPayoutEditing ? 'text-amber-600' : 'text-blue-600'} ${!isPayoutEditing ? 'animate-pulse' : ''}`}
                       >
                          {isPayoutEditing ? '[ LOCK & SAVE VIEW ]' : '[ EDIT / UPDATE NODE ]'}
                       </button>
@@ -902,13 +902,38 @@ export default function EarningsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                       {payoutMethod === 'bank' ? (
                         <>
-                          <input id="payout_bank_acc" key={`acc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.accountNumber} placeholder="Account Number" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
-                          <input id="payout_bank_ifsc" key={`ifsc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.ifsc} placeholder="IFSC Code" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all uppercase disabled:opacity-60" disabled={!isPayoutEditing} />
-                          <input id="payout_bank_name" key={`bank_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.bankName} placeholder="Bank Name" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
-                          <input id="payout_bank_holder" key={`hold_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.holderName} placeholder="Account Holder Name" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60" disabled={!isPayoutEditing} />
+                          <div className="relative group/field">
+                            <input id="payout_bank_acc" key={`acc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.accountNumber} placeholder="Account Number" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60 hover:border-blue-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" disabled={!isPayoutEditing} />
+                            {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-blue-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                               <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                            </div>}
+                          </div>
+                          <div className="relative group/field">
+                            <input id="payout_bank_ifsc" key={`ifsc_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.ifsc} placeholder="IFSC Code" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all uppercase disabled:opacity-60 hover:border-blue-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" disabled={!isPayoutEditing} />
+                            {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-blue-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                               <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                            </div>}
+                          </div>
+                          <div className="relative group/field">
+                            <input id="payout_bank_name" key={`bank_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.bankName} placeholder="Bank Name" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60 hover:border-blue-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" disabled={!isPayoutEditing} />
+                            {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-blue-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                               <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                            </div>}
+                          </div>
+                          <div className="relative group/field">
+                            <input id="payout_bank_holder" key={`hold_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.holderName} placeholder="Account Holder Name" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all disabled:opacity-60 hover:border-blue-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" disabled={!isPayoutEditing} />
+                            {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-blue-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                               <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                            </div>}
+                          </div>
                         </>
                       ) : (
-                        <input id="payout_upi_id" key={`upi_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.upiId} placeholder="Enter UPI ID (e.g. name@upi)" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all md:col-span-2 disabled:opacity-60" disabled={!isPayoutEditing} />
+                        <div className="relative group/field md:col-span-2">
+                          <input id="payout_upi_id" key={`upi_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.details?.upiId} placeholder="Enter UPI ID (e.g. name@upi)" className="payout-input w-full h-11 bg-white border-2 border-blue-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-600 transition-all md:col-span-2 disabled:opacity-60 hover:border-blue-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" disabled={!isPayoutEditing} />
+                          {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-blue-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                             <span className="text-[8px] font-black text-blue-700 bg-white px-3 py-1.5 rounded shadow-2xl border border-blue-200 uppercase tracking-tighter flex items-center gap-2"><Lock size={10} /> Click Edit to Unlock</span>
+                          </div>}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -916,11 +941,21 @@ export default function EarningsPage() {
                    <div className="space-y-4 px-1 sm:px-2">
                      <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest border-l-4 border-rose-500 pl-4">Step 3: Identity Verification (KYC)</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                       <input id="payout_kyc_pan" key={`pan_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.pan} disabled={!isPayoutEditing} placeholder="PAN Number (10 Digits)" maxLength={10} className="payout-input w-full h-11 bg-white border-2 border-rose-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-600 transition-all uppercase disabled:opacity-60" />
-                       <input id="payout_kyc_aadhar" key={`aad_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.aadhar} disabled={!isPayoutEditing} placeholder="Aadhaar Number (12 Digits)" maxLength={12} className="payout-input w-full h-11 bg-white border-2 border-rose-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-600 transition-all disabled:opacity-60" />
+                       <div className="relative group/field">
+                          <input id="payout_kyc_pan" key={`pan_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.pan} disabled={!isPayoutEditing} placeholder="PAN Number (10 Digits)" maxLength={10} className="payout-input w-full h-11 bg-white border-2 border-rose-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-600 transition-all uppercase disabled:opacity-60 hover:border-rose-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" />
+                          {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-rose-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                             <span className="text-[7px] font-black text-rose-700 bg-white px-2 py-1 rounded shadow-xl border border-rose-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                          </div>}
+                       </div>
+                       <div className="relative group/field">
+                          <input id="payout_kyc_aadhar" key={`aad_${userData?.updatedAt}`} defaultValue={userData?.payoutNode?.kyc?.aadhar} disabled={!isPayoutEditing} placeholder="Aadhaar Number (12 Digits)" maxLength={12} className="payout-input w-full h-11 bg-white border-2 border-rose-300 rounded-[4px] px-4 text-[12px] font-bold outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-600 transition-all disabled:opacity-60 hover:border-rose-500 hover:shadow-lg disabled:cursor-not-allowed disabled:pointer-events-none" />
+                          {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-rose-400/40 backdrop-blur-[2px] z-30 pointer-events-auto">
+                             <span className="text-[7px] font-black text-rose-700 bg-white px-2 py-1 rounded shadow-xl border border-rose-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                          </div>}
+                       </div>
                     </div>
 
-                    <div className="relative h-12 w-full mt-2 group">
+                    <div className="relative h-12 w-full mt-2 group/field">
                        <input 
                          type="file" 
                          id="payout_pan_image" 
@@ -947,6 +982,9 @@ export default function EarningsPage() {
                           <FileImage className="text-rose-500" size={16} />
                           <span id="pan_label" className="text-[8px] font-bold text-rose-700 uppercase tracking-widest">Upload PAN Image Proof</span>
                        </div>
+                       {!isPayoutEditing && <div className="absolute inset-0 bg-slate-50/40 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed rounded-[4px] border border-rose-400/40 backdrop-blur-[2px] z-30">
+                          <span className="text-[7px] font-black text-rose-700 bg-white px-2 py-1 rounded shadow-xl border border-rose-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Edit to Unlock</span>
+                       </div>}
                     </div>
                   </div>
 

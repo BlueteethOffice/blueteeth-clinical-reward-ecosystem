@@ -586,7 +586,7 @@ export default function ClinicianEarningsPage() {
                                <div className="space-y-1">
                                   <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight truncate leading-none">{item.patientName}</h4>
                                   <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest truncate">{item.treatmentName || 'Clinical Service'}</p>
-                               </div>
+                                </div>
                                <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
                                   <div className="space-y-0.5">
                                      <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none">Yield Result</p>
@@ -868,44 +868,50 @@ export default function ClinicianEarningsPage() {
                          <div className="space-y-4">
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Account Number</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input 
                                     type={isEditingKyc ? "text" : "password"} 
                                     required disabled={!isEditingKyc}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.bankAccount} onChange={e => setKycData({...kycData, bankAccount: e.target.value})}
                                     placeholder="•••• •••• ••••"
                                   />
                                   <Landmark size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 opacity-60" />
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">IFSC Code</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.ifsc} onChange={e => setKycData({...kycData, ifsc: e.target.value.toUpperCase()})}
                                     placeholder="SBIN000XXXX"
                                   />
                                   <ShieldCheck size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-500 opacity-60" />
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">UPI Address (VPA)</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.upiId} onChange={e => setKycData({...kycData, upiId: e.target.value})}
                                     placeholder="dr.specialist@upi"
                                   />
                                   <QrCode size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 opacity-60" />
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                          </div>
@@ -916,35 +922,39 @@ export default function ClinicianEarningsPage() {
                          <div className="space-y-4">
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Aadhaar Number</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc} maxLength={12}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.aadhaarNo} onChange={e => setKycData({...kycData, aadhaarNo: e.target.value.replace(/\D/g, '')})}
                                     placeholder="12-digit number"
                                   />
                                   <Fingerprint size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-500 opacity-60" />
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">PAN Number</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input 
                                     type="text" 
                                     required disabled={!isEditingKyc} maxLength={10}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
-                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed'}`}
+                                    className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.panNo} onChange={e => setKycData({...kycData, panNo: e.target.value.toUpperCase()})}
                                     placeholder="ABCDE1234F"
                                   />
                                   <CreditCard size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-violet-500 opacity-60" />
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                             <div className="space-y-1.5">
                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">PAN Card Image</label>
-                               <div className="relative">
+                               <div className="relative group/field">
                                   <input type="file" disabled={!isEditingKyc || isScanning} accept="image/*" className="hidden" id="panUploadE" onChange={e => {
                                      const file = e.target.files?.[0];
                                      if (file) {
@@ -959,7 +969,6 @@ export default function ClinicianEarningsPage() {
                                   }} />
                                   <div 
                                     onClick={() => isEditingKyc && !isScanning && document.getElementById('panUploadE')?.click()}
-                                    title={!isEditingKyc ? "Locked: Click 'Unlock Node' above to edit credentials" : ""}
                                     className={`w-full h-12 rounded-lg px-5 flex items-center justify-between border ${isScanning ? 'border-blue-400 bg-blue-50 animate-pulse' : kycData.panPhotoURL ? (scanResult?.success ? 'border-emerald-500 bg-emerald-50/30' : scanResult ? 'border-rose-500 bg-rose-50/30' : 'border-emerald-500 bg-emerald-50/30') : 'border-slate-200 bg-white'} transition-all ${isEditingKyc && !isScanning ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                   >
                                      <span className={`text-[10px] font-black uppercase ${isScanning ? 'text-blue-600' : scanResult?.success ? 'text-emerald-600' : scanResult ? 'text-rose-600' : 'text-slate-400'}`}>
@@ -971,6 +980,9 @@ export default function ClinicianEarningsPage() {
                                        <ShieldCheck size={16} className={kycData.panPhotoURL ? (scanResult?.success ? "text-emerald-500" : scanResult ? "text-rose-500" : "text-emerald-500") : "text-slate-300"} />
                                      )}
                                   </div>
+                                  {!isEditingKyc && <div className="absolute inset-0 bg-slate-50/20 opacity-0 group-hover/field:opacity-100 transition-all flex items-center justify-center cursor-not-allowed pointer-events-none rounded-lg border border-blue-400/20 backdrop-blur-[1px]">
+                                     <span className="text-[7px] font-black text-blue-700 bg-white px-2 py-1 rounded shadow-xl border border-blue-200 uppercase tracking-tighter flex items-center gap-1.5"><Lock size={8} /> Click Unlock Node to Edit</span>
+                                  </div>}
                                </div>
                             </div>
                          </div>
