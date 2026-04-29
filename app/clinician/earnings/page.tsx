@@ -925,7 +925,7 @@ export default function ClinicianEarningsPage() {
                                <div className="relative group/field">
                                   <input 
                                     type="text" 
-                                    required disabled={!isEditingKyc} maxLength={11} maxLength={12}
+                                    required disabled={!isEditingKyc} maxLength={12}
                                     className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.aadhaarNo} onChange={e => setKycData({...kycData, aadhaarNo: e.target.value.replace(/\D/g, '')})}
                                     placeholder="12-digit number"
@@ -941,7 +941,7 @@ export default function ClinicianEarningsPage() {
                                <div className="relative group/field">
                                   <input 
                                     type="text" 
-                                    required disabled={!isEditingKyc} maxLength={11} maxLength={10}
+                                    required disabled={!isEditingKyc} maxLength={10}
                                     className={`w-full h-12 rounded-lg pl-5 pr-12 outline-none font-bold text-sm transition-all border ${isEditingKyc ? 'bg-white border-blue-500 ring-4 ring-blue-50' : 'bg-slate-50 border-slate-200 text-slate-400'}`}
                                     value={kycData.panNo} onChange={e => setKycData({...kycData, panNo: e.target.value.toUpperCase()})}
                                     placeholder="ABCDE1234F"
