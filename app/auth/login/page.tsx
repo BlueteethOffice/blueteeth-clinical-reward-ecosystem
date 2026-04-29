@@ -91,11 +91,19 @@ export default function LoginPage() {
       } catch (_) {}
 
     } catch (error: any) {
-        let errorMsg = 'Login failed. Check your credentials.';
-        if (error.code === 'auth/wrong-password') errorMsg = 'Incorrect password. Please try again.';
-        else if (error.code === 'auth/user-not-found') errorMsg = 'No account found with this email.';
-        else if (error.code === 'auth/invalid-email') errorMsg = 'Invalid email format.';
-        else if (error.message) errorMsg = error.message;
+        let errorMsg = 'Access Denied: Authentication node failed to verify credentials.';
+        
+        if (error.code === 'auth/invalid-credential') { errorMsg = 'Access Denied: Invalid clinical ID or passcode.'; } else if (error.code === 'auth/wrong-password') {
+            errorMsg = 'Security Alert: Incorrect passcode entered. Please verify and retry.';
+        } else if (error.code === 'auth/user-not-found') {
+            errorMsg = 'Identity Error: No clinical profile associated with this ID.';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMsg = 'Protocol Error: Email format is not recognized by the registry.';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMsg = 'Security Lock: Too many failed attempts. Access temporarily restricted.';
+        } else if (error.message) {
+            errorMsg = error.message;
+        }
 
         toast.error(errorMsg, { id: toastId });
     } finally {
