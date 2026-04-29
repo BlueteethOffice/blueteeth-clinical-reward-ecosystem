@@ -63,7 +63,8 @@ export default function EarningsPage() {
   // Cache-First Identity State
   const [history, setHistory] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
-       const cached = localStorage.getItem('blueteeth_earnings_cache');
+       const lastUid = localStorage.getItem('last_clinical_uid');
+       const cached = lastUid ? localStorage.getItem(`blueteeth_earnings_cache_${lastUid}`) : null;
        return cached ? JSON.parse(cached) : [];
     }
     return [];
@@ -71,15 +72,17 @@ export default function EarningsPage() {
 
   const [stats, setStats] = useState(() => {
     if (typeof window !== 'undefined') {
-       const cached = localStorage.getItem('blueteeth_stats_cache');
+       const lastUid = localStorage.getItem('last_clinical_uid');
+       const cached = lastUid ? localStorage.getItem(`blueteeth_stats_cache_${lastUid}`) : null;
        return cached ? JSON.parse(cached) : {
          casePoints: 0,
          totalPoints: 0,
          totalRevenue: 0,
-         pendingPoints: 0
+         pendingPoints: 0,
+         availableRevenue: 0
        };
     }
-    return { casePoints: 0, totalPoints: 0, totalRevenue: 0, pendingPoints: 0 };
+    return { casePoints: 0, totalPoints: 0, totalRevenue: 0, pendingPoints: 0, availableRevenue: 0 };
   });
 
   const [loading, setLoading] = useState(history.length === 0);
@@ -135,8 +138,11 @@ export default function EarningsPage() {
        const CACHE_VER = 'v2_lightweight';
        const storedVer = localStorage.getItem('blueteeth_cache_ver');
        if (storedVer !== CACHE_VER) {
-          localStorage.removeItem('blueteeth_earnings_cache');
-          localStorage.removeItem('blueteeth_stats_cache');
+          const lastUid = localStorage.getItem('last_clinical_uid');
+          if (lastUid) {
+            localStorage.removeItem(`blueteeth_earnings_cache_${lastUid}`);
+            localStorage.removeItem(`blueteeth_stats_cache_${lastUid}`);
+          }
           localStorage.setItem('blueteeth_cache_ver', CACHE_VER);
           console.log(">>> [CLINICAL RECOVERY]: Storage optimized.");
        }
@@ -215,10 +221,10 @@ export default function EarningsPage() {
           date: c.date,
           submittedAt: c.submittedAt
         }));
-        localStorage.setItem('blueteeth_earnings_cache', JSON.stringify(lightweightData));
+        localStorage.setItem(`blueteeth_earnings_cache_${user.uid}`, JSON.stringify(lightweightData));
       } catch (e) {
         console.warn("Storage Full. Clearing earnings cache.");
-        localStorage.removeItem('blueteeth_earnings_cache');
+        localStorage.removeItem(`blueteeth_earnings_cache_${user.uid}`);
       }
 
       setLoading(false);
@@ -234,9 +240,18 @@ export default function EarningsPage() {
     };
   }, [user, db]);
 
-  // Ã°Å¸â€œÅ  Reactive Stats Engine (History + Redemptions change)
+  // 📊 Reactive Stats Engine (History + Redemptions change)
   useEffect(() => {
-    if (!history.length && !redemptions.length) return;
+    if (!history.length && !redemptions.length) {
+      setStats({
+        casePoints: 0,
+        pendingPoints: 0,
+        totalPoints: 0,
+        totalRevenue: 0,
+        availableRevenue: 0
+      });
+      return;
+    }
 
     let clP = 0;
     let adP = 0;
@@ -278,9 +293,13 @@ export default function EarningsPage() {
 
     setStats(newStats);
     try {
-      localStorage.setItem('blueteeth_stats_cache', JSON.stringify(newStats));
+      if (user?.uid) {
+        localStorage.setItem(`blueteeth_stats_cache_${user.uid}`, JSON.stringify(newStats));
+      }
     } catch (e) {
-      localStorage.removeItem('blueteeth_stats_cache');
+      if (user?.uid) {
+        localStorage.removeItem(`blueteeth_stats_cache_${user.uid}`);
+      }
     }
   }, [history, redemptions, exchangeRate]);
 
