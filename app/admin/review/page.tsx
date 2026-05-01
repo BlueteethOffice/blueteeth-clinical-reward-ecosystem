@@ -234,6 +234,13 @@ function CaseReviewContent() {
   const [points, setPoints] = useState<string | number>(8);
   const [clinicianSearch, setClinicianSearch] = useState('');
   const [hasMounted, setHasMounted] = useState(false);
+  const [activeProofType, setActiveProofType] = useState<'initial' | 'final'>('final');
+
+  useEffect(() => {
+    if (selectedCase) {
+      setActiveProofType(selectedCase.finalProof ? 'final' : 'initial');
+    }
+  }, [selectedCase]);
 
   useEffect(() => {
     setHasMounted(true);
@@ -685,11 +692,29 @@ function CaseReviewContent() {
                   <div className="space-y-2">
                      <div className="flex items-center justify-between">
                         <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Clinical Evidence Attachment</h4>
-                        <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-[4px] border border-blue-100 uppercase tracking-widest">Secure Link</span>
+                        <div className="flex bg-slate-100 p-0.5 rounded-[4px] border border-slate-200">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setActiveProofType('initial'); }}
+                            className={`px-3 py-1 text-[8px] font-black uppercase rounded-[2px] transition-all ${activeProofType === 'initial' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          >
+                            Patient Proof
+                          </button>
+                          {selectedCase.finalProof && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); setActiveProofType('final'); }}
+                              className={`px-3 py-1 text-[8px] font-black uppercase rounded-[2px] transition-all ${activeProofType === 'final' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                              Final Proof
+                            </button>
+                          )}
+                        </div>
                      </div>
                      <div 
                        onClick={() => {
-                         const url = (selectedCase.finalProof || selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                         const initialUrl = (selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                         const finalUrl = selectedCase.finalProof;
+                         const url = activeProofType === 'final' && finalUrl ? finalUrl : initialUrl;
+
                          if (!url || typeof url !== 'string') return;
                          
                          // Detect PDF for direct tab opening
@@ -721,53 +746,52 @@ function CaseReviewContent() {
                        className="group relative h-40 bg-slate-50 rounded-[4px] overflow-hidden cursor-pointer border-2 border-dashed border-slate-200 hover:border-blue-400 transition-all flex items-center justify-center"
                      >
                         {(() => {
-                          const initialUrl = (selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url);
-                          const finalUrl = selectedCase.finalProof;
-                          const url = finalUrl || initialUrl;
+                           const initialUrl = (selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url);
+                           const finalUrl = selectedCase.finalProof;
+                           const url = activeProofType === 'final' && finalUrl ? finalUrl : initialUrl;
 
-                          if (!url || typeof url !== 'string') {
-                            return (
-                              <div className="text-center">
-                                 <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
-                                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white px-2 py-1 rounded-[4px] border border-slate-200 shadow-inner">NO CASE NODES SYNCHRONIZED</p>
-                              </div>
-                            );
-                          }
-                          
-                          // Smart file type detection for Firebase Storage URLs
-                          // Firebase URLs look like: ...%2Ffilename.pdf?alt=media&token=...
-                          const urlLower = url.toLowerCase();
-                          const isImageFile = urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|$|%)/i) || 
-                                             urlLower.includes('%2f') && urlLower.includes('jpg') ||
-                                             urlLower.includes('%2f') && urlLower.includes('png') ||
-                                             urlLower.includes('%2f') && urlLower.includes('jpeg') ||
-                                             urlLower.includes('%2f') && urlLower.includes('webp');
-                          const isDocument = urlLower.includes('.pdf') || 
-                                            urlLower.includes('%2fpdf') ||
-                                            (urlLower.includes('alt=media') && !isImageFile);
-
-                          if (isDocument || imageError) {
-                            return (
-                              <div className="flex flex-col items-center justify-center p-6 text-center w-full h-full bg-slate-50 transition-all hover:bg-blue-50/50">
-                                <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-3 text-blue-600 border border-blue-100 shadow-sm">
-                                  <FileText size={32} />
-                                </div>
-                                <p className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-1">Clinical Attachment Found</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to View Document</p>
-                              </div>
-                            );
-                          }
-
-                           return (
-                             <>
-                               <div className="absolute top-2 right-2 z-20 flex gap-2">
-                                 {finalUrl && initialUrl && (
-                                   <div className="px-2 py-1 bg-emerald-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Final Proof Active</div>
-                                 )}
-                                 {initialUrl && !finalUrl && (
-                                   <div className="px-2 py-1 bg-blue-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Patient Proof Active</div>
-                                 )}
+                           if (!url || typeof url !== 'string') {
+                             return (
+                               <div className="text-center">
+                                  <ImageIcon size={40} className="text-slate-300 mx-auto mb-2" />
+                                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] bg-white px-2 py-1 rounded-[4px] border border-slate-200 shadow-inner">NO CASE NODES SYNCHRONIZED</p>
                                </div>
+                             );
+                           }
+                           
+                           // Smart file type detection for Firebase Storage URLs
+                           // Firebase URLs look like: ...%2Ffilename.pdf?alt=media&token=...
+                           const urlLower = url.toLowerCase();
+                           const isImageFile = urlLower.match(/\.(jpg|jpeg|png|gif|webp)(\?|$|%)/i) || 
+                                              urlLower.includes('%2f') && urlLower.includes('jpg') ||
+                                              urlLower.includes('%2f') && urlLower.includes('png') ||
+                                              urlLower.includes('%2f') && urlLower.includes('jpeg') ||
+                                              urlLower.includes('%2f') && urlLower.includes('webp');
+                           const isDocument = urlLower.includes('.pdf') || 
+                                             urlLower.includes('%2fpdf') ||
+                                             (urlLower.includes('alt=media') && !isImageFile);
+
+                           if (isDocument || imageError) {
+                             return (
+                               <div className="flex flex-col items-center justify-center p-6 text-center w-full h-full bg-slate-50 transition-all hover:bg-blue-50/50">
+                                 <div className="h-16 w-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-3 text-blue-600 border border-blue-100 shadow-sm">
+                                   <FileText size={32} />
+                                 </div>
+                                 <p className="text-[12px] font-black text-slate-900 uppercase tracking-widest mb-1">Clinical Attachment Found</p>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to View Document ({activeProofType === 'final' ? 'Final' : 'Patient'})</p>
+                               </div>
+                             );
+                           }
+
+                            return (
+                              <>
+                                <div className="absolute top-2 right-2 z-20 flex gap-2">
+                                  {activeProofType === 'final' ? (
+                                    <div className="px-2 py-1 bg-emerald-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Final Proof Active</div>
+                                  ) : (
+                                    <div className="px-2 py-1 bg-blue-600 text-white text-[7px] font-black uppercase rounded-[2px] shadow-lg">Patient Proof Active</div>
+                                  )}
+                                </div>
                                <img 
                                  src={url} 
                                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -791,14 +815,17 @@ function CaseReviewContent() {
                       {selectedCase.finalProof && (selectedCase.initialProof || selectedCase.evidenceUrl) && (
                          <div className="grid grid-cols-2 gap-2 mt-2">
                             <div 
-                              onClick={() => { /* View Initial */ }}
-                              className="h-20 bg-slate-100 rounded-[4px] overflow-hidden border border-slate-200 cursor-pointer relative group"
+                              onClick={(e) => { e.stopPropagation(); setActiveProofType('initial'); }}
+                              className={`h-20 bg-slate-100 rounded-[4px] overflow-hidden border-2 cursor-pointer relative group transition-all ${activeProofType === 'initial' ? 'border-blue-500' : 'border-slate-200'}`}
                             >
-                               <img src={selectedCase.initialProof || selectedCase.evidenceUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all" alt="Initial" />
+                               <img src={selectedCase.initialProof || selectedCase.evidenceUrl} className={`w-full h-full object-cover transition-all ${activeProofType === 'initial' ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} alt="Initial" />
                                <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-white text-[6px] font-black uppercase rounded-[2px]">Patient Proof</div>
                             </div>
-                            <div className="h-20 bg-slate-100 rounded-[4px] overflow-hidden border-2 border-emerald-500 cursor-pointer relative">
-                               <img src={selectedCase.finalProof} className="w-full h-full object-cover" alt="Final" />
+                            <div 
+                              onClick={(e) => { e.stopPropagation(); setActiveProofType('final'); }}
+                              className={`h-20 bg-slate-100 rounded-[4px] overflow-hidden border-2 cursor-pointer relative group transition-all ${activeProofType === 'final' ? 'border-emerald-500' : 'border-slate-200'}`}
+                            >
+                               <img src={selectedCase.finalProof} className={`w-full h-full object-cover transition-all ${activeProofType === 'final' ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} alt="Final" />
                                <div className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-emerald-600 text-white text-[6px] font-black uppercase rounded-[2px]">Final Proof</div>
                             </div>
                          </div>
@@ -1145,7 +1172,10 @@ function CaseReviewContent() {
               
               <div className="max-w-4xl w-full h-full flex items-center justify-center">
                 {(() => {
-                  const url = (selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                  const initialUrl = (selectedCase.initialProof || selectedCase.evidenceUrl || selectedCase.proofUrl || selectedCase.imageUrl || selectedCase.url || selectedCase.evidenceUrls?.[0]);
+                  const finalUrl = selectedCase.finalProof;
+                  const url = activeProofType === 'final' && finalUrl ? finalUrl : initialUrl;
+                  
                   const urlLower2 = url?.toLowerCase() || '';
                   const isImageFile2 = urlLower2.match(/\.(jpg|jpeg|png|gif|webp)(\?|$|%)/i) ||
                                       (urlLower2.includes('%2f') && (urlLower2.includes('jpg') || urlLower2.includes('png') || urlLower2.includes('jpeg') || urlLower2.includes('webp')));
